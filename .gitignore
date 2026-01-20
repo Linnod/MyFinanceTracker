@@ -1,0 +1,68 @@
+## [Standard .NET Ignore Rules]
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider / IntelliJ
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet Packages
+*.nupkg
+# The packages folder can be ignored as of NuGet 2.8
+**/packages/*
+# except build/, which is used as an MSBuild target.
+!**/packages/build/
+# If using NuGet restore setting, ignore the 'project.lock.json' file
+project.lock.json
+# obj folder is used for NuGet restore too
+**/obj/*
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+#-----------------------------------------------------------
+## [MyFinanceTracker Specific Secret & Config Files]
+
+# Google Cloud credentials
+google-api-credentials.json
+
+# Local category configuration
+categories.yaml
+
+# Configuration files with secrets (tokens, DB strings)
+appsettings.json
+appsettings.Development.json
+
+# If you use User Secrets in .NET
+[Cc]onnected [Ss]ervices/
