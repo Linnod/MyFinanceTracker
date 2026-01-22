@@ -17,4 +17,7 @@ internal sealed class GoogleSheetsOptions
 
     [Range(0, 10)]
     public int HeaderRowsCount { get; init; }
+
+    [Required(AllowEmptyStrings = false)]
+    public string DecimalSeparator { get; init; } = ",";
 }

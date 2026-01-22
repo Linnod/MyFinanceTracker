@@ -7,7 +7,6 @@ internal class FormulaBuilder
     public string Merge(string? currentValue, string delta)
     {
         var baseValue = (currentValue ?? string.Empty).Trim();
-
         if (IsZeroOrEmpty(baseValue))
         {
             return "=" + delta.TrimStart('+');
@@ -21,7 +20,7 @@ internal class FormulaBuilder
         return "=" + baseValue + delta;
     }
 
-    private bool IsZeroOrEmpty(string value)
+    private static bool IsZeroOrEmpty(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {

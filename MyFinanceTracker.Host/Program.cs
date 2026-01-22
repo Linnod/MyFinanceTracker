@@ -4,15 +4,17 @@ using MyFinanceTracker.Infrastructure.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
 using MyFinanceTracker.Interactions;
 using MyFinanceTracker.Interactions.Console;
+using MyFinanceTracker.Interactions.Telegram;
 using MyFinanceTracker.UseCases;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddYamlCategoryRepository(builder.Configuration)
-    .AddConsoleInteractions()
+    //.AddConsoleInteractions()
     .AddInteractions()
     .AddUseCases()
-    .AddGoogleSheetsPersistence(builder.Configuration);
+    .AddGoogleSheetsPersistence(builder.Configuration)
+    .AddTelegramInteractions(builder.Configuration);
     
 builder.Logging.AddConsole();
 

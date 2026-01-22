@@ -89,6 +89,22 @@ public class FinancialOperationParserTests
     }
 
     [Theory]
+    [InlineData("expense food 100.50", 100.50)]
+    [InlineData("income salary 1500,75", 1500.75)]
+    public void Parse_ShouldKeepDecimalPart_WhenInputHasFloatingPoint(string input, double expectedAmount)
+    {
+        // arrange
+        var parser = new FinancialOperationParser();
+
+        // act
+        var result = parser.Parse(input);
+
+        // assert
+        result.Amounts.Should().ContainSingle()
+              .Which.Should().Be((decimal)expectedAmount);
+    }
+
+    [Theory]
     [InlineData("food 100")]
     [InlineData("100")]
     [InlineData("01.01.2024 notes")]

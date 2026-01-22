@@ -27,4 +27,11 @@ public record InteractionResult
             onFailure(ErrorMessage!);
         }
     }
+
+    public TResult Match<TResult>(Func<FinancialOperation, TResult> onSuccess, Func<string, TResult> onFailure)
+    {
+        return IsSuccess
+            ? onSuccess(Operation!)
+            : onFailure(ErrorMessage!);
+    }
 }

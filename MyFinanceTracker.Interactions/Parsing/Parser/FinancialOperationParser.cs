@@ -8,7 +8,7 @@ namespace MyFinanceTracker.Interactions.Parsing.Parser;
 
 internal partial class FinancialOperationParser : IFinancialOperationParser
 {
-    [GeneratedRegex(@"^\s*(?:(?<type>income|return|adjust|expense)\s+)?(?:(?<category>[a-zA-Zа-яА-ЯёЁ_][^\d\s]*)\s+)?(?<amounts>\d+[.,]?\d*(?:\s+(?!\d+[.,]\d+[.,])\d+[.,]?\d*)*)(?:\s+(?<date>\d{1,2}\.\d{1,2}\.\d{2,4}))?\s*(?<notes>.*)?$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*(?:(?<type>income|return|adjust|expense)\s+)?(?:(?<category>[a-zA-Zа-яА-ЯёЁ_][^\d\s]*)\s+)?(?<amounts>\d+[.,]?\d*(?!\d+[.,]\d+[.,])(?:\s+(?!\d+[.,]\d+[.,])\d+[.,]?\d*)*)(?:\s+(?<date>\d{1,2}\.\d{1,2}\.\d{2,4}))?\s*(?<notes>.*)?$", RegexOptions.IgnoreCase)]
     private static partial Regex CommandRegex();
 
     public RawFinancialOperation Parse(string input)

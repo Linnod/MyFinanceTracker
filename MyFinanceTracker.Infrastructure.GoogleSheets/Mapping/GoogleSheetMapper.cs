@@ -13,6 +13,11 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 
     public List<GoogleSheetUpdate> Map(List<Transaction> transactions)
     {
+        var nfi = new NumberFormatInfo
+        {
+            NumberDecimalSeparator = options.DecimalSeparator
+        };
+
         return [.. transactions
             .GroupBy(t => t.Date)
             .SelectMany(dateGroup => dateGroup
@@ -20,24 +25,25 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
                 .Select(categoryGroup => new GoogleSheetUpdate(
                     SheetName: GetSheetName(dateGroup.Key),
                     CellAddress: GetCellAddress(categoryGroup.Key.Id, dateGroup.Key.Day),
-                    Delta: BuildDeltaString([.. categoryGroup])
+                    Delta: BuildDeltaString([.. categoryGroup], nfi)
                 ))
             )];
     }
 
     private static string GetSheetName(DateOnly date) => date.ToString(DateFormat);
 
-    private string GetCellAddress(string columnId, int day) => 
+    private string GetCellAddress(string columnId, int day) =>
         $"{columnId}{day + options.HeaderRowsCount}";
 
-    private static string BuildDeltaString(List<Transaction> transactions)
+    private static string BuildDeltaString(List<Transaction> transactions, NumberFormatInfo nfi)
     {
         var isIncome = transactions.First().Category.IsIncome;
 
         return string.Concat(transactions.Select(t =>
         {
             decimal val = isIncome ? t.Amount : -t.Amount;
-            return val.ToString("+#;-#;0", CultureInfo.InvariantCulture);
+
+            return val.ToString("+0.##;-0.##;0", nfi);
         }));
     }
 }
