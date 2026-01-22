@@ -1,0 +1,8 @@
+**/.git
+**/bin
+**/obj
+**/out
+appsettings.json
+secrets.json
+.vs
+.vscode

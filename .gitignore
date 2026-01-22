@@ -1,68 +1,51 @@
-## [Standard .NET Ignore Rules]
-
+## [Standard .NET Artifacts]
 # Build results
 [Dd]ebug/
-[Dd]ebugPublic/
 [Rr]elease/
-[Rr]eleases/
 x64/
 x86/
-[Aa]rm/
-[Aa]rm64/
-bld/
 [Bb]in/
 [Oo]bj/
-[Ll]og/
-[Ll]ogs/
-
-# Visual Studio files
-.vs/
-*.user
-*.userosscache
-*.sln.docstates
-
-# Rider / IntelliJ
-.idea/
-*.sln.iml
-
-# User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
 
 # NuGet Packages
 *.nupkg
-# The packages folder can be ignored as of NuGet 2.8
 **/packages/*
-# except build/, which is used as an MSBuild target.
 !**/packages/build/
-# If using NuGet restore setting, ignore the 'project.lock.json' file
-project.lock.json
-# obj folder is used for NuGet restore too
-**/obj/*
 
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
+# IDE specific files
+.vs/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.userosscache
 
 # OS generated files
 .DS_Store
 Thumbs.db
 
 #-----------------------------------------------------------
-## [MyFinanceTracker Specific Secret & Config Files]
+## [MyFinanceTracker Secrets & Configuration]
 
-# Google Cloud credentials
-google-api-credentials.json
+# 1. Google API Credentials (CRITICAL)
+# Excludes the JSON key file anywhere in the solution
+**/google-api-credentials.json
+**/google-credentials.json
 
-# Local category configuration
+# 2. Application Settings
+# We ignore real configs. Use appsettings.Example.json for the repository.
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Local.json
+
+# 3. Domain/Business Data
+# If your category mapping contains private info
 categories.yaml
 
-# Configuration files with secrets (tokens, DB strings)
-appsettings.json
-appsettings.Development.json
+# 4. Docker & Environment
+.env
+*.local.env
 
-# If you use User Secrets in .NET
-[Cc]onnected [Ss]ervices/
+# 5. Publishing artifacts
+publish/
+out/
