@@ -16,14 +16,14 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="appsettings.json" Condition="Exists('appsettings.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="google-api-credentials.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="categories.yaml" Condition="Exists('categories.yaml')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="categories.yaml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    <None Update="google-api-credentials.json" Condition="Exists('google-api-credentials.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
