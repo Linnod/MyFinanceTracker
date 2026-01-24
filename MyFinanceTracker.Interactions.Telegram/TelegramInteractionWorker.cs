@@ -58,7 +58,7 @@ internal sealed class TelegramInteractionWorker(
             await bot.SendMessage(
                 chatId: message.Chat.Id,
                 text: response,
-                parseMode: ParseMode.Markdown,
+                parseMode: ParseMode.Html,
                 cancellationToken: ct);
         }
         catch (Exception ex)

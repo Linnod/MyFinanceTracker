@@ -1,5 +1,5 @@
 using MediatR;
-using MyFinanceTracker.Interactions.Contracts.Internal;
+using MyFinanceTracker.Common.Contracts;
 
 namespace MyFinanceTracker.Interactions.Contracts;
 

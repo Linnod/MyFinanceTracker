@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.Common.Contracts;
 using MyFinanceTracker.Interactions.Contracts;
-using MyFinanceTracker.Interactions.Contracts.Internal;
 
 namespace MyFinanceTracker.Interactions.Behaviors;
 

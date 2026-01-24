@@ -1,31 +1,26 @@
+using System.Diagnostics;
+
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
-public record CreateTransactionResult
+public abstract record CreateTransactionResult
 {
-    private readonly string? _errorMessage;
+    private CreateTransactionResult() { }
 
-    public bool IsSuccess { get; }
+    public sealed record SuccessResult : CreateTransactionResult;
+    public sealed record FailureResult(string Message) : CreateTransactionResult;
 
-    private CreateTransactionResult(bool success, string? error)
-        => (IsSuccess, _errorMessage) = (success, error);
-
-    public static CreateTransactionResult Success() => new(true, null);
-    public static CreateTransactionResult Failure(string error) => new(false, error);
-
-    public void Match(Action onSuccess, Action<string> onFailure)
+    public static SuccessResult Success() => new();
+    public static FailureResult Failure(string message) => new(message);
+    public void Switch(Action onSuccess, Action<string> onFailure)
     {
-        if (IsSuccess)
-        {
-             onSuccess();
-        }
-        else
-        {
-            onFailure(_errorMessage!);
-        }
+        if (this is SuccessResult) onSuccess();
+        else onFailure(((FailureResult)this).Message);
     }
 
-    public T Match<T>(Func<T> onSuccess, Func<string, T> onFailure)
+    public T Match<T>(Func<T> onSuccess, Func<string, T> onFailure) => this switch
     {
-        return IsSuccess ? onSuccess() : onFailure(_errorMessage!);
-    }
+        SuccessResult => onSuccess(),
+        FailureResult f => onFailure(f.Message),
+        _ => throw new UnreachableException()
+    };
 }
