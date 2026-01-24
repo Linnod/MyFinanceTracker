@@ -6,7 +6,11 @@ using MyFinanceTracker.Infrastructure.Persistence.Yaml;
 using MyFinanceTracker.Interactions;
 using MyFinanceTracker.UseCases;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings 
+{ 
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory 
+});
 builder.Services
     .AddYamlCategoryRepository(builder.Configuration)
     .AddInteractions()

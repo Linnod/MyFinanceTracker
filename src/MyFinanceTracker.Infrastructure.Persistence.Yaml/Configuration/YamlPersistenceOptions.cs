@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MyFinanceTracker.Infrastructure.Persistence.Yaml;
+namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 
 internal class YamlPersistenceOptions
 {

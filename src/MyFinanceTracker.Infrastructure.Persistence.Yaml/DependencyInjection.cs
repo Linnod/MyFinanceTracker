@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MyFinanceTracker.Domain.Repositories;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml;
 

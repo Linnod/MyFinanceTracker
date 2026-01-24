@@ -16,15 +16,23 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Update="appsettings.json" Condition="Exists('appsettings.json')">
+    <Content Include="..\..\deploy\appsettings.json" 
+            Link="appsettings.json" 
+            Condition="Exists('..\..\deploy\appsettings.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="categories.yaml" Condition="Exists('categories.yaml')">
+    </Content>
+
+    <Content Include="..\..\deploy\categories.yaml" 
+            Link="categories.yaml" 
+            Condition="Exists('..\..\deploy\categories.yaml')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="google-api-credentials.json" Condition="Exists('google-api-credentials.json')">
+    </Content>
+
+    <Content Include="..\..\deploy\google-api-credentials.json" 
+            Link="secrets\google-api-credentials.json" 
+            Condition="Exists('..\..\deploy\google-api-credentials.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
   <PropertyGroup>

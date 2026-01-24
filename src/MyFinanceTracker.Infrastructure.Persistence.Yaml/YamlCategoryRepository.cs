@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -8,13 +9,13 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Yaml;
 
 internal class YamlCategoryRepository : ICategoryRepository
 {
-    private readonly YamlPersistenceOptions options;
+    private readonly string resolvedPath;
     private readonly Lazy<List<Category>> categories;
 
     public YamlCategoryRepository(IOptions<YamlPersistenceOptions> options)
     {
-        this.options = options.Value;
-        categories = new Lazy<List<Category>>(() => LoadCategories(), LazyThreadSafetyMode.ExecutionAndPublication);
+        resolvedPath = Path.Combine(AppContext.BaseDirectory, options.Value.FilePath);
+        categories = new Lazy<List<Category>>(LoadCategories, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public Task<IReadOnlyCollection<Category>> GetAll(CancellationToken ct = default)
@@ -24,25 +25,41 @@ internal class YamlCategoryRepository : ICategoryRepository
 
     public Task<Category?> GetByAlias(string alias, CancellationToken ct = default)
     {
-        return Task.FromResult(categories.Value.FirstOrDefault(c =>
-                    c.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase)));
+        var category = categories.Value.FirstOrDefault(c =>
+            c.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase));
+
+        return Task.FromResult(category);
     }
 
     private List<Category> LoadCategories()
     {
-        if (!File.Exists(options.FilePath))
+        if (!File.Exists(resolvedPath))
         {
-            throw new FileNotFoundException(options.FilePath);
+            throw new FileNotFoundException($"Critical error: YAML category file not found at: {resolvedPath}", resolvedPath);
         }
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
 
-        using var reader = new StreamReader(options.FilePath);
-        var yamlData = deserializer.Deserialize<YamlCategoryRoot>(reader);
+        try
+        {
+            using var reader = new StreamReader(resolvedPath);
+            var yamlData = deserializer.Deserialize<YamlCategoryRoot>(reader);
 
-        return [.. yamlData.Categories.Select(c => new Category(c.Id, c.Name, c.Aliases, c.IsIncome))];
+            if (yamlData?.Categories == null)
+            {
+                return [];
+            }
+
+            return yamlData.Categories
+                .Select(c => new Category(c.Id, c.Name, c.Aliases, c.IsIncome))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to deserialize YAML category file at: {resolvedPath}", ex);
+        }
     }
 
     private sealed class YamlCategoryRoot
