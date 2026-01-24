@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml;
 
@@ -14,7 +15,8 @@ public static class DependencyInjection
             .Bind(configuration.GetSection("YamlPersistence"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        services.AddSingleton<ICategoryRepository, YamlCategoryRepository>();
+        services.AddSingleton<ICategoryRepository, YamlCategoryRepository>()
+            .AddSingleton<ICategoryLoader, YamlCategoryLoader>();
 
         return services;
     }

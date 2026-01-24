@@ -12,10 +12,19 @@
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Loaders\" />
+    <Folder Include="Loaders\Exceptions\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests" />
+  </ItemGroup>
 
 </Project>
