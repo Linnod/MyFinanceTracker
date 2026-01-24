@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -67,41 +68,42 @@ internal sealed class TelegramInteractionWorker(
         }
     }
 
-    private static string FormatResponseMessage(InteractionResult result)
+    private static string FormatResponseMessage(InteractionResult result) => result switch
     {
-        return result.Match(
-            onSuccess: s =>
-            {
-                var op = s.Operation;
-                var amountsLine = op.Amounts.Length > 1
-                    ? $"{string.Join(" + ", op.Amounts)} = "
-                    : "";
+        InteractionResult.Success s => FormatSuccess(s.Operation),
 
-                return $"""
-                ✅ **Recorded!**
-                💰 {amountsLine}{op.Amounts.Sum()}€
-                📂 Category: `{op.CategoryAlias}`
-                📅 Date: {op.Date:dd/MM/yyyy}
-                """;
-            },
-
-            onParseError: e => $"""
+        InteractionResult.ParseError e => $"""
             ❓ **I didn't get that**
             Input: `{e.RawInput}`
             Hint: {e.Details}
             """,
 
-            onLogicError: e => $"""
+        InteractionResult.LogicError e => $"""
             ⚠️ **Logic Error**
             {e.Message}
             """,
 
-            onSystemError: _ => $"""
+        InteractionResult.SystemError => $"""
             🔌 **System hiccup**
             Something went wrong on my side. 
             I've logged the details. Please try again in a bit.
-            """
-        );
+            """,
+
+        _ => throw new UnreachableException($"Unknown result type: {result.GetType()}")
+    };
+
+    private static string FormatSuccess(FinancialOperation op)
+    {
+        var amountsLine = op.Amounts.Length > 1
+            ? $"{string.Join(" + ", op.Amounts)} = "
+            : "";
+
+        return $"""
+            ✅ **Recorded!**
+            💰 {amountsLine}{op.Amounts.Sum()}€
+            📂 Category: `{op.CategoryAlias}`
+            📅 Date: {op.Date:dd/MM/yyyy}
+            """;
     }
 
     private Task HandlePollingErrorAsync(ITelegramBotClient bot, Exception ex, CancellationToken ct)

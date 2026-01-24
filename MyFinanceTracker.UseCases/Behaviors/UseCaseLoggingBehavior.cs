@@ -6,7 +6,7 @@ using MyFinanceTracker.UseCases.Transaction.Create;
 namespace MyFinanceTracker.UseCases.Behaviors;
 
 internal sealed class UseCaseLoggingBehavior<TRequest, TResponse>(
-    ILogger<UseCaseLoggingBehavior<TRequest, TResponse>> logger) 
+    ILogger<UseCaseLoggingBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
@@ -18,10 +18,16 @@ internal sealed class UseCaseLoggingBehavior<TRequest, TResponse>(
 
         if (response is CreateTransactionResult ctr)
         {
-            ctr.Switch(
-                onSuccess: () => logger.LogInformation("✅ [UseCase] Transaction saved ({Ms}ms)", sw.ElapsedMilliseconds),
-                onFailure: msg => logger.LogWarning("⚠️ [UseCase] Business error: {Msg} ({Ms}ms)", msg, sw.ElapsedMilliseconds)
-            );
+            switch (ctr)
+            {
+                case CreateTransactionResult.Success:
+                    logger.LogInformation("✅ [UseCase] Transaction saved ({Ms}ms)", sw.ElapsedMilliseconds);
+                    break;
+
+                case CreateTransactionResult.Failure f:
+                    logger.LogWarning("⚠️ [UseCase] Business error: {Msg} ({Ms}ms)", f.Message, sw.ElapsedMilliseconds);
+                    break;
+            }
         }
 
         return response;

@@ -4,6 +4,7 @@ using MyFinanceTracker.Interactions.Contracts;
 using MyFinanceTracker.Interactions.Parsing.Parser.Exceptions;
 using MyFinanceTracker.Interactions.Parsing.Validation.Exceptions;
 using MyFinanceTracker.UseCases.Transaction.Create;
+using System.Diagnostics;
 
 namespace MyFinanceTracker.Interactions.Parsing.Commands.ProcessRawMessage;
 
@@ -20,10 +21,12 @@ internal sealed class ProcessRawMessageHandler(
             var operation = parsingService.Process(request.RawInput);
             var result = await mediator.Send(MapToCreateTransactionRequest(operation), cancellationToken);
 
-            return result.Match<InteractionResult>(
-                onSuccess: () => new InteractionResult.Success(operation),
-                onFailure: error => new InteractionResult.LogicError(error)
-            );
+            return result switch
+            {
+                CreateTransactionResult.Success => new InteractionResult.Success(operation),
+                CreateTransactionResult.Failure f => new InteractionResult.LogicError(f.Message),
+                _ => throw new UnreachableException($"Unhandled result type: {result.GetType()}")
+            };
         }
         catch (ParsingException ex)
         {

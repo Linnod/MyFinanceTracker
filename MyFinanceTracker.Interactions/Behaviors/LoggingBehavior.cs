@@ -42,29 +42,38 @@ internal sealed class LoggingBehavior<TRequest, TResponse>(
         {
             sw.Stop();
             logger.LogError(ex, "💥 Failed {Name} after {Elapsed}ms", requestName, sw.ElapsedMilliseconds);
-
+            
             throw;
         }
     }
 
     private void LogResult(string reqName, InteractionResult result, long ms)
     {
-        result.Match(
-            onSuccess: s => logger.LogInformation(
-                "✅ {Req} SUCCESS | {Ms}ms | Op: {Type} ({Amount}€)",
-                reqName, ms, s.Operation.Type, s.Operation.Amounts.Sum()),
+        switch (result)
+        {
+            case InteractionResult.Success s:
+                logger.LogInformation(
+                    "✅ {Req} SUCCESS | {Ms}ms | Op: {Type} ({Amount}€)",
+                    reqName, ms, s.Operation.Type, s.Operation.Amounts.Sum());
+                break;
 
-            onParseError: e => logger.LogWarning(
-                "❓ {Req} PARSE ERROR | {Ms}ms | Input: '{Input}' | Details: {Details}",
-                reqName, ms, e.RawInput, e.Details),
+            case InteractionResult.ParseError e:
+                logger.LogWarning(
+                    "❓ {Req} PARSE ERROR | {Ms}ms | Input: '{Input}' | Details: {Details}",
+                    reqName, ms, e.RawInput, e.Details);
+                break;
 
-            onLogicError: e => logger.LogWarning(
-                "⚠️ {Req} LOGIC ERROR | {Ms}ms | {Msg}",
-                reqName, ms, e.Message),
+            case InteractionResult.LogicError e:
+                logger.LogWarning(
+                    "⚠️ {Req} LOGIC ERROR | {Ms}ms | {Msg}",
+                    reqName, ms, e.Message);
+                break;
 
-            onSystemError: e => logger.LogError(
-                "🔌 {Req} SYSTEM ERROR | {Ms}ms | {Msg}",
-                reqName, ms, e.Message)
-        );
+            case InteractionResult.SystemError e:
+                logger.LogError(
+                    "🔌 {Req} SYSTEM ERROR | {Ms}ms | {Msg}",
+                    reqName, ms, e.Message);
+                break;
+        }
     }
 }

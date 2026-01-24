@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -41,8 +42,8 @@ internal sealed class ConsoleInteractionWorker(
     private async Task ProcessNextCommandAsync(CancellationToken ct)
     {
         System.Console.Write("\n> ");
+        
         var input = System.Console.ReadLine();
-
         if (string.IsNullOrWhiteSpace(input))
         {
             return;
@@ -64,28 +65,30 @@ internal sealed class ConsoleInteractionWorker(
         }
     }
 
-    private void HandleResult(InteractionResult result)
+    private static void HandleResult(InteractionResult result)
     {
-        result.Match(
-            onSuccess: success =>
-            {
-                ConsoleCommands.WriteSuccess(success.Operation);
-            },
-            onParseError: parseError =>
-            {
-                ConsoleCommands.WriteError($"[PARSE ERROR] Could not understand: \"{parseError.RawInput}\"");
-                ConsoleCommands.WriteInfo($"Hint: {parseError.Details}");
-            },
-            onLogicError: logicError =>
-            {
-                ConsoleCommands.WriteError($"[LOGIC ERROR] {logicError.Message}");
-            },
-            onSystemError: systemError =>
-            {
-                ConsoleCommands.WriteError($"[SYSTEM ERROR] {systemError.Message}");
-                logger.LogDebug(systemError.Exception, "System failure details");
-            }
-        );
+        switch (result)
+        {
+            case InteractionResult.Success s:
+                ConsoleCommands.WriteSuccess(s.Operation);
+                break;
+
+            case InteractionResult.ParseError e:
+                ConsoleCommands.WriteError($"[PARSE ERROR] Could not understand: \"{e.RawInput}\"");
+                ConsoleCommands.WriteInfo($"Hint: {e.Details}");
+                break;
+
+            case InteractionResult.LogicError e:
+                ConsoleCommands.WriteError($"[LOGIC ERROR] {e.Message}");
+                break;
+
+            case InteractionResult.SystemError e:
+                ConsoleCommands.WriteError($"[SYSTEM ERROR] {e.Message}");
+                break;
+
+            default:
+                throw new UnreachableException($"Unknown result type: {result.GetType()}");
+        }
     }
 
     private static void PrintWelcomeMessage()

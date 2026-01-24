@@ -15,16 +15,16 @@ internal sealed class CreateTransactionHandler(
     {
         try
         {
-            logger.LogInformation("Attempting to create {Type} transaction for category '{Alias}'. Amounts count: {Count}", 
+            logger.LogInformation("Attempting to create {Type} transaction for category '{Alias}'. Amounts count: {Count}",
                 request.Type, request.CategoryAlias, request.Amounts.Length);
 
             var category = await categoryRepository.GetByAlias(request.CategoryAlias, cancellationToken);
-            
+
             if (category is null)
             {
                 logger.LogWarning("CreateTransaction failed: Category with alias '{Alias}' was not found", request.CategoryAlias);
-                
-                return CreateTransactionResult.Failure($"Unknown category: {request.CategoryAlias}");
+
+                return new CreateTransactionResult.Failure($"Unknown category: {request.CategoryAlias}");
             }
 
             var transactions = request.Amounts.Select(amount =>
@@ -37,16 +37,16 @@ internal sealed class CreateTransactionHandler(
 
             await transactionRepository.AddRange(transactions, cancellationToken);
 
-            logger.LogInformation("Successfully recorded {Count} transactions into '{CategoryName}'", 
+            logger.LogInformation("Successfully recorded {Count} transactions into '{CategoryName}'",
                 transactions.Count, category.Name);
 
-            return CreateTransactionResult.Success();
+            return new CreateTransactionResult.Success();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Critical failure during transaction creation for category '{Alias}'", request.CategoryAlias);
-            
-            return CreateTransactionResult.Failure("A system error occurred while saving data to the registry.");
+
+            return new CreateTransactionResult.Failure("A system error occurred while saving data to the registry.");
         }
     }
 
