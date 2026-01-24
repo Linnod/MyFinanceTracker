@@ -23,4 +23,8 @@
     <Folder Include="Configuration\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="MyFinanceTracker.Infrastructure.GoogleSheets.Tests" />
+  </ItemGroup>
+
 </Project>

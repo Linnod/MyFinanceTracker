@@ -29,6 +29,7 @@ internal sealed class CreateTransactionHandler(
 
             var transactions = request.Amounts.Select(amount =>
                 new Domain.Entities.Transaction(
+                    Guid.NewGuid(),
                     category,
                     ApplyBusinessRulesToAmount(amount, request.Type),
                     request.Date,

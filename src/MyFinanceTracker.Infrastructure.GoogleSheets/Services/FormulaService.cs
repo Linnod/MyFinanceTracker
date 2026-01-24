@@ -4,7 +4,7 @@ using MyFinanceTracker.Infrastructure.GoogleSheets.Models;
 
 namespace MyFinanceTracker.Infrastructure.GoogleSheets.Services;
 
-internal class FormulaService(GoogleSheetsClient client, FormulaBuilder builder)
+internal class FormulaService(IGoogleSheetsClient client, FormulaBuilder builder)
 {
     public async Task<List<ValueRange>> PrepareValueRangesAsync(
         GoogleSheetBatch batch,
@@ -13,7 +13,7 @@ internal class FormulaService(GoogleSheetsClient client, FormulaBuilder builder)
         var ranges = batch.Updates
             .Select(u => $"{batch.SheetName}!{u.CellAddress}")
             .ToList();
-        var currentFormulas = await client.GetFormulasAsync(ranges, ct);
+        var currentFormulas = await client.GetFormulas(ranges, ct);
 
         return [.. batch.Updates.Zip(currentFormulas, (update, currentFormula) => new ValueRange
         {

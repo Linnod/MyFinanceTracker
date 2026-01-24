@@ -10,7 +10,6 @@ using Google.Apis.Services;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Clients;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Mapping;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Services;
-using System.IO; // Добавили для работы с путями
 
 namespace MyFinanceTracker.Infrastructure.GoogleSheets;
 
@@ -23,7 +22,7 @@ public static class DependencyInjection
             .AddSheetsService()
             .AddSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>()
             .AddSingleton<GoogleSheetMapper>()
-            .AddSingleton<GoogleSheetsClient>()
+            .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>()
             .AddFormulaServices();
 
         return services;

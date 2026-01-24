@@ -7,17 +7,19 @@ internal class FormulaBuilder
     public string Merge(string? currentValue, string delta)
     {
         var baseValue = (currentValue ?? string.Empty).Trim();
+        var cleanDelta = delta.Trim();
+
         if (IsZeroOrEmpty(baseValue))
         {
-            return "=" + delta.TrimStart('+');
+            return "=" + cleanDelta.TrimStart('+');
         }
 
         if (baseValue.StartsWith('='))
         {
-            return baseValue + delta;
+            return baseValue + cleanDelta;
         }
 
-        return "=" + baseValue + delta;
+        return "=" + baseValue + cleanDelta;
     }
 
     private static bool IsZeroOrEmpty(string value)
