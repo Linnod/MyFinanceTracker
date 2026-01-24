@@ -51,27 +51,57 @@ internal sealed class TelegramInteractionWorker(
 
         logger.LogInformation("Message received from {UserId}: '{Text}'", message.From?.Id, messageText);
 
+        var result = await mediator.Send(new ProcessRawMessageCommand(messageText), ct);
+        var response = FormatResponseMessage(result);
         try
         {
-            var result = await mediator.Send(new ProcessRawMessageCommand(messageText), ct);
-            var response = result.Match(
-                op => $"✅ Recorded in **{op.CategoryAlias}**: {string.Join(", ", op.Amounts)} on {op.Date:dd/MM/yyyy}",
-                error => $"❌ Error: {error}"
-            );
             await bot.SendMessage(
                 chatId: message.Chat.Id,
                 text: response,
+                parseMode: ParseMode.Markdown,
                 cancellationToken: ct);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error occurred while processing message: '{Text}'", messageText);
-
-            await bot.SendMessage(
-                chatId: message.Chat.Id,
-                text: "⚠️ Inner error. Check logs.",
-                cancellationToken: ct);
+            logger.LogError(ex, "Failed to send message to Telegram. Response was: {Response}", response);
         }
+    }
+
+    private static string FormatResponseMessage(InteractionResult result)
+    {
+        return result.Match(
+            onSuccess: s =>
+            {
+                var op = s.Operation;
+                var amountsLine = op.Amounts.Length > 1
+                    ? $"{string.Join(" + ", op.Amounts)} = "
+                    : "";
+
+                return $"""
+                ✅ **Recorded!**
+                💰 {amountsLine}{op.Amounts.Sum()}€
+                📂 Category: `{op.CategoryAlias}`
+                📅 Date: {op.Date:dd/MM/yyyy}
+                """;
+            },
+
+            onParseError: e => $"""
+            ❓ **I didn't get that**
+            Input: `{e.RawInput}`
+            Hint: {e.Details}
+            """,
+
+            onLogicError: e => $"""
+            ⚠️ **Logic Error**
+            {e.Message}
+            """,
+
+            onSystemError: _ => $"""
+            🔌 **System hiccup**
+            Something went wrong on my side. 
+            I've logged the details. Please try again in a bit.
+            """
+        );
     }
 
     private Task HandlePollingErrorAsync(ITelegramBotClient bot, Exception ex, CancellationToken ct)

@@ -1,37 +1,42 @@
 namespace MyFinanceTracker.Interactions.Contracts;
 
-public record InteractionResult
+public abstract record InteractionResult
 {
-    private InteractionResult(bool isSuccess, FinancialOperation? operation, string? error)
+    private InteractionResult() { }
+
+    public sealed record Success(FinancialOperation Operation) : InteractionResult;
+    public sealed record ParseError(string RawInput, string Details) : InteractionResult;
+    public sealed record LogicError(string Message) : InteractionResult;
+    public sealed record SystemError(string Message, Exception? Exception = null) : InteractionResult;
+
+    public TResult Match<TResult>(
+        Func<Success, TResult> onSuccess,
+        Func<ParseError, TResult> onParseError,
+        Func<LogicError, TResult> onLogicError,
+        Func<SystemError, TResult> onSystemError)
     {
-        IsSuccess = isSuccess;
-        Operation = operation;
-        ErrorMessage = error;
+        return this switch
+        {
+            Success s => onSuccess(s),
+            ParseError e => onParseError(e),
+            LogicError e => onLogicError(e),
+            SystemError e => onSystemError(e),
+            _ => throw new InvalidOperationException("Unhandled interaction result type")
+        };
     }
 
-    private bool IsSuccess { get; }
-    private FinancialOperation? Operation { get; }
-    private string? ErrorMessage { get; }
-
-    internal static InteractionResult Success(FinancialOperation op) => new(true, op, null);
-    internal static InteractionResult Failure(string error) => new(false, null, error);
-
-    public void Match(Action<FinancialOperation> onSuccess, Action<string> onFailure)
+    public void Match(
+        Action<Success> onSuccess,
+        Action<ParseError> onParseError,
+        Action<LogicError> onLogicError,
+        Action<SystemError> onSystemError)
     {
-        if (IsSuccess)
+        switch (this)
         {
-            onSuccess(Operation!);
+            case Success s: onSuccess(s); break;
+            case ParseError e: onParseError(e); break;
+            case LogicError e: onLogicError(e); break;
+            case SystemError e: onSystemError(e); break;
         }
-        else
-        {
-            onFailure(ErrorMessage!);
-        }
-    }
-
-    public TResult Match<TResult>(Func<FinancialOperation, TResult> onSuccess, Func<string, TResult> onFailure)
-    {
-        return IsSuccess
-            ? onSuccess(Operation!)
-            : onFailure(ErrorMessage!);
     }
 }

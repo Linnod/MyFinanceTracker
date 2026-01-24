@@ -20,30 +20,33 @@ internal sealed class ProcessRawMessageHandler(
             var operation = parsingService.Process(request.RawInput);
             var result = await mediator.Send(MapToCreateTransactionRequest(operation), cancellationToken);
 
-            return result.Match(
-                onSuccess: () => InteractionResult.Success(operation),
-                onFailure: error => InteractionResult.Failure(error)
+            return result.Match<InteractionResult>(
+                onSuccess: () => new InteractionResult.Success(operation),
+                onFailure: error => new InteractionResult.LogicError(error)
             );
         }
-        catch (Exception ex) when (ex is ParsingException or ValidationException)
+        catch (ParsingException ex)
         {
-            return InteractionResult.Failure(ex.Message);
+            return new InteractionResult.ParseError(request.RawInput, ex.Message);
+        }
+        catch (ValidationException ex)
+        {
+            return new InteractionResult.LogicError($"Validation failed: {ex.Message}");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An unhandled exception occurred while processing message: {Input}", request.RawInput);
-
-            return InteractionResult.Failure("Unexpected system error");
+            logger.LogError(ex, "Unhandled exception for input: {Input}", request.RawInput);
+            return new InteractionResult.SystemError("Something went wrong on our side.", ex);
         }
     }
 
-    private static CreateTransactionRequest MapToCreateTransactionRequest(FinancialOperation financialOperation)
+    private static CreateTransactionRequest MapToCreateTransactionRequest(FinancialOperation op)
     {
         return new CreateTransactionRequest(
-            financialOperation.Type,
-            financialOperation.CategoryAlias!,
-            financialOperation.Amounts,
-            financialOperation.Date,
-            financialOperation.Notes);
+            op.Type,
+            op.CategoryAlias,
+            op.Amounts,
+            op.Date,
+            op.Notes);
     }
 }

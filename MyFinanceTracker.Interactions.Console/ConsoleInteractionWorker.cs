@@ -6,7 +6,7 @@ using MyFinanceTracker.Interactions.Contracts;
 namespace MyFinanceTracker.Interactions.Console;
 
 internal sealed class ConsoleInteractionWorker(
-    IMediator mediator, 
+    IMediator mediator,
     ILogger<ConsoleInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -64,11 +64,27 @@ internal sealed class ConsoleInteractionWorker(
         }
     }
 
-    private static void HandleResult(InteractionResult result)
+    private void HandleResult(InteractionResult result)
     {
         result.Match(
-            ConsoleCommands.WriteSuccess,
-            ConsoleCommands.WriteError
+            onSuccess: success =>
+            {
+                ConsoleCommands.WriteSuccess(success.Operation);
+            },
+            onParseError: parseError =>
+            {
+                ConsoleCommands.WriteError($"[PARSE ERROR] Could not understand: \"{parseError.RawInput}\"");
+                ConsoleCommands.WriteInfo($"Hint: {parseError.Details}");
+            },
+            onLogicError: logicError =>
+            {
+                ConsoleCommands.WriteError($"[LOGIC ERROR] {logicError.Message}");
+            },
+            onSystemError: systemError =>
+            {
+                ConsoleCommands.WriteError($"[SYSTEM ERROR] {systemError.Message}");
+                logger.LogDebug(systemError.Exception, "System failure details");
+            }
         );
     }
 
