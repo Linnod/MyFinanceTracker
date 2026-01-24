@@ -8,8 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoFixture" />
-    <PackageReference Include="coverlet.collector"/>
+    <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
@@ -21,7 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
+    <ProjectReference Include="..\..\src\MyFinanceTracker.Interactions\MyFinanceTracker.Interactions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Parsing\Validation\" />
   </ItemGroup>
 
 </Project>

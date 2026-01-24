@@ -1,8 +1,11 @@
 **/.git
+**/.vs
+**/.vscode
 **/bin
 **/obj
 **/out
+.github/
+deploy/
 appsettings.json
 secrets.json
-.vs
-.vscode
+*.yaml

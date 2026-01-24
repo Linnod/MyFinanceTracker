@@ -1,31 +1,30 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Domain", "MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj", "{5CB9A1DF-47F8-43D6-BC01-C0BFE4932CCD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Domain", "src\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj", "{5CB9A1DF-47F8-43D6-BC01-C0BFE4932CCD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Domain.Tests", "MyFinanceTracker.Domain.Tests\MyFinanceTracker.Domain.Tests.csproj", "{1D9104CC-0751-44CE-A9B9-3B6AE6657A9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Domain.Tests", "tests\MyFinanceTracker.Domain.Tests\MyFinanceTracker.Domain.Tests.csproj", "{1D9104CC-0751-44CE-A9B9-3B6AE6657A9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.UseCases", "MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj", "{6318AC55-DDA5-42B5-8FF6-A56EF765AB31}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.UseCases", "src\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj", "{6318AC55-DDA5-42B5-8FF6-A56EF765AB31}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Common", "MyFinanceTracker.Common\MyFinanceTracker.Common.csproj", "{0CCD6776-0B57-4A18-863C-4A40CDC73942}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Common", "src\MyFinanceTracker.Common\MyFinanceTracker.Common.csproj", "{0CCD6776-0B57-4A18-863C-4A40CDC73942}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Host", "MyFinanceTracker.Host\MyFinanceTracker.Host.csproj", "{EDCEAF32-4A1A-406A-A13A-2E0B9E2EE3AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Host", "src\MyFinanceTracker.Host\MyFinanceTracker.Host.csproj", "{EDCEAF32-4A1A-406A-A13A-2E0B9E2EE3AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions", "MyFinanceTracker.Interactions\MyFinanceTracker.Interactions.csproj", "{0C149636-3652-406E-8F44-9EA54F01637A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions", "src\MyFinanceTracker.Interactions\MyFinanceTracker.Interactions.csproj", "{0C149636-3652-406E-8F44-9EA54F01637A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions.Console", "MyFinanceTracker.Interactions.Console\MyFinanceTracker.Interactions.Console.csproj", "{E345193C-9335-4ED6-A517-0FE0B892EF1C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions.Console", "src\MyFinanceTracker.Interactions.Console\MyFinanceTracker.Interactions.Console.csproj", "{E345193C-9335-4ED6-A517-0FE0B892EF1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions.Tests", "MyFinanceTracker.Interactions.Tests\MyFinanceTracker.Interactions.Tests.csproj", "{F1AF2C0B-F0B9-4FFE-91C1-2589D68BE808}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions.Tests", "tests\MyFinanceTracker.Interactions.Tests\MyFinanceTracker.Interactions.Tests.csproj", "{F1AF2C0B-F0B9-4FFE-91C1-2589D68BE808}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Infrastructure.GoogleSheets", "MyFinanceTracker.Infrastructure.GoogleSheets\MyFinanceTracker.Infrastructure.GoogleSheets.csproj", "{A1921909-ADBC-4F11-B19D-906155E73778}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Infrastructure.GoogleSheets", "src\MyFinanceTracker.Infrastructure.GoogleSheets\MyFinanceTracker.Infrastructure.GoogleSheets.csproj", "{A1921909-ADBC-4F11-B19D-906155E73778}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Infrastructure.Persistence", "MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj", "{8DDA8DF2-8FE8-46CD-A1F5-E80A850857F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Infrastructure.Persistence", "src\MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj", "{8DDA8DF2-8FE8-46CD-A1F5-E80A850857F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Infrastructure.Persistence.Yaml", "MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj", "{F37456A3-AA0D-4F7D-8B2E-E6C50A64F715}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Infrastructure.Persistence.Yaml", "src\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj", "{F37456A3-AA0D-4F7D-8B2E-E6C50A64F715}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions.Telegram", "MyFinanceTracker.Interactions.Telegram\MyFinanceTracker.Interactions.Telegram.csproj", "{FCE05750-BD88-4C6D-8ED5-6FA7FA2ED2E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyFinanceTracker.Interactions.Telegram", "src\MyFinanceTracker.Interactions.Telegram\MyFinanceTracker.Interactions.Telegram.csproj", "{FCE05750-BD88-4C6D-8ED5-6FA7FA2ED2E2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

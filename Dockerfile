@@ -1,12 +1,12 @@
 # Stage 1: Build (.NET 10 SDK)
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+WORKDIR /app
 
 COPY . .
 
 RUN dotnet restore MyFinanceTracker.sln
 
-RUN dotnet publish MyFinanceTracker.Host/MyFinanceTracker.Host.csproj \
+RUN dotnet publish src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj \
     -c Release \
     -o /app/publish \
     --no-restore

@@ -4,8 +4,9 @@ services:
     build: .
     restart: always
     volumes:
-      - ./MyFinanceTracker.Host/appsettings.json:/app/appsettings.json
-      - ./MyFinanceTracker.Host/secrets/google-api-credentials.json:/app/secrets/google-api-credentials.json
+      - ./deploy/appsettings.json:/app/appsettings.json
+      - ./deploy/google-api-credentials.json:/app/secrets/google-api-credentials.json
+      - ./deploy/categories.yaml:/app/categories.yaml
     environment:
       - TZ=Europe/Moscow
     logging:
