@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Contracts\Internal\" />
     <Folder Include="Parsing\Validation\" />
     <Folder Include="Parsing\Validation\Exceptions\" />
   </ItemGroup>
