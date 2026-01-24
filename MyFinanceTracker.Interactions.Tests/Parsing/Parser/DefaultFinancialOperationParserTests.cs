@@ -4,7 +4,7 @@ using MyFinanceTracker.Interactions.Parsing.Parser;
 using MyFinanceTracker.Interactions.Parsing.Parser.Exceptions;
 
 
-namespace MyFinanceTracker.Interactions.Tests.Parser;
+namespace MyFinanceTracker.Interactions.Tests.Parsing.Parser;
 
 public class FinancialOperationParserTests
 {
