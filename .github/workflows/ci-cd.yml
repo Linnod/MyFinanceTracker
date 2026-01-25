@@ -1,15 +1,12 @@
-name: CI/CD (Build, Test & Publish)
+name: CI/CD (Build, Test & Deploy)
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
     branches: [ "main" ]
 
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       packages: write
@@ -21,35 +18,31 @@ jobs:
     - name: Set Image Name to Lowercase
       run: echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build project
-      run: dotnet build --configuration Release --no-restore
-
-    - name: Run Tests
-      run: dotnet test --configuration Release --no-build --verbosity normal
-    
-    - name: Log in to the Container registry
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Build and push Docker image
-      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
         push: true
-        tags: |
-          ghcr.io/${{ env.IMAGE_NAME }}:latest
-          ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        tags: ghcr.io/${{ env.IMAGE_NAME }}:latest
+
+    - name: Copy docker-compose.yml via SCP
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        source: "docker-compose.yml"
+        target: "~/"
+
+    - name: Execute remote SSH commands
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+          docker compose pull
+          docker compose up -d
+          docker image prune -f
