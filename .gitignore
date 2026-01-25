@@ -34,7 +34,6 @@ Thumbs.db
 
 # 2. Application Settings
 # We ignore real configs. Use appsettings.Example.json for the repository.
-**/appsettings.json
 **/appsettings.Development.json
 **/appsettings.Local.json
 

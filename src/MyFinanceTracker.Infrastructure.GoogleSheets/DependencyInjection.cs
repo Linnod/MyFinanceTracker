@@ -10,6 +10,7 @@ using Google.Apis.Services;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Clients;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Mapping;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Services;
+using System.Text.Json;
 
 namespace MyFinanceTracker.Infrastructure.GoogleSheets;
 
@@ -19,7 +20,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.ConfigureGoogleSheetsOptions(configuration)
-            .AddSheetsService()
+            .AddSheetsService(configuration)
             .AddSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>()
             .AddSingleton<GoogleSheetMapper>()
             .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>()
@@ -34,21 +35,20 @@ public static class DependencyInjection
             .AddSingleton<FormulaBuilder>();
     }
 
-    private static IServiceCollection AddSheetsService(this IServiceCollection services)
+    private static IServiceCollection AddSheetsService(this IServiceCollection services, IConfiguration configuration)
     {
         return services.AddSingleton<SheetsService>(sp =>
-        {
-            var opt = sp.GetRequiredService<IOptions<GoogleSheetsOptions>>().Value;
-            var fullPath = Path.Combine(AppContext.BaseDirectory, opt.CredentialsPath);
-            var serviceAccount = GoogleCredential.FromFile(fullPath);
-            var credential = serviceAccount.CreateScoped([SheetsService.Scope.Spreadsheets]);
-
-            return new SheetsService(new BaseClientService.Initializer
             {
-                HttpClientInitializer = credential,
-                ApplicationName = opt.ApplicationName
+                var opt = sp.GetRequiredService<IOptions<GoogleSheetsOptions>>().Value;
+                var credential = GoogleCredential.FromFile(opt.CredentialsFilePath)
+                    .CreateScoped(SheetsService.Scope.Spreadsheets);
+
+                return new SheetsService(new BaseClientService.Initializer
+                {
+                    HttpClientInitializer = credential,
+                    ApplicationName = opt.ApplicationName
+                });
             });
-        });
     }
 
     private static IServiceCollection ConfigureGoogleSheetsOptions(this IServiceCollection services,

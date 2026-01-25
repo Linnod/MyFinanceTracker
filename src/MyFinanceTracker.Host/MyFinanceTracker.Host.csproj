@@ -15,31 +15,12 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>
   
-  <ItemGroup>
-    <Content Include="..\..\deploy\appsettings.json" 
-            Link="appsettings.json" 
-            Condition="Exists('..\..\deploy\appsettings.json')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-
-    <Content Include="..\..\deploy\categories.yaml" 
-            Link="categories.yaml" 
-            Condition="Exists('..\..\deploy\categories.yaml')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-
-    <Content Include="..\..\deploy\google-api-credentials.json" 
-            Link="secrets\google-api-credentials.json" 
-            Condition="Exists('..\..\deploy\google-api-credentials.json')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UserSecretsId>8e0d14af-df41-45ef-a376-e6ee9b97aa43</UserSecretsId>
   </PropertyGroup>
 
 </Project>

@@ -9,3 +9,4 @@ deploy/
 appsettings.json
 secrets.json
 *.yaml
+.env

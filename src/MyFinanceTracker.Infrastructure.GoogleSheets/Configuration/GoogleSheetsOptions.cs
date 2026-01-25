@@ -9,8 +9,8 @@ internal sealed class GoogleSheetsOptions
     [Required(AllowEmptyStrings = false)]
     public string SpreadsheetId { get; init; } = string.Empty;
 
-    [Required(AllowEmptyStrings = false)]
-    public string CredentialsPath { get; init; } = string.Empty;
+    [Required]
+    public string CredentialsFilePath { get; init; } = string.Empty;
 
     [Required(AllowEmptyStrings = false)]
     public string ApplicationName { get; init; } = "MyFinanceTracker";

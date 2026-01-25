@@ -2,13 +2,26 @@ services:
   fintracker-bot:
     container_name: fintracker_app
     build: .
-    restart: always
     volumes:
-      - ./deploy/appsettings.json:/app/appsettings.json
-      - ./deploy/google-api-credentials.json:/app/secrets/google-api-credentials.json
-      - ./deploy/categories.yaml:/app/categories.yaml
+      - ./deploy/google-api-credentials.json:/app/secrets/google-api-credentials.json:ro
+      - ./deploy/categories.yaml:/app/data/categories.yaml:ro
+    restart: always
     environment:
       - TZ=Europe/Moscow
+      - DOTNET_ENVIRONMENT=Production
+      
+      - Telegram__Token=${TG_TOKEN}
+      - Telegram__AllowedUserId=${TG_USER_ID}
+      
+      - GoogleSheets__SpreadsheetId=${GOOGLE_SHEET_ID}
+      - GoogleSheets__CredentialsFilePath=/app/secrets/google-api-credentials.json
+      - GoogleSheets__HeaderRowsCount=3
+      - GoogleSheets__DecimalSeparator=,
+
+      - YamlPersistence__FilePath=/app/data/categories.yaml
+
+      - Interactions__EnableConsole=false
+      - Interactions__EnableTelegram=true
     logging:
       driver: "json-file"
       options:
