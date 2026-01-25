@@ -57,6 +57,7 @@ public static class DependencyInjection
         return services.AddOptions<GoogleSheetsOptions>()
                 .Bind(configuration.GetSection(GoogleSheetsOptions.SectionName))
                 .ValidateDataAnnotations()
+                .Validate(opt => File.Exists(opt.CredentialsFilePath), "Google Service Account key file is missing at the specified path.")
                 .ValidateOnStart()
                 .Services;
     }

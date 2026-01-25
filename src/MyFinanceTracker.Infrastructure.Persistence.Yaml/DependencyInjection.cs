@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddOptions<YamlPersistenceOptions>()
             .Bind(configuration.GetSection("YamlPersistence"))
             .ValidateDataAnnotations()
+            .Validate(options => File.Exists(options.FilePath), "Category YAML file not found. Check your environment or volume mounts.")
             .ValidateOnStart();
         services.AddSingleton<ICategoryRepository, YamlCategoryRepository>()
             .AddSingleton<ICategoryLoader, YamlCategoryLoader>();
