@@ -2,24 +2,33 @@ using MyFinanceTracker.Interactions.Contracts;
 
 namespace MyFinanceTracker.Interactions.Console;
 
-internal class ConsoleCommands
+internal static class ConsoleCommands
 {
-    public static void WriteSuccess(FinancialOperation op)
+    public static void WriteSuccess(InteractionResponse.Success success)
     {
         System.Console.ForegroundColor = ConsoleColor.Green;
-        var amountsDisplay = string.Join(" + ", op.Amounts);
-        System.Console.WriteLine($"[SUCCESS] {op.Type} in '{op.CategoryAlias}' for {amountsDisplay} on {op.Date:dd.MM.yyyy}");
+        System.Console.WriteLine($"\n✅ {success.InteractionDescription.ToUpper()}");
+        System.Console.WriteLine($"Result: {success.PrimaryValue}");
+
+        System.Console.ResetColor();
+        foreach (var detail in success.Details)
+        {
+            var icon = detail.Icon ?? "•";
+            System.Console.WriteLine($"{icon} {detail.Name}: {detail.Value}");
+        }
     }
 
     public static void WriteError(string error)
     {
         System.Console.ForegroundColor = ConsoleColor.Red;
-        System.Console.WriteLine($"[ERROR] {error}");
+        System.Console.WriteLine($"\n[ERROR] {error}");
+        System.Console.ResetColor();
     }
 
     public static void WriteInfo(string message)
     {
         System.Console.ForegroundColor = ConsoleColor.Cyan;
         System.Console.WriteLine(message);
+        System.Console.ResetColor();
     }
 }

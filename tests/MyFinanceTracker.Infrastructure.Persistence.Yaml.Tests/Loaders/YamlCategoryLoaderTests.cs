@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders.Exceptions;
@@ -16,56 +17,65 @@ public class YamlCategoryLoaderTests : IDisposable
         {
             File.Delete(_testFileName);
         }
-
         GC.SuppressFinalize(this);
     }
 
     private YamlCategoryLoader CreateSut()
     {
-        var options = Options.Create(new YamlPersistenceOptions
-        {
-            FilePath = _testFileName
-        });
-
+        var options = Options.Create(new YamlPersistenceOptions { FilePath = _testFileName });
         return new YamlCategoryLoader(options);
     }
 
+    private void WriteYaml(string content) => File.WriteAllText(_testFileName, content);
+
     [Fact]
-    public void Load_ShouldThrowFileNotFound_WhenFileDoesNotExist()
+    void Load_ShouldThrowFileNotFound_WhenFileDoesNotExist()
     {
-        // arrange
         var sut = CreateSut();
+        var act = () => sut.Load();
 
-        // act
-        var act = () =>
-        {
-            return sut.Load();
-        };
-
-        // assert
         act.Should().Throw<CategoryLoaderException>()
             .WithMessage("*Category file not found*");
     }
 
     [Fact]
-    public void Load_ShouldThrowDuplicateId_WhenIdsAreNotUnique()
+    void Load_ShouldThrowDefaultIncomeCategoryMissing_WhenIncomeIsMissing()
     {
-        // arrange
-        // Используем явные переносы строк без скрытых табов
-        var yaml = "categories:\n" +
-                   "  - id: A\n" +
-                   "    name: First\n" +
-                   "  - id: A\n" +
-                   "    name: Second";
-
-        File.WriteAllText(_testFileName, yaml);
+        // arrange:
+        WriteYaml("""
+            categories:
+              - id: FOOD
+                name: Products
+                isIncome: false
+            """);
         var sut = CreateSut();
 
         // act
-        var act = () =>
-        {
-            return sut.Load();
-        };
+        var act = () => sut.Load();
+
+        // assert
+        act.Should().Throw<CategoryLoaderException>()
+            .WithMessage($"*Required default income category with alias '{FinancialRules.DefaultIncomeCategoryAlias}' is missing*");
+    }
+
+    [Fact]
+    void Load_ShouldThrowDuplicateId_WhenIdsAreNotUnique()
+    {
+        // arrange:
+        WriteYaml($"""
+            categories:
+              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+                name: Income
+                isIncome: true
+              - id: A
+                name: First
+              - id: A
+                name: Second
+            """);
+        var sut = CreateSut();
+
+        // act
+        var act = () => sut.Load();
 
         // assert
         act.Should().Throw<CategoryLoaderException>()
@@ -73,25 +83,25 @@ public class YamlCategoryLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_ShouldThrowDuplicateAlias_WhenAliasesAreNotUnique()
+    void Load_ShouldThrowDuplicateAlias_WhenAliasesAreNotUnique()
     {
-        // arrange
-        var yaml = "categories:\n" +
-                   "  - id: A\n" +
-                   "    name: Food\n" +
-                   "    aliases: [test]\n" +
-                   "  - id: B\n" +
-                   "    name: Drinks\n" +
-                   "    aliases: [test]";
-
-        File.WriteAllText(_testFileName, yaml);
+        // arrange:
+        WriteYaml($"""
+            categories:
+              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+                name: Income
+                isIncome: true
+              - id: A
+                name: Food
+                aliases: [test]
+              - id: B
+                name: Drinks
+                aliases: [test]
+            """);
         var sut = CreateSut();
 
         // act
-        var act = () =>
-        {
-            return sut.Load();
-        };
+        var act = () => sut.Load();
 
         // assert
         act.Should().Throw<CategoryLoaderException>()
@@ -99,43 +109,39 @@ public class YamlCategoryLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_ShouldThrowDeserializationFailed_WhenYamlIsInvalid()
+    void Load_ShouldReturnCategories_WhenYamlIsValid()
     {
         // arrange
-        File.WriteAllText(_testFileName, "invalid: [ [ [ yaml structure");
-        var sut = CreateSut();
-
-        // act
-        var act = () =>
-        {
-            return sut.Load();
-        };
-
-        // assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage("*Failed to deserialize*");
-    }
-
-    [Fact]
-    public void Load_ShouldReturnCategories_WhenYamlIsValid()
-    {
-        // arrange
-        var yaml = "categories:\n" +
-                   "  - id: FOOD\n" +
-                   "    name: Products\n" +
-                   "    isIncome: false\n" +
-                   "    aliases: [eat, meal]";
-
-        File.WriteAllText(_testFileName, yaml);
+        WriteYaml($"""
+            categories:
+              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+                name: Salary
+                isIncome: true
+              - id: FOOD
+                name: Products
+                isIncome: false
+                aliases: [eat, meal]
+            """);
         var sut = CreateSut();
 
         // act
         var result = sut.Load();
 
         // assert
-        result.Should().HaveCount(1);
-        result[0].Id.Should().Be("FOOD");
-        result[0].Name.Should().Be("Products");
-        result[0].Aliases.Should().Contain("eat");
+        result.Should().HaveCount(2);
+        result.Should().ContainSingle(c => c.Id == FinancialRules.DefaultIncomeCategoryAlias && c.IsIncome);
+        result.Should().ContainSingle(c => c.Id == "FOOD" && c.Aliases.Contains("eat"));
+    }
+
+    [Fact]
+    void Load_ShouldThrowDeserializationFailed_WhenYamlIsInvalid()
+    {
+        WriteYaml("invalid: [ [ [ yaml structure");
+        var sut = CreateSut();
+
+        var act = () => sut.Load();
+
+        act.Should().Throw<CategoryLoaderException>()
+            .WithMessage("*Failed to deserialize*");
     }
 }

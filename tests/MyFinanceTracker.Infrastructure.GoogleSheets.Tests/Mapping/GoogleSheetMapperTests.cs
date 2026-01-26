@@ -25,8 +25,8 @@ public class GoogleSheetMapperTests
 
         var transactions = new List<Transaction>
         {
-            new(Guid.NewGuid(), category, 100.50m, date, "Lunch"),
-            new(Guid.NewGuid(), category, 50.25m, date, "Coffee")
+            new(Guid.NewGuid(), TransactionType.Expense, category, 100.50m, date, "Lunch"),
+            new(Guid.NewGuid(), TransactionType.Expense, category, 50.25m, date, "Coffee")
         };
 
         // act
@@ -49,7 +49,7 @@ public class GoogleSheetMapperTests
         var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
         var sut = new GoogleSheetMapper(options);
         var category = new Category("B", "Test", [], isIncome);
-        var transaction = new Transaction(Guid.NewGuid(), category, amount, new DateOnly(2026, 1, 1), "");
+        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, amount, new DateOnly(2026, 1, 1), "");
 
         // act
         var result = sut.Map([transaction]);
@@ -69,7 +69,7 @@ public class GoogleSheetMapperTests
         });
         var sut = new GoogleSheetMapper(optionsWithComma);
         var category = new Category("C", "Food", []);
-        var transaction = new Transaction(Guid.NewGuid(), category, 10.5m, new DateOnly(2026, 1, 1), "");
+        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10.5m, new DateOnly(2026, 1, 1), "");
 
         // act
         var result = sut.Map([transaction]);
@@ -92,7 +92,7 @@ public class GoogleSheetMapperTests
         });
         var sut = new GoogleSheetMapper(customOptions);
         var category = new Category("A", "Food", []);
-        var transaction = new Transaction(Guid.NewGuid(), category, 10, new DateOnly(2026, 1, day), "");
+        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10, new DateOnly(2026, 1, day), "");
 
         // act
         var result = sut.Map([transaction]);

@@ -13,7 +13,7 @@ internal sealed class ConsoleInteractionWorker(
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         PrintWelcomeMessage();
-        logger.LogInformation("Worker started.");
+        logger.LogInformation("Console worker started.");
 
         try
         {
@@ -25,39 +25,30 @@ internal sealed class ConsoleInteractionWorker(
         catch (OperationCanceledException)
         {
             ConsoleCommands.WriteInfo("\n>>> Shutdown signal received. Closing...");
-            logger.LogInformation("Worker is stopping due to cancellation.");
         }
         catch (Exception ex)
         {
             logger.LogCritical(ex, "Fatal error in worker loop.");
-            ConsoleCommands.WriteError("[FATAL ERROR] The application crashed. See logs for details.");
-            throw;
-        }
-        finally
-        {
-            logger.LogInformation("Worker stopped.");
+            ConsoleCommands.WriteError("The application crashed. See logs for details.");
         }
     }
 
     private async Task ProcessNextCommandAsync(CancellationToken ct)
     {
         System.Console.Write("\n> ");
-        
+
         var input = System.Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(input)) return;
 
         try
         {
-            var result = await mediator.Send(new ProcessRawMessageCommand(input), ct);
-            HandleResult(result);
+            var response = await mediator.Send(new InteractionRequest(input), ct);
+            HandleResponse(response);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error processing command: {Input}", input);
-            ConsoleCommands.WriteError("[CRITICAL ERROR] Internal system failure.");
+            logger.LogError(ex, "Error processing interaction for input: {Input}", input);
+            ConsoleCommands.WriteError("Internal system failure.");
         }
         finally
         {
@@ -65,35 +56,41 @@ internal sealed class ConsoleInteractionWorker(
         }
     }
 
-    private static void HandleResult(InteractionResult result)
+    private static void HandleResponse(InteractionResponse response)
     {
-        switch (result)
+        switch (response)
         {
-            case InteractionResult.Success s:
-                ConsoleCommands.WriteSuccess(s.Operation);
+            case InteractionResponse.Success success:
+                ConsoleCommands.WriteSuccess(success);
                 break;
 
-            case InteractionResult.ParseError e:
-                ConsoleCommands.WriteError($"[PARSE ERROR] Could not understand: \"{e.RawInput}\"");
-                ConsoleCommands.WriteInfo($"Hint: {e.Details}");
+            case InteractionResponse.UnrecognizedInteraction unrecognized:
+                ConsoleCommands.WriteError($"Unknown command: '{unrecognized.RawInput}'");
+                ConsoleCommands.WriteInfo("Hint: Try starting with 'add expense ...'");
                 break;
 
-            case InteractionResult.LogicError e:
-                ConsoleCommands.WriteError($"[LOGIC ERROR] {e.Message}");
+            case InteractionResponse.InvalidInput invalidInput:
+                ConsoleCommands.WriteError($"Invalid input for '{invalidInput.InteractionDescription}'");
+                ConsoleCommands.WriteInfo($"Details: {invalidInput.Details}");
                 break;
 
-            case InteractionResult.SystemError e:
-                ConsoleCommands.WriteError($"[SYSTEM ERROR] {e.Message}");
+            case InteractionResponse.LogicError logicError:
+                ConsoleCommands.WriteError(logicError.Message);
+                break;
+
+            case InteractionResponse.SystemError systemError:
+                ConsoleCommands.WriteError($"System failure: {systemError.Message}");
                 break;
 
             default:
-                throw new UnreachableException($"Unknown result type: {result.GetType()}");
+                throw new UnreachableException($"Unknown response type: {response.GetType()}");
         }
     }
 
     private static void PrintWelcomeMessage()
     {
-        ConsoleCommands.WriteInfo(">>> Finance Tracker is active. Type your command (e.g., 'expense food 100')");
-        ConsoleCommands.WriteInfo(">>> Press Ctrl+C to exit.");
+        ConsoleCommands.WriteInfo(">>> Finance Tracker 2026 is active.");
+        ConsoleCommands.WriteInfo(">>> Usage: add <type> <category?> <amounts> <date?>");
+        ConsoleCommands.WriteInfo(">>> Example: add expense food 100 200");
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,11 +18,11 @@ internal sealed class TelegramInteractionWorker(
     IOptions<TelegramInteractionOptions> options,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
-    private readonly TelegramInteractionOptions options = options.Value;
+    private readonly TelegramInteractionOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Telegram Interaction Worker started using Long Polling.");
+        logger.LogInformation("Telegram Interaction Worker started.");
 
         var receiverOptions = new ReceiverOptions
         {
@@ -44,66 +45,72 @@ internal sealed class TelegramInteractionWorker(
         if (update.Message is not { Text: { } messageText } message)
             return;
 
-        if (message.From?.Id != options.AllowedUserId)
+        if (message.From?.Id != _options.AllowedUserId)
         {
             logger.LogWarning("Unauthorized access attempt. UserID: {UserId}", message.From?.Id);
             return;
         }
 
-        logger.LogInformation("Message received from {UserId}: '{Text}'", message.From?.Id, messageText);
-
-        var result = await mediator.Send(new ProcessRawMessageCommand(messageText), ct);
-        var response = FormatResponseMessage(result);
+        var response = await mediator.Send(new InteractionRequest(messageText), ct);
+        var formattedText = FormatResponse(response);
         try
         {
             await bot.SendMessage(
                 chatId: message.Chat.Id,
-                text: response,
+                text: formattedText,
                 parseMode: ParseMode.Html,
                 cancellationToken: ct);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to send message to Telegram. Response was: {Response}", response);
+            logger.LogError(ex, "Failed to send Telegram message. Input was: {Input}", messageText);
         }
     }
 
-    private static string FormatResponseMessage(InteractionResult result) => result switch
+    private static string FormatResponse(InteractionResponse response) => response switch
     {
-        InteractionResult.Success s => FormatSuccess(s.Operation),
+        InteractionResponse.Success success => FormatSuccess(success),
 
-        InteractionResult.ParseError e => $"""
-            ❓ **I didn't get that**
-            Input: `{e.RawInput}`
-            Hint: {e.Details}
-            """,
+        InteractionResponse.UnrecognizedInteraction unrecognized => $"""
+        ❓ <b>I didn't quite get that...</b>
+        Input: <code>{unrecognized.RawInput}</code>
+        
+        <i>Hint: Try starting with 'add', e.g., 'add expense food 100'</i>
+        """,
 
-        InteractionResult.LogicError e => $"""
-            ⚠️ **Logic Error**
-            {e.Message}
-            """,
+        InteractionResponse.InvalidInput invalid => $"""
+        ⚠️ <b>Input Error: {invalid.InteractionDescription}</b>
+        {invalid.Details}
+        """,
 
-        InteractionResult.SystemError => $"""
-            🔌 **System hiccup**
-            Something went wrong on my side. 
-            I've logged the details. Please try again in a bit.
-            """,
+        InteractionResponse.LogicError logicError => $"""
+        ❌ <b>Logic Error:</b>
+        {logicError.Message}
+        """,
 
-        _ => throw new UnreachableException($"Unknown result type: {result.GetType()}")
+        InteractionResponse.SystemError systemError => $"""
+        🔌 <b>System Hiccup</b>
+        Something went wrong on our side. We're already looking into it.
+        <i>Error ref: {systemError.Message}</i>
+        """,
+
+        _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
     };
 
-    private static string FormatSuccess(FinancialOperation op)
+    private static string FormatSuccess(InteractionResponse.Success success)
     {
-        var amountsLine = op.Amounts.Length > 1
-            ? $"{string.Join(" + ", op.Amounts)} = "
-            : "";
+        var builder = new StringBuilder();
+        builder.AppendLine($"✅ <b>{success.InteractionDescription.ToUpper()}</b>");
+        builder.AppendLine($"Result: <b>{success.PrimaryValue}</b>");
+        builder.AppendLine();
 
-        return $"""
-            ✅ **Recorded!**
-            💰 {amountsLine}{op.Amounts.Sum()}€
-            📂 Category: `{op.CategoryAlias}`
-            📅 Date: {op.Date:dd/MM/yyyy}
-            """;
+        foreach (var detail in success.Details)
+        {
+            var icon = detail.Icon ?? "🔹";
+            builder.AppendLine($"{icon} {detail.Name}: <code>{detail.Value}</code>");
+        }
+
+        return builder.ToString();
     }
 
     private Task HandlePollingErrorAsync(ITelegramBotClient bot, Exception ex, CancellationToken ct)

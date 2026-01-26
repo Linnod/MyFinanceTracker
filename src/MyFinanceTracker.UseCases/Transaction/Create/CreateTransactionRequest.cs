@@ -5,12 +5,12 @@ using MyFinanceTracker.Domain.Entities;
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
 public record CreateTransactionRequest(
-    FinancialOperationType Type,
+    TransactionType TransactionType,
     string CategoryAlias,
     decimal[] Amounts,
     DateOnly Date,
     string Note
 ) : IRequest<CreateTransactionResult>, ILoggableRequest
 {
-    string ILoggableRequest.GetLogPayload() => $"{Type} | Cat: {CategoryAlias} | Total: {Amounts.Sum()}€";
+    string ILoggableRequest.GetLogPayload() => $"{TransactionType} | Cat: {CategoryAlias} | Total: {Amounts.Sum()}€";
 }
