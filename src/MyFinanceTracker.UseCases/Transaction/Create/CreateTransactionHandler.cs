@@ -16,7 +16,7 @@ internal sealed class CreateTransactionHandler(
         try
         {
             logger.LogInformation("Attempting to create {Type} transaction for category '{Alias}'. Amounts count: {Count}",
-                request.Type, request.CategoryAlias, request.Amounts.Length);
+                request.TransactionType, request.CategoryAlias, request.Amounts.Length);
 
             var category = await categoryRepository.GetByAlias(request.CategoryAlias, cancellationToken);
 
@@ -30,8 +30,9 @@ internal sealed class CreateTransactionHandler(
             var transactions = request.Amounts.Select(amount =>
                 new Domain.Entities.Transaction(
                     Guid.NewGuid(),
+                    request.TransactionType,
                     category,
-                    ApplyBusinessRulesToAmount(amount, request.Type),
+                    ApplyBusinessRulesToAmount(amount, request.TransactionType),
                     request.Date,
                     request.Note
                 )).ToList();
@@ -51,14 +52,12 @@ internal sealed class CreateTransactionHandler(
         }
     }
 
-    private static decimal ApplyBusinessRulesToAmount(decimal amount, FinancialOperationType type)
+    private static decimal ApplyBusinessRulesToAmount(decimal amount, TransactionType type)
     {
         return type switch
         {
-            FinancialOperationType.Expense => -Math.Abs(amount),
-            FinancialOperationType.Income => Math.Abs(amount),
-            FinancialOperationType.Return => Math.Abs(amount),
-            FinancialOperationType.Adjustment => amount,
+            TransactionType.Expense => -Math.Abs(amount),
+            TransactionType.Income => Math.Abs(amount),
             _ => amount
         };
     }

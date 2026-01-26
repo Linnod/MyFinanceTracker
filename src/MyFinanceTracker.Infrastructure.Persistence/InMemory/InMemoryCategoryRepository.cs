@@ -7,7 +7,7 @@ internal class InMemoryCategoryRepository : ICategoryRepository
 {
     private readonly List<Category> categories =
     [
-        new Category("B", "Доход", ["income"], IsIncome: true),
+        new Category("B", "Доход", [FinancialRules.DefaultIncomeCategoryAlias], IsIncome: true),
         new Category("C", "Продукты", ["food", "products"]),
         new Category("G", "Общественный", ["bus", "train"])
     ];

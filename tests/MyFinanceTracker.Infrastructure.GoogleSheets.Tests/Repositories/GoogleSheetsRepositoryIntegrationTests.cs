@@ -31,7 +31,7 @@ public class GoogleSheetsRepositoryIntegrationTests
 
         var date = new DateOnly(2026, 01, 24);
         var category = new Category("A", "Food", ["food"], false);
-        var transaction = new Transaction(Guid.NewGuid(), category, 50m, date, "Coffee");
+        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 50m, date, "Coffee");
 
         clientMock.GetFormulas(Arg.Any<IList<string>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<List<string>>(["100"]));

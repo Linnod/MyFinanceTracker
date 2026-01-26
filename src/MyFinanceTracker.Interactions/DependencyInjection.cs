@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using MyFinanceTracker.Interactions.Abstractions;
 using MyFinanceTracker.Interactions.Behaviors;
-using MyFinanceTracker.Interactions.Parsing;
-using MyFinanceTracker.Interactions.Parsing.Parser;
-using MyFinanceTracker.Interactions.Parsing.Validation;
+using MyFinanceTracker.Interactions.Commands.AddTransaction;
+using MyFinanceTracker.Interactions.Commands.AddTransaction.Parsing;
+using MyFinanceTracker.Interactions.Commands.AddTransaction.Validation;
+using MyFinanceTracker.Interactions.Interpretation;
 
 namespace MyFinanceTracker.Interactions;
 
@@ -11,7 +13,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInteractions(this IServiceCollection services)
     {
-        services.AddParsing()
+        services.AddSingleton<IInteractionInterpreter, StrictInteractionInterpreter>()
+            .AddTransactionHandling()
             .AddMediatR(cfg => 
             {
                 cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly);
@@ -21,10 +24,10 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddParsing(this IServiceCollection services)
+    private static IServiceCollection AddTransactionHandling(this IServiceCollection services)
     {
-        return services.AddSingleton<IFinancialOperationParser, FinancialOperationParser>()
-            .AddSingleton<ParsingService>()
-            .AddSingleton<IRawFinancialOperationValidator, RawFinancialOperationValidator>();
+        return services.AddSingleton<IInteractionHandler, AddTransactionCommandHandler>()
+            .AddSingleton<IAddTransactionCommandParser, AddTransactionCommandParser>()
+            .AddSingleton<IAddTransactionCommandValidator, AddTransactionCommandValidator>();
     }
 }

@@ -48,38 +48,33 @@ internal class YamlCategoryLoader(IOptions<YamlPersistenceOptions> options) : IC
 
         var duplicateId = data.Categories
             .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(g =>
-            {
-                return g.Count() > 1;
-            });
-
+            .FirstOrDefault(g => g.Count() > 1);
         if (duplicateId != null)
         {
             throw CategoryLoaderException.DuplicateId(duplicateId.Key);
         }
 
-        var allAliases = data.Categories.SelectMany(c =>
-        {
-            return c.Aliases;
-        }).ToList();
+        var allAliasesWithIds = data.Categories
+            .SelectMany(c => c.Aliases.Append(c.Id))
+            .ToList();
 
-        var duplicateAlias = allAliases
+        var duplicateAlias = allAliasesWithIds
             .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(g =>
-            {
-                return g.Count() > 1;
-            });
-
+            .FirstOrDefault(g => g.Count() > 1);
         if (duplicateAlias != null)
         {
             throw CategoryLoaderException.DuplicateAlias(duplicateAlias.Key);
         }
 
+        var hasDefaultIncome = allAliasesWithIds
+            .Contains(FinancialRules.DefaultIncomeCategoryAlias, StringComparer.OrdinalIgnoreCase);
+        if (!hasDefaultIncome)
+        {
+            throw CategoryLoaderException.DefaultIncomeCategoryMissing(FinancialRules.DefaultIncomeCategoryAlias);
+        }
+
         return [.. data.Categories
-            .Select(c =>
-            {
-                return new Category(c.Id, c.Name, c.Aliases, c.IsIncome);
-            })];
+            .Select(c => new Category(c.Id, c.Name, c.Aliases, c.IsIncome))];
     }
 
     private sealed class YamlCategoryRoot
