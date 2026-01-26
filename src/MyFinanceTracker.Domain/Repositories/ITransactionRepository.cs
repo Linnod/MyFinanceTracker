@@ -7,4 +7,5 @@ public interface ITransactionRepository
     Task Add(Transaction transaction, CancellationToken ct = default);
     
     Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct = default);
+    Task DeleteRange(Category category, DateOnly date, CancellationToken ct = default);
 }

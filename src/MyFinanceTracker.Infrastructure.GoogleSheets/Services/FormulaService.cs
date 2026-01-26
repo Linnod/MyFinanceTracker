@@ -18,7 +18,17 @@ internal class FormulaService(IGoogleSheetsClient client, FormulaBuilder builder
         return [.. batch.Updates.Zip(currentFormulas, (update, currentFormula) => new ValueRange
         {
             Range = $"{batch.SheetName}!{update.CellAddress}",
-            Values = [[builder.Merge(currentFormula, update.Delta)]]
+            Values = [[builder.Merge(currentFormula, update.Content)]]
+        })];
+    }
+
+    public List<ValueRange> PrepareForOverwrite(GoogleSheetBatch batch)
+    {
+
+        return [.. batch.Updates.Select(u => new ValueRange
+        {
+            Range = $"{batch.SheetName}!{u.CellAddress}",
+            Values = [[ u.Content ]]
         })];
     }
 }

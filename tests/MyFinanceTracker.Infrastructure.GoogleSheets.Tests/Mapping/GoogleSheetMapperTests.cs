@@ -35,7 +35,7 @@ public class GoogleSheetMapperTests
         // assert
         result.Should().HaveCount(1);
         result[0].CellAddress.Should().Be("A26");
-        result[0].Delta.Should().Be("-100.5-50.25");
+        result[0].Content.Should().Be("-100.5-50.25");
         result[0].SheetName.Should().Be("2026.01");
     }
 
@@ -55,7 +55,7 @@ public class GoogleSheetMapperTests
         var result = sut.Map([transaction]);
 
         // assert
-        result[0].Delta.Should().Be(expectedDelta);
+        result[0].Content.Should().Be(expectedDelta);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class GoogleSheetMapperTests
         var result = sut.Map([transaction]);
 
         // assert
-        result[0].Delta.Should().Contain("-10,5");
+        result[0].Content.Should().Contain("-10,5");
     }
 
     [Theory]
@@ -99,5 +99,23 @@ public class GoogleSheetMapperTests
 
         // assert
         result[0].CellAddress.Should().Be(expectedCell);
+    }
+
+    [Fact]
+    public void MapForClearance_ShouldReturnZeroAndCorrectAddress()
+    {
+        // arrange
+        var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
+        var sut = new GoogleSheetMapper(options);
+        var date = new DateOnly(2026, 01, 27);
+        var categoryId = "B";
+
+        // act
+        var result = sut.MapForClearance(categoryId, date);
+
+        // assert
+        result.SheetName.Should().Be("2026.01");
+        result.CellAddress.Should().Be("B29");
+        result.Content.Should().Be("0");
     }
 }

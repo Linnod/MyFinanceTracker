@@ -48,4 +48,38 @@ public class GoogleSheetsRepositoryIntegrationTests
             ),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task DeleteRange_ShouldSendZeroWithoutFetchingFormulas()
+    {
+        // arrange
+        var options = Options.Create(new GoogleSheetsOptions
+        {
+            HeaderRowsCount = 2,
+            DecimalSeparator = ".",
+            SpreadsheetId = "test-id"
+        });
+
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var formulaService = new FormulaService(clientMock, new FormulaBuilder());
+        var sut = new GoogleSheetsTransactionRepository(mapper, clientMock, formulaService);
+
+        var date = new DateOnly(2026, 01, 27);
+        var category = new Category("B", "Food", ["food"], false);
+
+        // act
+        await sut.DeleteRange(category, date, CancellationToken.None);
+
+        // assert
+        await clientMock.DidNotReceive().GetFormulas(Arg.Any<IList<string>>(), Arg.Any<CancellationToken>());
+
+        await clientMock.Received(1).SendBatchUpdate(
+            Arg.Is<List<ValueRange>>(list =>
+                list.Count == 1 &&
+                list[0].Range == "2026.01!B29" &&
+                list[0].Values[0][0].ToString() == "0"
+            ),
+            Arg.Any<CancellationToken>());
+    }
 }

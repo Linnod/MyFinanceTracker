@@ -28,4 +28,12 @@ internal class GoogleSheetsTransactionRepository(
 
     public Task Add(Transaction transaction, CancellationToken ct = default) =>
         AddRange([transaction], ct);
+
+    public async Task DeleteRange(Category category, DateOnly date, CancellationToken ct = default)
+    {
+        var update = mapper.MapForClearance(category.Id, date);
+        var batch = new GoogleSheetBatch(update.SheetName, [update]);
+        var updateData = formulaService.PrepareForOverwrite(batch);
+        await client.SendBatchUpdate(updateData, ct);
+    }
 }

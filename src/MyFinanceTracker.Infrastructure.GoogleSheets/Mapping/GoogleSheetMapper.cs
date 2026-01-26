@@ -25,9 +25,18 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
                 .Select(categoryGroup => new GoogleSheetUpdate(
                     SheetName: GetSheetName(dateGroup.Key),
                     CellAddress: GetCellAddress(categoryGroup.Key.Id, dateGroup.Key.Day),
-                    Delta: BuildDeltaString([.. categoryGroup], nfi)
+                    Content: BuildDeltaString([.. categoryGroup], nfi)
                 ))
             )];
+    }
+
+    public GoogleSheetUpdate MapForClearance(string columnId, DateOnly date)
+    {
+        return new GoogleSheetUpdate(
+            SheetName: GetSheetName(date),
+            CellAddress: GetCellAddress(columnId, date.Day),
+            Content: "0"
+        );
     }
 
     private static string GetSheetName(DateOnly date) => date.ToString(DateFormat);

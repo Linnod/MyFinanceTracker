@@ -23,6 +23,7 @@
   <ItemGroup>
     <Folder Include="Abstractions\" />
     <Folder Include="Commands\AddTransaction\Validation\" />
+    <Folder Include="Commands\DeleteTransaction\Parsing\" />
     <Folder Include="Interpretation\" />
     <Folder Include="Commands\DeleteTransaction\" />
   </ItemGroup>

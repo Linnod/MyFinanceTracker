@@ -13,7 +13,7 @@ internal sealed class AddTransactionCommandHandler(
     IAddTransactionCommandParser parser,
     IAddTransactionCommandValidator validator,
     IMediator mediator,
-    ILogger<AddTransactionCommandHandler> logger) 
+    ILogger<AddTransactionCommandHandler> logger)
     : IInteractionHandler
 {
     private const string InteractionName = "Adding a transaction";
