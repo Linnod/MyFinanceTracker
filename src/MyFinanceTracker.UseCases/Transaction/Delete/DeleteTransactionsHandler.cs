@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 
 namespace MyFinanceTracker.UseCases.Transaction.Delete;
@@ -15,29 +14,26 @@ internal sealed class DeleteTransactionsHandler(
         DeleteTransactionsRequest request,
         CancellationToken ct)
     {
-        var finalDate = request.Date ?? DateOnly.FromDateTime(DateTime.Now);
-        if (finalDate.Year < FinancialRules.MinAllowedYear || finalDate.Year > FinancialRules.MaxAllowedYear)
-        {
-            return new DeleteTransactionsResponse.ValidationError(
-                $"Date {finalDate:dd.MM.yyyy} is out of allowed range ({FinancialRules.MinAllowedYear}-{FinancialRules.MaxAllowedYear})");
-        }
+        logger.LogInformation("--> Handle");
 
-        if (string.IsNullOrWhiteSpace(request.CategoryAlias))
-        {
-            return new DeleteTransactionsResponse.ValidationError("Category alias is required for deletion.");
-        }
+        var response = await HandleInternal(request, ct);
 
-        logger.LogInformation("🚀 Processing deletion for Category: {Alias}, Date: {Date}",
-            request.CategoryAlias, finalDate);
+        logger.LogInformation("<-- Handle");
 
-        var category = await categoryRepository.GetByAlias(request.CategoryAlias, ct);
+        return response;
+    }
+
+    private async Task<DeleteTransactionsResponse> HandleInternal(DeleteTransactionsRequest request, CancellationToken ct)
+    {
+        var category = await categoryRepository.GetByAlias(request.CategoryAlias!, ct);
         if (category is null)
         {
-            logger.LogWarning("🔍 Category with alias '{Alias}' not found", request.CategoryAlias);
-            
+            logger.LogWarning("🔍 Category '{Alias}' not found", request.CategoryAlias);
+
             return new DeleteTransactionsResponse.ValidationError($"Unknown category: {request.CategoryAlias}");
         }
 
+        var finalDate = request.Date!.Value;
         try
         {
             await transactionRepository.DeleteRange(category, finalDate, ct);

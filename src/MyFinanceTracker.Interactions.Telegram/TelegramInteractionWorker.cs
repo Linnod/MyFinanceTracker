@@ -42,11 +42,18 @@ internal sealed class TelegramInteractionWorker(
     private async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken ct)
     {
         if (update.Message is not { Text: { } messageText } message)
+        {
             return;
+        }
+
+        var username = message.From?.Username ?? message.From?.FirstName ?? "Unknown";
+        logger.LogInformation("--> HandleUpdate [{User}]", username);
 
         if (message.From?.Id != _options.AllowedUserId)
         {
-            logger.LogWarning("Unauthorized access attempt. UserID: {UserId}", message.From?.Id);
+            logger.LogWarning("⚠️ Unauthorized access attempt. UserID: {UserId}", message.From?.Id);
+            logger.LogInformation("<-- HandleUpdate");
+            
             return;
         }
 
@@ -62,8 +69,10 @@ internal sealed class TelegramInteractionWorker(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to send Telegram message. Input was: {Input}", messageText);
+            logger.LogError(ex, "❌ Failed to send Telegram message. Input: {Input}", messageText);
         }
+
+        logger.LogInformation("<-- HandleUpdate");
     }
 
     private static string FormatResponse(InteractionResponse response) => response switch

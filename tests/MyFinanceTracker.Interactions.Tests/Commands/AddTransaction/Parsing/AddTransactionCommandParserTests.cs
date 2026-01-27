@@ -77,8 +77,6 @@ public class AddTransactionCommandParserTests
     }
 
     [Theory]
-    [InlineData("expense food 100 01.01.1899", typeof(AddTransactionCommandParseResult.DateBelowMinLimit))]
-    [InlineData("expense food 100 01.01.2101", typeof(AddTransactionCommandParseResult.DateAboveMaxLimit))]
     [InlineData("expense food 100 32.01.2026", typeof(AddTransactionCommandParseResult.UnparseableDate))]
     void Parse_InvalidDates_ReturnsSpecificError(string input, Type expectedErrorType)
     {

@@ -16,6 +16,8 @@ internal class GoogleSheetsClient(IOptions<GoogleSheetsOptions> options,
 
     public async Task<List<string>> GetFormulas(IList<string> ranges, CancellationToken ct)
     {
+        logger.LogInformation("--> GetFormulas");
+
         logger.LogInformation("🔍 Fetching formulas for {Count} ranges from Spreadsheet {Id}",
                     ranges.Count, options.SpreadsheetId);
 
@@ -26,13 +28,19 @@ internal class GoogleSheetsClient(IOptions<GoogleSheetsOptions> options,
 
         logger.LogDebug("✅ Successfully fetched {Count} value ranges", response.ValueRanges?.Count ?? 0);
 
-        return response.ValueRanges?
+        var result = response.ValueRanges?
             .Select(vr => vr.Values?[0]?[0]?.ToString() ?? string.Empty)
             .ToList() ?? [];
+
+        logger.LogInformation("<-- GetFormulas");
+        
+        return result;
     }
 
     public async Task SendBatchUpdate(List<ValueRange> updateData, CancellationToken ct)
     {
+        logger.LogInformation("--> SendBatchUpdate");
+
         logger.LogInformation("📤 Sending batch update to Google Sheets ({Count} entries)", updateData.Count);
 
         var batchRequest = new BatchUpdateValuesRequest
@@ -46,5 +54,7 @@ internal class GoogleSheetsClient(IOptions<GoogleSheetsOptions> options,
             .ExecuteAsync(ct);
 
         logger.LogInformation("✅ Batch update applied successfully");
+
+        logger.LogInformation("<-- SendBatchUpdate");
     }
 }

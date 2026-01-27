@@ -14,6 +14,15 @@ builder.Services
     .AddGoogleSheetsPersistence(builder.Configuration)
     .AddConfiguredInteractions(builder.Configuration);
     
-builder.Logging.AddConsole();
+builder.Logging
+    .AddSimpleConsole(options =>
+    {
+        options.IncludeScopes = true;
+        options.SingleLine = true;
+        options.TimestampFormat = "HH:mm:ss ";
+    })
+    .AddFilter("Microsoft", LogLevel.Warning)
+    .AddFilter("System", LogLevel.Warning)
+    .AddFilter("MyFinanceTracker", LogLevel.Information);
 using var host = builder.Build();
 await host.RunAsync();

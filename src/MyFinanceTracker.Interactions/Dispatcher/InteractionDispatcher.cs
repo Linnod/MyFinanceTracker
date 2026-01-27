@@ -13,45 +13,46 @@ internal sealed class InteractionDispatcher(
     : IRequestHandler<InteractionRequest, InteractionResponse>
 {
     public async Task<InteractionResponse> Handle(
-        InteractionRequest request, 
+        InteractionRequest request,
         CancellationToken ct)
     {
-        var result = interpreter.Interpret(request.Input);
+        logger.LogInformation("--> Handle");
 
-        return result switch
+        var result = interpreter.Interpret(request.Input);
+        var response = result switch
         {
             InterpretationResult.Identified identified => await ProcessIdentified(identified, ct),
-            
             InterpretationResult.Unrecognized => new InteractionResponse.UnrecognizedInteraction(request.Input),
-            
             _ => throw new InvalidOperationException($"Unexpected interpretation result type: {result.GetType().Name}")
         };
+
+        logger.LogInformation("<-- Handle");
+
+        return response;
     }
 
     private async Task<InteractionResponse> ProcessIdentified(
-        InterpretationResult.Identified identified, 
+        InterpretationResult.Identified identified,
         CancellationToken ct)
     {
         var handler = handlers.FirstOrDefault(h => h.CanHandle(identified.Type));
-
         if (handler == null)
         {
-            logger.LogCritical("No handler registered for interaction type: {Type}. Check DI container.", identified.Type);
+            logger.LogCritical("No handler registered for interaction type: {Type}.", identified.Type);
 
             return new InteractionResponse.SystemError(
-                "The requested action is recognized, but the handling mechanism is not yet implemented or is currently disabled.");
+                "The requested action is recognized, but the handling mechanism is not yet implemented.");
         }
 
         try
         {
-            return await handler.HandleAsync(identified.Payload, ct);
+            return await handler.Handle(identified.Payload, ct);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Execution failed for interaction type: {Type}", identified.Type);
-            
-            return new InteractionResponse.SystemError(
-                "An error occurred while executing the command. Please try again later.", ex);
+
+            return new InteractionResponse.SystemError("An error occurred during execution.", ex);
         }
     }
 }

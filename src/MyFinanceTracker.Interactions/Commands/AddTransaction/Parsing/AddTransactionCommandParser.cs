@@ -34,15 +34,13 @@ internal sealed partial class AddTransactionCommandParser : IAddTransactionComma
             return dateError;
         }
 
-        var commandData = new RawAddTransactionCommand(
+        return new AddTransactionCommandParseResult.Success(new RawAddTransactionCommand(
             Type: ExtractType(match.Groups["type"].Value),
             CategoryAlias: ExtractCategory(match.Groups["category"].Value),
             Amounts: amounts!,
             Date: date,
             Note: ExtractNotes(match.Groups["notes"].Value)
-        );
-
-        return new AddTransactionCommandParseResult.Success(commandData);
+        ));
     }
 
     private static TransactionType ExtractType(string value)
@@ -86,26 +84,10 @@ internal sealed partial class AddTransactionCommandParser : IAddTransactionComma
             return (null, new AddTransactionCommandParseResult.UnparseableDate(value));
         }
 
-        if (date.Year < FinancialRules.MinAllowedYear)
-        {
-            return (null, new AddTransactionCommandParseResult.DateBelowMinLimit(date));
-        }
-
-        if (date.Year > FinancialRules.MaxAllowedYear)
-        {
-            return (null, new AddTransactionCommandParseResult.DateAboveMaxLimit(date));
-        }
-
         return (date, null);
     }
 
-    private static string? ExtractCategory(string value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
+    private static string? ExtractCategory(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
-    private static string? ExtractNotes(string value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
+    private static string? ExtractNotes(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

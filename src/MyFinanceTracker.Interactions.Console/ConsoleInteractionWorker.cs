@@ -11,8 +11,9 @@ internal sealed class ConsoleInteractionWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        PrintWelcomeMessage();
         logger.LogInformation("Console worker started.");
+
+        PrintWelcomeMessage();
 
         try
         {
@@ -34,10 +35,14 @@ internal sealed class ConsoleInteractionWorker(
 
     private async Task ProcessNextCommandAsync(CancellationToken ct)
     {
-        System.Console.Write("\n> ");
+        System.Console.WriteLine(); 
+        System.Console.Write("> ");
 
-        var input = System.Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(input)) return;
+        var input = await ConsoleCommands.ReadLine(ct);
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return;
+        }
 
         try
         {

@@ -7,7 +7,8 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 
-internal class YamlCategoryLoader(IOptions<YamlPersistenceOptions> options) : ICategoryLoader
+internal class YamlCategoryLoader(
+    IOptions<YamlPersistenceOptions> options) : ICategoryLoader
 {
     private readonly string resolvedPath = Path.Combine(AppContext.BaseDirectory, options.Value.FilePath);
 
@@ -27,7 +28,9 @@ internal class YamlCategoryLoader(IOptions<YamlPersistenceOptions> options) : IC
             using var reader = new StreamReader(resolvedPath);
             var yamlData = deserializer.Deserialize<YamlCategoryRoot>(reader);
 
-            return ValidateAndMap(yamlData);
+            var result = ValidateAndMap(yamlData);
+            
+            return result;
         }
         catch (CategoryLoaderException)
         {
@@ -49,6 +52,7 @@ internal class YamlCategoryLoader(IOptions<YamlPersistenceOptions> options) : IC
         var duplicateId = data.Categories
             .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
+
         if (duplicateId != null)
         {
             throw CategoryLoaderException.DuplicateId(duplicateId.Key);
@@ -61,6 +65,7 @@ internal class YamlCategoryLoader(IOptions<YamlPersistenceOptions> options) : IC
         var duplicateAlias = allAliasesWithIds
             .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
+
         if (duplicateAlias != null)
         {
             throw CategoryLoaderException.DuplicateAlias(duplicateAlias.Key);
@@ -68,6 +73,7 @@ internal class YamlCategoryLoader(IOptions<YamlPersistenceOptions> options) : IC
 
         var hasDefaultIncome = allAliasesWithIds
             .Contains(FinancialRules.DefaultIncomeCategoryAlias, StringComparer.OrdinalIgnoreCase);
+
         if (!hasDefaultIncome)
         {
             throw CategoryLoaderException.DefaultIncomeCategoryMissing(FinancialRules.DefaultIncomeCategoryAlias);

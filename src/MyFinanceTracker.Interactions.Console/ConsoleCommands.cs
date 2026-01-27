@@ -31,4 +31,21 @@ internal static class ConsoleCommands
         System.Console.WriteLine(message);
         System.Console.ResetColor();
     }
+
+    public static async Task<string?> ReadLine(CancellationToken ct)
+    {
+        try
+        {
+            while (!System.Console.KeyAvailable)
+            {
+                await Task.Delay(100, ct);
+            }
+
+            return System.Console.ReadLine();
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+    }
 }

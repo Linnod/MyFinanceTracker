@@ -13,6 +13,17 @@ internal class StrictInteractionInterpreter(ILogger<StrictInteractionInterpreter
 
     public InterpretationResult Interpret(string input)
     {
+        logger.LogInformation("--> Interpret");
+
+        var result = InternalInterpret(input);
+
+        logger.LogInformation("<-- Interpret");
+
+        return result;
+    }
+
+    private InterpretationResult InternalInterpret(string input)
+    {
         if (string.IsNullOrWhiteSpace(input))
         {
             logger.LogWarning("Interpretation failed: input is null or empty.");
@@ -22,14 +33,17 @@ internal class StrictInteractionInterpreter(ILogger<StrictInteractionInterpreter
 
         var parts = input.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         var commandCandidate = parts[0];
+
         if (!CommandMap.TryGetValue(commandCandidate, out var type))
         {
             logger.LogWarning("Interpretation failed: command '{Command}' is not recognized.", commandCandidate);
-
+            
             return new InterpretationResult.Unrecognized();
         }
 
-        var payload = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+        var payload = parts.Length > 1 
+            ? parts[1].Trim() 
+            : string.Empty;
 
         return new InterpretationResult.Identified(type, payload);
     }

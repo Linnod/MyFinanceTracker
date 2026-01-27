@@ -18,7 +18,18 @@ internal sealed class AddTransactionCommandHandler(
 
     public bool CanHandle(InteractionType type) => type == InteractionType.AddTransaction;
 
-    public async Task<InteractionResponse> HandleAsync(string payload, CancellationToken ct)
+    public async Task<InteractionResponse> Handle(string payload, CancellationToken ct)
+    {
+        logger.LogInformation("--> Handle");
+
+        var response = await HandleInternal(payload, ct);
+
+        logger.LogInformation("<-- Handle");
+        
+        return response;
+    }
+
+    private async Task<InteractionResponse> HandleInternal(string payload, CancellationToken ct)
     {
         var parseResult = parser.Parse(payload);
         if (parseResult is not AddTransactionCommandParseResult.Success(var raw))
@@ -34,6 +45,7 @@ internal sealed class AddTransactionCommandHandler(
                 raw.CategoryAlias,
                 raw.Date,
                 raw.Note);
+
             var result = await mediator.Send(request, ct);
 
             return MapToInteractionResponse(result);
@@ -41,7 +53,6 @@ internal sealed class AddTransactionCommandHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "System failure for input: {Input}", payload);
-
             return new InteractionResponse.SystemError("Processing failed on our side.", ex);
         }
     }

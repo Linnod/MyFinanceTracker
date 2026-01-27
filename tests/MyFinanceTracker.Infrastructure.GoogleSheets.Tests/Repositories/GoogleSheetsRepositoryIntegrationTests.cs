@@ -1,4 +1,5 @@
 using Google.Apis.Sheets.v4.Data;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.GoogleSheets.Clients;
@@ -13,7 +14,7 @@ namespace MyFinanceTracker.Infrastructure.GoogleSheets.Tests.Repositories;
 public class GoogleSheetsRepositoryIntegrationTests
 {
     [Fact]
-    public async Task AddRange_ShouldOrchestrateMappingAndBatchUpdateCorrectly()
+    async Task AddRange_ShouldOrchestrateMappingAndBatchUpdateCorrectly()
     {
         // arrange
         var options = Options.Create(new GoogleSheetsOptions
@@ -27,7 +28,8 @@ public class GoogleSheetsRepositoryIntegrationTests
         var formulaBuilder = new FormulaBuilder();
         var clientMock = Substitute.For<IGoogleSheetsClient>();
         var formulaService = new FormulaService(clientMock, formulaBuilder);
-        var sut = new GoogleSheetsTransactionRepository(mapper, clientMock, formulaService);
+        var loggerLock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+        var sut = new GoogleSheetsTransactionRepository(mapper, clientMock, formulaService, loggerLock);
 
         var date = new DateOnly(2026, 01, 24);
         var category = new Category("A", "Food", ["food"], false);
@@ -50,7 +52,7 @@ public class GoogleSheetsRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task DeleteRange_ShouldSendZeroWithoutFetchingFormulas()
+    async Task DeleteRange_ShouldSendZeroWithoutFetchingFormulas()
     {
         // arrange
         var options = Options.Create(new GoogleSheetsOptions
@@ -63,7 +65,8 @@ public class GoogleSheetsRepositoryIntegrationTests
         var mapper = new GoogleSheetMapper(options);
         var clientMock = Substitute.For<IGoogleSheetsClient>();
         var formulaService = new FormulaService(clientMock, new FormulaBuilder());
-        var sut = new GoogleSheetsTransactionRepository(mapper, clientMock, formulaService);
+        var loggerLock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+        var sut = new GoogleSheetsTransactionRepository(mapper, clientMock, formulaService, loggerLock);
 
         var date = new DateOnly(2026, 01, 27);
         var category = new Category("B", "Food", ["food"], false);

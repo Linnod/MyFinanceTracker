@@ -13,6 +13,17 @@ internal sealed class CreateTransactionHandler(
 {
     public async Task<CreateTransactionResponse> Handle(CreateTransactionRequest request, CancellationToken ct)
     {
+        logger.LogInformation("--> Handle");
+
+        var response = await HandleInternal(request, ct);
+
+        logger.LogInformation("<-- Handle");
+
+        return response;
+    }
+
+    private async Task<CreateTransactionResponse> HandleInternal(CreateTransactionRequest request, CancellationToken ct)
+    {
         var finalDate = request.Date ?? DateOnly.FromDateTime(DateTime.Now);
 
         var (categoryAlias, categoryError) = ResolveCategoryAlias(request);
@@ -25,7 +36,7 @@ internal sealed class CreateTransactionHandler(
         if (category is null)
         {
             logger.LogWarning("🔍 Category '{Alias}' not found", categoryAlias);
-            
+
             return new CreateTransactionResponse.ValidationError($"Unknown category: {categoryAlias}");
         }
 
@@ -47,11 +58,10 @@ internal sealed class CreateTransactionHandler(
                 transactions.Count, category.Name);
 
             return new CreateTransactionResponse.Success(
-                CategoryName: category.Name,
-                Amounts: request.Amounts,
-                Date: finalDate,
-                Note: request.Note
-            );
+                category.Name,
+                request.Amounts,
+                finalDate,
+                request.Note);
         }
         catch (Exception ex)
         {
@@ -64,12 +74,18 @@ internal sealed class CreateTransactionHandler(
     private static (string? Alias, CreateTransactionResponse.ValidationError? Error) ResolveCategoryAlias(CreateTransactionRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.CategoryAlias))
+        {
             return (request.CategoryAlias, null);
+        }        
+
 
         if (request.TransactionType == TransactionType.Income)
+        {
             return (FinancialRules.DefaultIncomeCategoryAlias, null);
-
+        }
+            
         var typeName = request.TransactionType.ToString().ToLower();
+
         return (null, new CreateTransactionResponse.ValidationError($"Category is required for {typeName} transactions."));
     }
 

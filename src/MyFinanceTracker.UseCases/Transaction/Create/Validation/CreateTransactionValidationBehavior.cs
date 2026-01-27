@@ -12,7 +12,6 @@ internal sealed class CreateTransactionValidationBehavior(IValidator<CreateTrans
         CancellationToken ct)
     {
         var result = await validator.ValidateAsync(request, ct);
-
         if (!result.IsValid)
         {
             var errorMessage = string.Join(" ", result.Errors.Select(e => e.ErrorMessage));

@@ -18,7 +18,17 @@ internal sealed class DeleteTransactionCommandHandler(
 
     public bool CanHandle(InteractionType type) => type == InteractionType.DeleteTransaction;
 
-    public async Task<InteractionResponse> HandleAsync(string payload, CancellationToken ct)
+    public async Task<InteractionResponse> Handle(string payload, CancellationToken ct)
+    {
+        logger.LogInformation("--> Handle");
+
+        var response = await HandleInternal(payload, ct);
+
+        logger.LogInformation("<-- Handle");
+        return response;
+    }
+
+    private async Task<InteractionResponse> HandleInternal(string payload, CancellationToken ct)
     {
         var parseResult = parser.Parse(payload);
         if (parseResult is not DeleteTransactionCommandParseResult.Success(var raw))
@@ -42,7 +52,7 @@ internal sealed class DeleteTransactionCommandHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "System failure while deleting for input: {Input}", payload);
-
+            
             return new InteractionResponse.SystemError("Processing failed on our side.", ex);
         }
     }

@@ -12,6 +12,4 @@ internal abstract record AddTransactionCommandParseResult
     public sealed record InvalidAmount(string RawValue) : AddTransactionCommandParseResult;
 
     public sealed record UnparseableDate(string RawValue) : AddTransactionCommandParseResult;
-    public sealed record DateBelowMinLimit(DateOnly Value) : AddTransactionCommandParseResult;
-    public sealed record DateAboveMaxLimit(DateOnly Value) : AddTransactionCommandParseResult;
 }

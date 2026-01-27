@@ -12,9 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Behaviors\" />
+    <Folder Include="Transaction\Create\Behaviors\" />
     <Folder Include="Transaction\Create\Validation\" />
     <Folder Include="Transaction\Delete\" />
+    <Folder Include="Transaction\Delete\Behaviors\" />
+    <Folder Include="Transaction\Delete\Validation\" />
   </ItemGroup>
 
   <PropertyGroup>
