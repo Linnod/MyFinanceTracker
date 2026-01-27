@@ -42,7 +42,7 @@ internal sealed class DeleteTransactionCommandHandler(
         catch (Exception ex)
         {
             logger.LogError(ex, "System failure while deleting for input: {Input}", payload);
-            
+
             return new InteractionResponse.SystemError("Processing failed on our side.", ex);
         }
     }
@@ -50,12 +50,11 @@ internal sealed class DeleteTransactionCommandHandler(
     private static InteractionResponse.Success MapSuccess(DeleteTransactionsResponse.Success data)
     {
         return new InteractionResponse.Success(
-            InteractionDescription: "Category cleared",
-            PrimaryValue: data.CategoryName,
+            InteractionDescription: InteractionName,
+            PrimaryValue: $"Cleared category '{data.CategoryName}'",
             Details:
             [
-                new ResponseDetail("Date", data.Date.ToString("dd.MM.yyyy"), "📅"),
-                new ResponseDetail("Status", "All entries removed", "🧹")
+                new ResponseDetail("Date", data.Date.ToString("dd.MM.yyyy"), "📅")
             ]
         );
     }
