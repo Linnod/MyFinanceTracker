@@ -28,7 +28,6 @@
     <Folder Include="Commands\" />
     <Folder Include="Commands\AddTransaction\" />
     <Folder Include="Commands\AddTransaction\Parsing\" />
-    <Folder Include="Commands\AddTransaction\Validation\" />
     <Folder Include="Commands\DeleteTransaction\" />
     <Folder Include="Commands\DeleteTransaction\Parsing\" />
     <Folder Include="Interpretation\" />

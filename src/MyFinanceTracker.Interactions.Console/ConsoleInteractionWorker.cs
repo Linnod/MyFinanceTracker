@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Interactions.Contracts;
@@ -7,7 +6,7 @@ using MyFinanceTracker.Interactions.Contracts;
 namespace MyFinanceTracker.Interactions.Console;
 
 internal sealed class ConsoleInteractionWorker(
-    IMediator mediator,
+    IInteractionGateway interactionGateway,
     ILogger<ConsoleInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,7 +41,7 @@ internal sealed class ConsoleInteractionWorker(
 
         try
         {
-            var response = await mediator.Send(new InteractionRequest(input), ct);
+            var response = await interactionGateway.Send(new InteractionRequest(input), ct);
             HandleResponse(response);
         }
         catch (Exception ex)

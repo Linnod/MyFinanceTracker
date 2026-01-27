@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text;
-using MediatR;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,7 +13,7 @@ namespace MyFinanceTracker.Interactions.Telegram;
 
 internal sealed class TelegramInteractionWorker(
     ITelegramBotClient botClient,
-    IMediator mediator,
+    IInteractionGateway interactionGateway,
     IOptions<TelegramInteractionOptions> options,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
@@ -51,7 +50,7 @@ internal sealed class TelegramInteractionWorker(
             return;
         }
 
-        var response = await mediator.Send(new InteractionRequest(messageText), ct);
+        var response = await interactionGateway.Send(new InteractionRequest(messageText), ct);
         var formattedText = FormatResponse(response);
         try
         {

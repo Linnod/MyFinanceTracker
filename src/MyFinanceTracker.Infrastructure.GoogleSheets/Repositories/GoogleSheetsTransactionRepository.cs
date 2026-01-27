@@ -14,7 +14,7 @@ internal class GoogleSheetsTransactionRepository(
 {
     public async Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct = default)
     {
-        var updates = mapper.Map([.. transactions]);
+        var updates = mapper.MapForAddition([.. transactions]);
         var batches = updates
             .GroupBy(u => u.SheetName)
             .Select(g => new GoogleSheetBatch(g.Key, [.. g]));
@@ -25,9 +25,6 @@ internal class GoogleSheetsTransactionRepository(
         });
         await Task.WhenAll(tasks);
     }
-
-    public Task Add(Transaction transaction, CancellationToken ct = default) =>
-        AddRange([transaction], ct);
 
     public async Task DeleteRange(Category category, DateOnly date, CancellationToken ct = default)
     {

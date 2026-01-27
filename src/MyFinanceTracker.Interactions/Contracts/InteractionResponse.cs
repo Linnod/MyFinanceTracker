@@ -7,7 +7,7 @@ public abstract record InteractionResponse
     public sealed record Success(
         string InteractionDescription,
         string PrimaryValue,
-        List<ResponseDetail> Details
+        IReadOnlyCollection<ResponseDetail> Details
     ) : InteractionResponse;
 
     public sealed record UnrecognizedInteraction(string RawInput) : InteractionResponse;

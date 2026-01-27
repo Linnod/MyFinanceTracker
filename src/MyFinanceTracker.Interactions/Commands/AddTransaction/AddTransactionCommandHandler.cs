@@ -4,14 +4,12 @@ using MyFinanceTracker.Interactions.Abstractions;
 using MyFinanceTracker.Interactions.Interpretation;
 using MyFinanceTracker.Interactions.Contracts;
 using MyFinanceTracker.Interactions.Commands.AddTransaction.Parsing;
-using MyFinanceTracker.Interactions.Commands.AddTransaction.Validation;
 using MyFinanceTracker.UseCases.Transaction.Create;
 
 namespace MyFinanceTracker.Interactions.Commands.AddTransaction;
 
 internal sealed class AddTransactionCommandHandler(
     IAddTransactionCommandParser parser,
-    IAddTransactionCommandValidator validator,
     IMediator mediator,
     ILogger<AddTransactionCommandHandler> logger)
     : IInteractionHandler
@@ -23,33 +21,22 @@ internal sealed class AddTransactionCommandHandler(
     public async Task<InteractionResponse> HandleAsync(string payload, CancellationToken ct)
     {
         var parseResult = parser.Parse(payload);
-        if (parseResult is not AddTransactionCommandParseResult.Success(var rawData))
+        if (parseResult is not AddTransactionCommandParseResult.Success(var raw))
         {
-            return MapToInvalidInput(parseResult);
-        }
-
-        var validationResult = validator.Validate(rawData);
-        if (validationResult is not AddTransactionCommandValidationResult.Success(var validatedData))
-        {
-            return MapToLogicError(validationResult);
+            return MapParseError(parseResult);
         }
 
         try
         {
-            var createRequest = new CreateTransactionRequest(
-                validatedData.Type,
-                validatedData.CategoryAlias,
-                validatedData.Amounts,
-                validatedData.Date,
-                validatedData.Note);
-            var result = await mediator.Send(createRequest, ct);
+            var request = new CreateTransactionRequest(
+                raw.Type,
+                raw.Amounts,
+                raw.CategoryAlias,
+                raw.Date,
+                raw.Note);
+            var result = await mediator.Send(request, ct);
 
-            return result switch
-            {
-                CreateTransactionResult.Success => BuildSuccessResponse(validatedData),
-                CreateTransactionResult.Failure f => new InteractionResponse.LogicError(f.Message),
-                _ => new InteractionResponse.SystemError("Unexpected response from domain service.")
-            };
+            return MapToInteractionResponse(result);
         }
         catch (Exception ex)
         {
@@ -59,57 +46,59 @@ internal sealed class AddTransactionCommandHandler(
         }
     }
 
-    private static InteractionResponse.Success BuildSuccessResponse(ValidatedAddTransactionCommand data)
+    private static InteractionResponse MapToInteractionResponse(CreateTransactionResponse result)
     {
-        var total = data.Amounts.Sum();
-        var details = new List<ResponseDetail>
+        return result switch
         {
-            new("Category", data.CategoryAlias, "📁"),
-            new("Date", data.Date.ToString("dd.MM.yyyy"), "📅")
+            CreateTransactionResponse.Success s => MapSuccess(s),
+            CreateTransactionResponse.ValidationError v => new InteractionResponse.LogicError(v.Message),
+            CreateTransactionResponse.Failure f => new InteractionResponse.LogicError(f.Message),
+            _ => new InteractionResponse.SystemError("Unexpected response from domain service.")
         };
+    }
 
-        if (!string.IsNullOrWhiteSpace(data.Note))
-        {
-            details.Add(new ResponseDetail("Note", data.Note, "📝"));
-        }
-
-        if (data.Amounts.Length > 1)
-        {
-            details.Add(new ResponseDetail("Breakdown", string.Join(" + ", data.Amounts), "🔢"));
-        }
+    private static InteractionResponse.Success MapSuccess(CreateTransactionResponse.Success s)
+    {
+        var totalAmount = s.Amounts.Sum();
 
         return new InteractionResponse.Success(
-            InteractionDescription: $"Added {data.Type.ToString().ToLower()}",
-            PrimaryValue: total.ToString("N2"),
-            Details: details
+            InteractionDescription: InteractionName,
+            PrimaryValue: $"{totalAmount} added to category '{s.CategoryName}'",
+            Details: BuildDetails(s)
         );
     }
 
-    private static InteractionResponse.InvalidInput MapToInvalidInput(AddTransactionCommandParseResult result)
+    private static List<ResponseDetail> BuildDetails(CreateTransactionResponse.Success s)
     {
-        var errorDetail = result switch
+        var details = new List<ResponseDetail>
         {
-            AddTransactionCommandParseResult.EmptyInput => "The input string is empty.",
-            AddTransactionCommandParseResult.InvalidFormat => "Format error. Use: add <type> <category?> <amounts> <date?>",
-            AddTransactionCommandParseResult.InvalidAmount(var v) => $"'{v}' is not a valid amount.",
-            AddTransactionCommandParseResult.UnparseableDate(var v) => $"'{v}' is not a valid date format.",
-            AddTransactionCommandParseResult.DateBelowMinLimit(var d) => $"Date {d:dd.MM.yyyy} is too far in the past.",
-            AddTransactionCommandParseResult.DateAboveMaxLimit(var d) => $"Date {d:dd.MM.yyyy} is in the future.",
-            _ => "Unknown parsing error."
+            new("Date", s.Date.ToString("dd.MM.yyyy"), "📅")
         };
 
-        return new InteractionResponse.InvalidInput(InteractionName, errorDetail);
+        if (s.Amounts.Count > 1)
+        {
+            details.Add(new("Breakdown", string.Join(" + ", s.Amounts), "🔢"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(s.Note))
+        {
+            details.Add(new("Note", s.Note, "📝"));
+        }
+
+        return details;
     }
 
-    private static InteractionResponse.LogicError MapToLogicError(AddTransactionCommandValidationResult result)
+    private static InteractionResponse.InvalidInput MapParseError(AddTransactionCommandParseResult result)
     {
         var message = result switch
         {
-            AddTransactionCommandValidationResult.MissingAmounts => "At least one amount is required.",
-            AddTransactionCommandValidationResult.CategoryRequired(var t) => $"Category is required for {t.ToString().ToLower()} transactions.",
-            _ => "Validation failed."
+            AddTransactionCommandParseResult.EmptyInput => "The input string is empty.",
+            AddTransactionCommandParseResult.InvalidFormat => "Format error. Use: <type> <amounts> <category?> <date?> <note?>",
+            AddTransactionCommandParseResult.InvalidAmount(var v) => $"'{v}' is not a valid amount.",
+            AddTransactionCommandParseResult.UnparseableDate(var v) => $"'{v}' is not a valid date format.",
+            _ => "Unknown parsing error."
         };
 
-        return new InteractionResponse.LogicError(message);
+        return new InteractionResponse.InvalidInput(InteractionName, message);
     }
 }

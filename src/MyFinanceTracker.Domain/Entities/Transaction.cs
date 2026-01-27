@@ -6,5 +6,5 @@ public record Transaction(
     Category Category,
     decimal Amount,
     DateOnly Date,
-    string Note
+    string? Note
 );

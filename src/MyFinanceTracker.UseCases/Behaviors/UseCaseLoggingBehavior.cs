@@ -19,14 +19,14 @@ internal sealed class UseCaseLoggingBehavior<TRequest, TResponse>(
 
         var elapsedMs = sw.ElapsedMilliseconds;
 
-        if (response is CreateTransactionResult ctr)
+        if (response is CreateTransactionResponse ctr)
         {
             switch (ctr)
             {
-                case CreateTransactionResult.Success:
+                case CreateTransactionResponse.Success:
                     logger.LogInformation("✅ [UseCase] Transaction saved ({Ms}ms)", elapsedMs);
                     break;
-                case CreateTransactionResult.Failure f:
+                case CreateTransactionResponse.Failure f:
                     logger.LogWarning("⚠️ [UseCase] Business error: {Msg} ({Ms}ms)", f.Message, elapsedMs);
                     break;
             }

@@ -11,7 +11,7 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
     private readonly GoogleSheetsOptions options = options.Value;
     private const string DateFormat = "yyyy.MM";
 
-    public List<GoogleSheetUpdate> Map(List<Transaction> transactions)
+    public List<GoogleSheetUpdate> MapForAddition(List<Transaction> transactions)
     {
         var nfi = new NumberFormatInfo
         {

@@ -9,56 +9,73 @@ internal sealed class CreateTransactionHandler(
     ICategoryRepository categoryRepository,
     ITransactionRepository transactionRepository,
     ILogger<CreateTransactionHandler> logger)
-    : IRequestHandler<CreateTransactionRequest, CreateTransactionResult>
+    : IRequestHandler<CreateTransactionRequest, CreateTransactionResponse>
 {
-    public async Task<CreateTransactionResult> Handle(CreateTransactionRequest request, CancellationToken cancellationToken)
+    public async Task<CreateTransactionResponse> Handle(CreateTransactionRequest request, CancellationToken ct)
     {
+        var finalDate = request.Date ?? DateOnly.FromDateTime(DateTime.Now);
+
+        var (categoryAlias, categoryError) = ResolveCategoryAlias(request);
+        if (categoryError != null)
+        {
+             return categoryError;
+        }
+
+        var category = await categoryRepository.GetByAlias(categoryAlias!, ct);
+        if (category is null)
+        {
+            logger.LogWarning("🔍 Category '{Alias}' not found", categoryAlias);
+            
+            return new CreateTransactionResponse.ValidationError($"Unknown category: {categoryAlias}");
+        }
+
         try
         {
-            logger.LogInformation("Attempting to create {Type} transaction for category '{Alias}'. Amounts count: {Count}",
-                request.TransactionType, request.CategoryAlias, request.Amounts.Length);
-
-            var category = await categoryRepository.GetByAlias(request.CategoryAlias, cancellationToken);
-
-            if (category is null)
-            {
-                logger.LogWarning("CreateTransaction failed: Category with alias '{Alias}' was not found", request.CategoryAlias);
-
-                return new CreateTransactionResult.Failure($"Unknown category: {request.CategoryAlias}");
-            }
-
             var transactions = request.Amounts.Select(amount =>
                 new Domain.Entities.Transaction(
                     Guid.NewGuid(),
                     request.TransactionType,
                     category,
                     ApplyBusinessRulesToAmount(amount, request.TransactionType),
-                    request.Date,
+                    finalDate,
                     request.Note
                 )).ToList();
 
-            await transactionRepository.AddRange(transactions, cancellationToken);
+            await transactionRepository.AddRange(transactions, ct);
 
-            logger.LogInformation("Successfully recorded {Count} transactions into '{CategoryName}'",
+            logger.LogInformation("✅ Successfully recorded {Count} transactions for {CatName}",
                 transactions.Count, category.Name);
 
-            return new CreateTransactionResult.Success();
+            return new CreateTransactionResponse.Success(
+                CategoryName: category.Name,
+                Amounts: request.Amounts,
+                Date: finalDate,
+                Note: request.Note
+            );
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Critical failure during transaction creation for category '{Alias}'", request.CategoryAlias);
+            logger.LogError(ex, "❌ Failed to create transactions for category '{Alias}'", categoryAlias);
 
-            return new CreateTransactionResult.Failure("A system error occurred while saving data to the registry.");
+            return new CreateTransactionResponse.Failure("System error during transaction creation.");
         }
+    }
+
+    private static (string? Alias, CreateTransactionResponse.ValidationError? Error) ResolveCategoryAlias(CreateTransactionRequest request)
+    {
+        if (!string.IsNullOrWhiteSpace(request.CategoryAlias))
+            return (request.CategoryAlias, null);
+
+        if (request.TransactionType == TransactionType.Income)
+            return (FinancialRules.DefaultIncomeCategoryAlias, null);
+
+        var typeName = request.TransactionType.ToString().ToLower();
+        return (null, new CreateTransactionResponse.ValidationError($"Category is required for {typeName} transactions."));
     }
 
     private static decimal ApplyBusinessRulesToAmount(decimal amount, TransactionType type)
     {
-        return type switch
-        {
-            TransactionType.Expense => -Math.Abs(amount),
-            TransactionType.Income => Math.Abs(amount),
-            _ => amount
-        };
+        var absAmount = Math.Abs(amount);
+        return type == TransactionType.Expense ? -absAmount : absAmount;
     }
 }

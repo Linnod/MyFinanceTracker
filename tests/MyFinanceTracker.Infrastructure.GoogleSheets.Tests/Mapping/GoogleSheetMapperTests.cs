@@ -30,7 +30,7 @@ public class GoogleSheetMapperTests
         };
 
         // act
-        var result = sut.Map(transactions);
+        var result = sut.MapForAddition(transactions);
 
         // assert
         result.Should().HaveCount(1);
@@ -52,7 +52,7 @@ public class GoogleSheetMapperTests
         var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, amount, new DateOnly(2026, 1, 1), "");
 
         // act
-        var result = sut.Map([transaction]);
+        var result = sut.MapForAddition([transaction]);
 
         // assert
         result[0].Content.Should().Be(expectedDelta);
@@ -72,7 +72,7 @@ public class GoogleSheetMapperTests
         var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10.5m, new DateOnly(2026, 1, 1), "");
 
         // act
-        var result = sut.Map([transaction]);
+        var result = sut.MapForAddition([transaction]);
 
         // assert
         result[0].Content.Should().Contain("-10,5");
@@ -95,7 +95,7 @@ public class GoogleSheetMapperTests
         var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10, new DateOnly(2026, 1, day), "");
 
         // act
-        var result = sut.Map([transaction]);
+        var result = sut.MapForAddition([transaction]);
 
         // assert
         result[0].CellAddress.Should().Be(expectedCell);
