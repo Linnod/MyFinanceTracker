@@ -1,0 +1,21 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MyFinanceTracker.Domain/MyFinanceTracker.Domain.csproj" />
+    <Project Path="src/MyFinanceTracker.UseCases/MyFinanceTracker.UseCases.csproj" />
+    <Project Path="src/MyFinanceTracker.Common/MyFinanceTracker.Common.csproj" />
+    <Project Path="src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj" />
+    <Project Path="src/MyFinanceTracker.CommandProcessing.Text/MyFinanceTracker.CommandProcessing.Text.csproj" />
+    <Project Path="src/MyFinanceTracker.Infrastructure.Persistence/MyFinanceTracker.Infrastructure.Persistence.csproj" />
+    <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.Yaml/MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
+    <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
+    <Project Path="src/MyFinanceTracker.Interactions.Console/MyFinanceTracker.Interactions.Console.csproj" />
+    <Project Path="src/MyFinanceTracker.Interactions.Telegram/MyFinanceTracker.Interactions.Telegram.csproj" />
+  </Folder>
+
+  <Folder Name="/tests/">
+    <Project Path="tests/MyFinanceTracker.Domain.Tests/MyFinanceTracker.Domain.Tests.csproj" />
+    <Project Path="tests/MyFinanceTracker.CommandProcessing.Text.Tests/MyFinanceTracker.CommandProcessing.Text.Tests.csproj" />
+    <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.csproj" />
+    <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.csproj" />
+  </Folder>
+</Solution>

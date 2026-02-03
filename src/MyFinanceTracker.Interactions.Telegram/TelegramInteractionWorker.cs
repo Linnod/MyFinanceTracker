@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.Interactions.Contracts;
+using MyFinanceTracker.CommandProcessing.Text;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -11,9 +11,9 @@ using Telegram.Bot.Types.Enums;
 
 namespace MyFinanceTracker.Interactions.Telegram;
 
-internal sealed class TelegramInteractionWorker(
+internal sealed partial class TelegramInteractionWorker(
     ITelegramBotClient botClient,
-    IInteractionGateway interactionGateway,
+    ITextCommandReceiver textCommandReceiver,
     IOptions<TelegramInteractionOptions> options,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
@@ -21,7 +21,7 @@ internal sealed class TelegramInteractionWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Telegram Interaction Worker started.");
+        LogStarted();
 
         var receiverOptions = new ReceiverOptions
         {
@@ -30,8 +30,8 @@ internal sealed class TelegramInteractionWorker(
         };
 
         botClient.StartReceiving(
-            updateHandler: HandleUpdateAsync,
-            errorHandler: HandlePollingErrorAsync,
+            updateHandler: HandleUpdate,
+            errorHandler: HandlePollingError,
             receiverOptions: receiverOptions,
             cancellationToken: stoppingToken
         );
@@ -39,76 +39,102 @@ internal sealed class TelegramInteractionWorker(
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
-    private async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken ct)
+    private async Task HandleUpdate(ITelegramBotClient bot, Update update, CancellationToken ct)
     {
         if (update.Message is not { Text: { } messageText } message)
         {
             return;
         }
 
+        var userId = message.From?.Id;
         var username = message.From?.Username ?? message.From?.FirstName ?? "Unknown";
-        logger.LogInformation("--> HandleUpdate [{User}]", username);
 
-        if (message.From?.Id != _options.AllowedUserId)
+        using (logger.BeginScope(new Dictionary<string, object>
         {
-            logger.LogWarning("⚠️ Unauthorized access attempt. UserID: {UserId}", message.From?.Id);
-            logger.LogInformation("<-- HandleUpdate");
-            
-            return;
-        }
+            ["TelegramUserId"] = userId ?? 0,
+            ["TelegramUser"] = username
+        }))
+        {
+            LogUpdateReceived(messageText);
 
-        var response = await interactionGateway.Send(new InteractionRequest(messageText), ct);
-        var formattedText = FormatResponse(response);
-        try
-        {
-            await bot.SendMessage(
-                chatId: message.Chat.Id,
-                text: formattedText,
-                parseMode: ParseMode.Html,
-                cancellationToken: ct);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "❌ Failed to send Telegram message. Input: {Input}", messageText);
-        }
+            if (userId != _options.AllowedUserId)
+            {
+                LogUnauthorized(userId);
+                return;
+            }
 
-        logger.LogInformation("<-- HandleUpdate");
+            var response = await textCommandReceiver.Receive(new TextCommandRequest(messageText), ct);
+            var formattedText = FormatResponse(response);
+
+            try
+            {
+                await bot.SendMessage(
+                    chatId: message.Chat.Id,
+                    text: formattedText,
+                    parseMode: ParseMode.Html,
+                    cancellationToken: ct);
+            }
+            catch (Exception ex)
+            {
+                LogMessageSendFailed(ex, messageText);
+            }
+        }
     }
 
-    private static string FormatResponse(InteractionResponse response) => response switch
+    private Task HandlePollingError(ITelegramBotClient bot, Exception ex, CancellationToken ct)
     {
-        InteractionResponse.Success success => FormatSuccess(success),
+        LogPollingError(ex);
+        return Task.CompletedTask;
+    }
 
-        InteractionResponse.UnrecognizedInteraction unrecognized => $"""
-        ❓ <b>I didn't quite get that...</b>
-        Input: <code>{unrecognized.RawInput}</code>
-        
-        <i>Hint: Try starting with 'add', e.g., 'add expense food 100'</i>
-        """,
+    private static string FormatResponse(TextCommandResponse response) => response switch
+    {
+        TextCommandResponse.Success success => FormatSuccess(success),
 
-        InteractionResponse.InvalidInput invalid => $"""
-        ⚠️ <b>Input Error: {invalid.InteractionDescription}</b>
-        {invalid.Details}
-        """,
+        TextCommandResponse.InvalidInput invalid => BuildInvalidInputMessage(invalid),
 
-        InteractionResponse.LogicError logicError => $"""
-        ❌ <b>Logic Error:</b>
-        {logicError.Message}
-        """,
+        TextCommandResponse.LogicError logicError => $"""
+            ❌ <b>Logic Error</b>
+            {logicError.Message}
+            """,
 
-        InteractionResponse.SystemError systemError => $"""
-        🔌 <b>System Hiccup</b>
-        Something went wrong on our side. We're already looking into it.
-        <i>Error ref: {systemError.Message}</i>
-        """,
+        TextCommandResponse.SystemError systemError => $"""
+            🔌 <b>System Hiccup</b>
+            Something went wrong. We're looking into it.
+            <i>Ref: {systemError.Message}</i>
+            """,
 
         _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
     };
 
-    private static string FormatSuccess(InteractionResponse.Success success)
+    private static string BuildInvalidInputMessage(TextCommandResponse.InvalidInput invalid)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("⚠️ <b>Input Error</b>");
+        sb.AppendLine(invalid.Details);
+        sb.AppendLine();
+
+        if (invalid.Suggestion is not null)
+        {
+            sb.AppendLine($"💡 Did you mean: <code>{invalid.Suggestion}</code>?");
+        }
+
+        if (invalid.Examples is { Count: > 0 })
+        {
+            sb.AppendLine("<b>Try like this:</b>");
+            foreach (var example in invalid.Examples)
+            {
+                sb.AppendLine($"• <code>{example}</code>");
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static string FormatSuccess(TextCommandResponse.Success success)
     {
         var builder = new StringBuilder();
-        builder.AppendLine($"✅ <b>{success.InteractionDescription.ToUpper()}</b>");
+        builder.AppendLine($"✅ <b>{success.CommandDescription.ToUpper()}</b>");
         builder.AppendLine($"Result: <b>{success.PrimaryValue}</b>");
         builder.AppendLine();
 

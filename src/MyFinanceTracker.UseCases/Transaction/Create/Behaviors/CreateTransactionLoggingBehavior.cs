@@ -1,35 +1,42 @@
 using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.UseCases.Transaction.Create;
 
-namespace MyFinanceTracker.UseCases.Behaviors;
+namespace MyFinanceTracker.UseCases.Transaction.Create.Behaviors;
 
-internal sealed class CreateTransactionLoggingBehavior<TRequest, TResponse>(
-    ILogger<CreateTransactionLoggingBehavior<TRequest, TResponse>> logger)
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : CreateTransactionRequest
-    where TResponse : CreateTransactionResponse
+internal sealed partial class CreateTransactionLoggingBehavior(
+    ILogger<CreateTransactionLoggingBehavior> logger)
+    : IPipelineBehavior<CreateTransactionRequest, CreateTransactionResponse>
 {
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
+    public async Task<CreateTransactionResponse> Handle(
+        CreateTransactionRequest request,
+        RequestHandlerDelegate<CreateTransactionResponse> next,
+        CancellationToken ct)
     {
-        logger.LogInformation("--> Handle");
-
+        LogStarting(request);
         var sw = Stopwatch.StartNew();
-        var response = await next();
-        sw.Stop();
 
-        if (response is CreateTransactionResponse.Success)
+        try
         {
-            logger.LogInformation("✅ [UseCase] Saved ({Ms}ms)", sw.ElapsedMilliseconds);
-        }
-        else if (response is CreateTransactionResponse.Failure f)
-        {
-            logger.LogWarning("⚠️ [UseCase] Business error: {Msg} ({Ms}ms)", f.Message, sw.ElapsedMilliseconds);
-        }
+            var response = await next();
+            sw.Stop();
 
-        logger.LogInformation("<-- Handle");
-        
-        return response;
+            if (response is CreateTransactionResponse.Success success)
+            {
+                LogSuccess(success, sw.ElapsedMilliseconds);
+            }
+            else if (response is CreateTransactionResponse.ValidationError validationError)
+            {
+                LogValidationError(validationError, sw.ElapsedMilliseconds);
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            LogCriticalError(ex, sw.ElapsedMilliseconds);
+            return new CreateTransactionResponse.Failure();
+        }
     }
 }

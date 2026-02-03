@@ -1,25 +1,24 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.Interactions.Contracts;
+using MyFinanceTracker.CommandProcessing.Text;
 
 namespace MyFinanceTracker.Interactions.Console;
 
-internal sealed class ConsoleInteractionWorker(
-    IInteractionGateway interactionGateway,
+internal sealed partial class ConsoleInteractionWorker(
+    ITextCommandReceiver textCommandReceiver,
     ILogger<ConsoleInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Console worker started.");
-
+        LogStarted();
         PrintWelcomeMessage();
 
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await ProcessNextCommandAsync(stoppingToken);
+                await ProcessNextCommand(stoppingToken);
             }
         }
         catch (OperationCanceledException)
@@ -28,14 +27,14 @@ internal sealed class ConsoleInteractionWorker(
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "Fatal error in worker loop.");
+            LogLoopCrashed(ex);
             ConsoleCommands.WriteError("The application crashed. See logs for details.");
         }
     }
 
-    private async Task ProcessNextCommandAsync(CancellationToken ct)
+    private async Task ProcessNextCommand(CancellationToken ct)
     {
-        System.Console.WriteLine(); 
+        System.Console.WriteLine();
         System.Console.Write("> ");
 
         var input = await ConsoleCommands.ReadLine(ct);
@@ -44,45 +43,55 @@ internal sealed class ConsoleInteractionWorker(
             return;
         }
 
-        try
+        var correlationId = Guid.NewGuid();
+        using (logger.BeginScope("ID: {CorrelationId}", correlationId))
         {
-            var response = await interactionGateway.Send(new InteractionRequest(input), ct);
-            HandleResponse(response);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error processing interaction for input: {Input}", input);
-            ConsoleCommands.WriteError("Internal system failure.");
-        }
-        finally
-        {
-            System.Console.ResetColor();
+            LogCommandReceived(input);
+
+            try
+            {
+                var response = await textCommandReceiver.Receive(new TextCommandRequest(input), ct);
+                HandleResponse(response);
+            }
+            catch (Exception ex)
+            {
+                LogCommandFailed(ex, input);
+                ConsoleCommands.WriteError("Internal system failure.");
+            }
         }
     }
 
-    private static void HandleResponse(InteractionResponse response)
+    private static void HandleResponse(TextCommandResponse response)
     {
         switch (response)
         {
-            case InteractionResponse.Success success:
+            case TextCommandResponse.Success success:
                 ConsoleCommands.WriteSuccess(success);
                 break;
 
-            case InteractionResponse.UnrecognizedInteraction unrecognized:
-                ConsoleCommands.WriteError($"Unknown command: '{unrecognized.RawInput}'");
-                ConsoleCommands.WriteInfo("Hint: Try starting with 'add expense ...'");
+            case TextCommandResponse.InvalidInput invalid:
+                ConsoleCommands.WriteError($"Input error: {invalid.Details}");
+
+                if (invalid.Suggestion is not null)
+                {
+                    ConsoleCommands.WriteInfo($"💡 Did you mean: '{invalid.Suggestion}'?");
+                }
+
+                if (invalid.Examples is { Count: > 0 })
+                {
+                    ConsoleCommands.WriteInfo("💡 Examples:");
+                    foreach (var example in invalid.Examples)
+                    {
+                        ConsoleCommands.WriteInfo($"  > {example}");
+                    }
+                }
                 break;
 
-            case InteractionResponse.InvalidInput invalidInput:
-                ConsoleCommands.WriteError($"Invalid input for '{invalidInput.InteractionDescription}'");
-                ConsoleCommands.WriteInfo($"Details: {invalidInput.Details}");
-                break;
-
-            case InteractionResponse.LogicError logicError:
+            case TextCommandResponse.LogicError logicError:
                 ConsoleCommands.WriteError(logicError.Message);
                 break;
 
-            case InteractionResponse.SystemError systemError:
+            case TextCommandResponse.SystemError systemError:
                 ConsoleCommands.WriteError($"System failure: {systemError.Message}");
                 break;
 

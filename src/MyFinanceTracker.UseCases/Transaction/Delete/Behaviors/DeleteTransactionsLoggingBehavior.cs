@@ -1,35 +1,42 @@
 using System.Diagnostics;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.UseCases.Transaction.Delete;
 
-namespace MyFinanceTracker.UseCases.Behaviors;
+namespace MyFinanceTracker.UseCases.Transaction.Delete.Behaviors;
 
-internal sealed class DeleteTransactionsLoggingBehavior<TRequest, TResponse>(
-    ILogger<DeleteTransactionsLoggingBehavior<TRequest, TResponse>> logger)
-    : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : DeleteTransactionsRequest
-    where TResponse : DeleteTransactionsResponse
+internal sealed partial class DeleteTransactionsLoggingBehavior(
+    ILogger<DeleteTransactionsLoggingBehavior> logger)
+    : IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>
 {
-    public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
+    public async Task<DeleteTransactionsResponse> Handle(
+        DeleteTransactionsRequest request,
+        RequestHandlerDelegate<DeleteTransactionsResponse> next,
+        CancellationToken ct)
     {
-        logger.LogInformation("--> Handle");
-
+        LogStarting(request);
         var sw = Stopwatch.StartNew();
-        var response = await next();
-        sw.Stop();
 
-        if (response is DeleteTransactionsResponse.Success)
+        try
         {
-            logger.LogInformation("✅ [UseCase] Cleared ({Ms}ms)", sw.ElapsedMilliseconds);
-        }
-        else if (response is DeleteTransactionsResponse.Failure f)
-        {
-            logger.LogWarning("⚠️ [UseCase] Failed: {Msg} ({Ms}ms)", f.Message, sw.ElapsedMilliseconds);
-        }
+            var response = await next();
+            sw.Stop();
 
-        logger.LogInformation("<-- Handle");
-        
-        return response;
+            if (response is DeleteTransactionsResponse.Success success)
+            {
+                LogSuccess(success, sw.ElapsedMilliseconds);
+            }
+            else if (response is DeleteTransactionsResponse.ValidationError validationError)
+            {
+                LogValidationError(validationError, sw.ElapsedMilliseconds);
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            LogCriticalError(ex, sw.ElapsedMilliseconds);
+            return new DeleteTransactionsResponse.Failure();
+        }
     }
 }

@@ -14,9 +14,11 @@ internal sealed class CreateTransactionValidationBehavior(IValidator<CreateTrans
         var result = await validator.ValidateAsync(request, ct);
         if (!result.IsValid)
         {
-            var errorMessage = string.Join(" ", result.Errors.Select(e => e.ErrorMessage));
-
-            return new CreateTransactionResponse.ValidationError(errorMessage);
+            var errors = result.Errors
+                .Select(e => new ValidationErrorItem(e.PropertyName, e.ErrorMessage))
+                .ToList();
+                
+            return new CreateTransactionResponse.ValidationError(errors);
         }
 
         return await next();

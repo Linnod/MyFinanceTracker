@@ -14,9 +14,11 @@ internal class DeleteTransactionValidationBehavior(IValidator<DeleteTransactions
         var result = await validator.ValidateAsync(request, ct);
         if (!result.IsValid)
         {
-            var errorMessage = string.Join(" ", result.Errors.Select(e => e.ErrorMessage));
+            var errors = result.Errors
+                .Select(e => new ValidationErrorItem(e.PropertyName, e.ErrorMessage))
+                .ToList();
 
-            return new DeleteTransactionsResponse.ValidationError(errorMessage);
+            return new DeleteTransactionsResponse.ValidationError(errors);
         }
 
         return await next();

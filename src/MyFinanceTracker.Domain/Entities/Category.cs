@@ -5,4 +5,7 @@ public record Category(
     string Name,
     IReadOnlyCollection<string> Aliases,
     bool IsIncome = false
-);
+)
+{
+    public override string ToString() => Name;
+}

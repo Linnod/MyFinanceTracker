@@ -1,9 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
@@ -11,20 +10,17 @@
     <PackageReference Include="System.ComponentModel.Annotations" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Loaders\" />
     <Folder Include="Loaders\Exceptions\" />
+    <Folder Include="Logging\" />
   </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <InternalsVisibleTo Include="MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests" />
   </ItemGroup>
-
 </Project>

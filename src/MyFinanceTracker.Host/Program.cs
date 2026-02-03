@@ -1,15 +1,15 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.CommandProcessing.Text;
 using MyFinanceTracker.Host;
-using MyFinanceTracker.Infrastructure.GoogleSheets;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
-using MyFinanceTracker.Interactions;
 using MyFinanceTracker.UseCases;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddYamlCategoryRepository(builder.Configuration)
-    .AddInteractions()
+    .AddTextCommandProcessing()
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)
     .AddConfiguredInteractions(builder.Configuration);

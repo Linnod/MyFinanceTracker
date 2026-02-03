@@ -5,7 +5,7 @@ services:
     build: .
     restart: always
     environment:
-      - TZ=Europe/Moscow
+      - TZ=Etc/UTC
       - DOTNET_ENVIRONMENT=Production
       - Telegram__Token=${TG_TOKEN}
       - Telegram__AllowedUserId=${TG_USER_ID}

@@ -5,34 +5,41 @@ using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml;
 
-internal class YamlCategoryRepository(
+internal sealed partial class YamlCategoryRepository(
     ICategoryLoader loader,
     ILogger<YamlCategoryRepository> logger) : ICategoryRepository
 {
-    private readonly Lazy<List<Category>> categories = new(loader.Load, LazyThreadSafetyMode.ExecutionAndPublication);
-
-    public Task<IReadOnlyCollection<Category>> GetAll(CancellationToken ct = default)
-    {
-        logger.LogInformation("--> GetAll");
-
-        var result = Task.FromResult<IReadOnlyCollection<Category>>([.. categories.Value]);
-
-        logger.LogInformation("<-- GetAll");
-        
-        return result;
-    }
+    private readonly Lazy<IReadOnlyCollection<Category>> categories = new(loader.Load, LazyThreadSafetyMode.ExecutionAndPublication);
 
     public Task<Category?> GetByAlias(string alias, CancellationToken ct = default)
     {
-        logger.LogInformation("--> GetByAlias");
+        LogSearching(alias);
 
-        var category = categories.Value.FirstOrDefault(c =>
-        {
-            return c.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase);
-        });
+        var category = categories.Value.FirstOrDefault(c => c.Aliases.Contains(alias, StringComparer.OrdinalIgnoreCase));
 
-        logger.LogInformation("<-- GetByAlias");
+        LogSearchResult(alias, category);
 
         return Task.FromResult(category);
+    }
+
+    public Task<IReadOnlyCollection<string>> GetAllAliases(CancellationToken ct = default)
+    {
+        var allAliases = categories.Value
+            .SelectMany(c => c.Aliases)
+            .ToArray();
+
+        return Task.FromResult<IReadOnlyCollection<string>>(allAliases);
+    }
+
+    private void LogSearchResult(string alias, Category? category)
+    {
+        if (category != null)
+        {
+            LogFound(category);
+        }
+        else
+        {
+            LogNotFound(alias);
+        }
     }
 }

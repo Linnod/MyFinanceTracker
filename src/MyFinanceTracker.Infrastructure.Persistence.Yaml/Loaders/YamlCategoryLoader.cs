@@ -12,7 +12,7 @@ internal class YamlCategoryLoader(
 {
     private readonly string resolvedPath = Path.Combine(AppContext.BaseDirectory, options.Value.FilePath);
 
-    public List<Category> Load()
+    public IReadOnlyCollection<Category> Load()
     {
         if (!File.Exists(resolvedPath))
         {

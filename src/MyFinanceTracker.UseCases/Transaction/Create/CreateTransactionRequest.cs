@@ -1,5 +1,4 @@
 using MediatR;
-using MyFinanceTracker.Common.Contracts;
 using MyFinanceTracker.Domain.Entities;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create;
@@ -10,9 +9,9 @@ public record CreateTransactionRequest(
     string? CategoryAlias = null,
     DateOnly? Date = null,
     string? Note = null
-) : IRequest<CreateTransactionResponse>, ILoggableRequest
+) : IRequest<CreateTransactionResponse>
 {
-    string ILoggableRequest.GetLogPayload()
+    public override string ToString()
     {
         var parts = new List<string>
         {
@@ -22,7 +21,7 @@ public record CreateTransactionRequest(
 
         if (!string.IsNullOrWhiteSpace(CategoryAlias))
         {
-            parts.Add($"Cat: {CategoryAlias}");
+            parts.Add($"Category: {CategoryAlias}");
         }
 
         if (Date.HasValue)

@@ -1,13 +1,13 @@
-using MyFinanceTracker.Interactions.Contracts;
+using MyFinanceTracker.CommandProcessing.Text;
 
 namespace MyFinanceTracker.Interactions.Console;
 
 internal static class ConsoleCommands
 {
-    public static void WriteSuccess(InteractionResponse.Success success)
+    public static void WriteSuccess(TextCommandResponse.Success success)
     {
         System.Console.ForegroundColor = ConsoleColor.Green;
-        System.Console.WriteLine($"\n✅ {success.InteractionDescription.ToUpper()}");
+        System.Console.WriteLine($"\n✅ {success.CommandDescription.ToUpper()}");
         System.Console.WriteLine($"Result: {success.PrimaryValue}");
 
         System.Console.ResetColor();

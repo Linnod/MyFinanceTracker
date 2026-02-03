@@ -1,28 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\MyFinanceTracker.Common\MyFinanceTracker.Common.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
-
   <ItemGroup>
+    <Folder Include="Logging\" />
     <Folder Include="Transaction\Create\Behaviors\" />
     <Folder Include="Transaction\Create\Validation\" />
     <Folder Include="Transaction\Delete\" />
     <Folder Include="Transaction\Delete\Behaviors\" />
     <Folder Include="Transaction\Delete\Validation\" />
   </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
 </Project>
