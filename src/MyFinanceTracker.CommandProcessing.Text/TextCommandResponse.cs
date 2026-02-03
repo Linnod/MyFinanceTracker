@@ -19,8 +19,7 @@ public abstract record TextCommandResponse
         IReadOnlyCollection<string>? Examples = null) : TextCommandResponse
     {
         public override string ToString() =>
-            $"REJECTED | {Details}" +
-            (Suggestion != null ? $" | Suggestion: {Suggestion}" : "");
+            $"REJECTED | {Details}";
     }
 
     public sealed record LogicError(string Message) : TextCommandResponse

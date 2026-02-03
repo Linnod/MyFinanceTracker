@@ -105,6 +105,6 @@ internal sealed partial class AddTransactionCommandHandler(
     private TextCommandResponse.InvalidInput ProcessParseFailure(AddTransactionCommandParseResult.Failure failure)
     {
         LogParseFailure(failure);
-        return new TextCommandResponse.InvalidInput(CommandName, failure.Message);
+        return new TextCommandResponse.InvalidInput(failure.Reason, failure.Suggestion, failure.Examples);
     }
 }

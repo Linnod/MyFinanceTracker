@@ -6,6 +6,15 @@ namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.Ad
 
 internal sealed partial class AddTransactionCommandRegexParser : IAddTransactionCommandParser
 {
+    private const string UsageHint = "<type> <category?> <amounts> <date?> <note?>";
+
+    private static readonly string[] StaticExamples =
+    [
+        "+ food 150",
+        "income salary 5000 01.02",
+        "expense tax 100.50 20.01.2026 rent"
+    ];
+
     [GeneratedRegex(@"^\s*(?<type>income|expense)\s+(?:(?<category>[a-zA-Zа-яА-ЯёЁ_][^\d\s]*)\s+)?(?<amounts>\d+[.,]?\d*(?!\d+[.,]\d+[.,])(?:\s+(?!\d+[.,]\d+[.,])\d+[.,]?\d*)*)(?:\s+(?<date>\d{1,2}\.\d{1,2}\.\d{2,4}))?\s*(?<notes>.*)?$", RegexOptions.IgnoreCase)]
     private static partial Regex CommandRegex();
 
@@ -13,24 +22,25 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
     {
         if (string.IsNullOrWhiteSpace(payload))
         {
-            return new AddTransactionCommandParseResult.Failure("The input string is empty.");
+            return CreateFailure("The input string is empty.");
         }
 
         var match = CommandRegex().Match(payload.Trim());
         if (!match.Success)
         {
-            return new AddTransactionCommandParseResult.Failure("Format error. Use: <type> <category?> <amounts> <date?> <note?>");
+            return CreateFailure("Invalid syntax.");
         }
 
         var (amounts, amountsError) = ExtractAmounts(match.Groups["amounts"].Value);
+        if (amountsError != null)
         {
-            if (amountsError != null) return amountsError;
+             return amountsError;
         }
 
         var (date, dateError) = ExtractDate(match.Groups["date"].Value);
         if (dateError != null)
         {
-            return dateError;
+             return dateError;
         }
 
         return new AddTransactionCommandParseResult.Success(new RawAddTransactionCommand(
@@ -42,6 +52,9 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
         ));
     }
 
+    private static AddTransactionCommandParseResult.Failure CreateFailure(string reason)
+        => new(reason, UsageHint, StaticExamples);
+
     private static (decimal[]? Values, AddTransactionCommandParseResult.Failure? Error) ExtractAmounts(string value)
     {
         var tokens = value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -52,7 +65,7 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
             var clean = tokens[i].Replace(',', '.');
             if (!decimal.TryParse(clean, NumberStyles.Number, CultureInfo.InvariantCulture, out var val))
             {
-                return (null, new AddTransactionCommandParseResult.Failure($"'{tokens[i]}' is not a valid amount."));
+                return (null, CreateFailure($"'{tokens[i]}' is not a valid number."));
             }
             result[i] = val;
         }
@@ -72,13 +85,11 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
         {
             var supported = string.Join(", ", formats);
 
-            return (null, new AddTransactionCommandParseResult.Failure(
-                $"'{value}' is not a valid date format. Supported formats: {supported}"));
+            return (null, CreateFailure($"Invalid date: '{value}'. Expected: {supported}"));
         }
 
         return (date, null);
     }
-
     private static TransactionType ExtractType(string value)
     {
         return value.ToLower() switch
@@ -90,6 +101,5 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
     }
 
     private static string? ExtractCategory(string value) => string.IsNullOrWhiteSpace(value) ? null : value;
-
     private static string? ExtractNotes(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

@@ -7,7 +7,7 @@ namespace MyFinanceTracker.CommandProcessing.Text.Tests.Engine.Dispatching.Comma
 
 public class AddTransactionCommandRegexParserTests
 {
-    private readonly AddTransactionCommandRegexParser parser = new ();
+    private readonly AddTransactionCommandRegexParser parser = new();
 
     [Theory]
     [InlineData("income food 100", TransactionType.Income, "food", new[] { 100.0 })]
@@ -72,41 +72,46 @@ public class AddTransactionCommandRegexParserTests
     }
 
     [Theory]
-    [InlineData("expense food 100 32.01.2026", "is not a valid date format")]
-    async Task Parse_InvalidDates_ReturnsFailureWithMessage(string input, string expectedMessagePart)
+    [InlineData("expense food 100 32.01.2026", "Invalid date")]
+    async Task Parse_InvalidDates_ReturnsFailureWithReason(string input, string expectedReasonPart)
     {
         // act
         var result = await parser.Parse(input);
 
         // assert
         var failure = result.Should().BeOfType<AddTransactionCommandParseResult.Failure>().Subject;
-        failure.Message.Should().Contain(expectedMessagePart);
+        failure.Reason.Should().Contain(expectedReasonPart);
+        failure.Suggestion.Should().NotBeNullOrWhiteSpace();
+        failure.Examples.Should().NotBeEmpty();
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    async Task Parse_EmptyInput_ReturnsFailureWithEmptyMessage(string input)
+    async Task Parse_EmptyInput_ReturnsFailureWithEmptyReason(string input)
     {
         // act
         var result = await parser.Parse(input);
 
         // assert
         var failure = result.Should().BeOfType<AddTransactionCommandParseResult.Failure>().Subject;
-        failure.Message.Should().Be("The input string is empty.");
+        failure.Reason.Should().Be("The input string is empty.");
     }
 
     [Theory]
-    [InlineData("just some text", "Format error")]
-    [InlineData("100 expense food", "Format error")]
-    [InlineData("expense", "Format error")]
-    async Task Parse_InvalidFormat_ReturnsFailureWithFormatMessage(string input, string expectedMessagePart)
+    [InlineData("just some text", "Invalid syntax")]
+    [InlineData("100 expense food", "Invalid syntax")]
+    [InlineData("expense", "Invalid syntax")]
+    async Task Parse_InvalidFormat_ReturnsFailureWithSyntaxReason(string input, string expectedReasonPart)
     {
         // act
         var result = await parser.Parse(input);
 
         // assert
         var failure = result.Should().BeOfType<AddTransactionCommandParseResult.Failure>().Subject;
-        failure.Message.Should().Contain(expectedMessagePart);
+        failure.Reason.Should().Contain(expectedReasonPart);
+
+        failure.Suggestion.Should().Contain("<type>");
+        failure.Examples.Should().Contain(x => x.Contains("+ food"));
     }
 }

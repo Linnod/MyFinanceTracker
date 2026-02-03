@@ -5,6 +5,14 @@ namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.De
 
 internal sealed partial class DeleteTransactionCommandRegexParser : IDeleteTransactionCommandParser
 {
+    private const string UsageHint = "rem <category> <date>";
+
+    private static readonly string[] StaticExamples =
+    [
+        "rem food 03.02.2026",
+        "rem taxi 04.02"
+    ];
+
     [GeneratedRegex(@"^\s*(?<category>[a-zA-Zа-яА-ЯёЁ_][^\d\s]*)\s+(?<date>\S+)\s*$", RegexOptions.IgnoreCase)]
     private static partial Regex CommandRegex();
 
@@ -12,13 +20,13 @@ internal sealed partial class DeleteTransactionCommandRegexParser : IDeleteTrans
     {
         if (string.IsNullOrWhiteSpace(payload))
         {
-            return new DeleteTransactionCommandParseResult.Failure("The input string is empty.");
+            return CreateFailure("The input string is empty.");
         }
 
         var match = CommandRegex().Match(payload.Trim());
         if (!match.Success)
         {
-            return new DeleteTransactionCommandParseResult.Failure("Format error. Use: rem <category> <date>");
+            return CreateFailure("Invalid syntax.");
         }
 
         var dateValue = match.Groups["date"].Value;
@@ -36,15 +44,17 @@ internal sealed partial class DeleteTransactionCommandRegexParser : IDeleteTrans
         return new DeleteTransactionCommandParseResult.Success(commandData);
     }
 
+    private static DeleteTransactionCommandParseResult.Failure CreateFailure(string reason)
+        => new(reason, UsageHint, StaticExamples);
+
     private static (DateOnly? Date, DeleteTransactionCommandParseResult.Failure? Error) ExtractDate(string value)
     {
         string[] formats = ["dd.MM.yyyy", "dd.MM.yy", "d.M.yyyy", "d.M.yy"];
         if (!DateOnly.TryParseExact(value, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
             var supported = string.Join(", ", formats);
-            
-            return (null, new DeleteTransactionCommandParseResult.Failure(
-                $"'{value}' is not a valid date format. Supported formats: {supported}"));
+
+            return (null, CreateFailure($"Invalid date: '{value}'. Expected: {supported}"));
         }
 
         return (date, null);

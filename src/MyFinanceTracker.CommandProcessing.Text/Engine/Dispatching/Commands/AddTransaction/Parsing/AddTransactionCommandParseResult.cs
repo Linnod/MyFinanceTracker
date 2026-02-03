@@ -2,15 +2,22 @@ namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.Ad
 
 internal abstract record AddTransactionCommandParseResult
 {
-    private AddTransactionCommandParseResult() {}
+    private AddTransactionCommandParseResult() { }
 
     public sealed record Success(RawAddTransactionCommand Command) : AddTransactionCommandParseResult
     {
         public override string ToString() => Command.ToString();
     }
 
-    public sealed record Failure(string Message) : AddTransactionCommandParseResult
+    public sealed record Failure(
+        string Reason,
+        string Suggestion,
+        IReadOnlyCollection<string> Examples
+    ) : AddTransactionCommandParseResult
     {
-        public override string ToString() => $"Failure: {Message}";
+        public override string ToString()
+        {
+            return $"[Failure] Reason: {Reason}";
+        }
     }
 }

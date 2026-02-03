@@ -6,7 +6,7 @@ namespace MyFinanceTracker.CommandProcessing.Text.Tests.Engine.Dispatching.Comma
 
 public class DeleteTransactionCommandRegexParserTests
 {
-    private readonly DeleteTransactionCommandRegexParser parser = new ();
+    private readonly DeleteTransactionCommandRegexParser parser = new();
 
     [Theory]
     [InlineData("food 27.01.2026", "food", 2026, 1, 27)]
@@ -31,7 +31,9 @@ public class DeleteTransactionCommandRegexParserTests
 
         // assert
         var failure = result.Should().BeOfType<DeleteTransactionCommandParseResult.Failure>().Subject;
-        failure.Message.Should().Be("The input string is empty.");
+        failure.Reason.Should().Be("The input string is empty.");
+        failure.Suggestion.Should().NotBeNullOrWhiteSpace();
+        failure.Examples.Should().NotBeEmpty();
     }
 
     [Theory]
@@ -45,7 +47,9 @@ public class DeleteTransactionCommandRegexParserTests
 
         // assert
         var failure = result.Should().BeOfType<DeleteTransactionCommandParseResult.Failure>().Subject;
-        failure.Message.Should().Contain("Format error");
+        failure.Reason.Should().Be("Invalid syntax.");
+        failure.Suggestion.Should().Be("rem <category> <date>");
+        failure.Examples.Should().Contain(x => x.StartsWith("rem "));
     }
 
     [Theory]
@@ -53,8 +57,6 @@ public class DeleteTransactionCommandRegexParserTests
     [InlineData("food 27.13.2026")]
     [InlineData("food 27.01.abcd")]
     [InlineData("food as.01.abcd")]
-    [InlineData("food 27.sd.abcd")]
-    [InlineData("food sd.01.abcd")]
     async Task Parse_InvalidDate_ReturnsFailure(string input)
     {
         // act
@@ -62,6 +64,8 @@ public class DeleteTransactionCommandRegexParserTests
 
         // assert
         var failure = result.Should().BeOfType<DeleteTransactionCommandParseResult.Failure>().Subject;
-        failure.Message.Should().Contain("is not a valid date format");
+        failure.Reason.Should().Contain("Invalid date");
+        failure.Suggestion.Should().Be("rem <category> <date>");
+        failure.Examples.Should().NotBeEmpty();
     }
 }

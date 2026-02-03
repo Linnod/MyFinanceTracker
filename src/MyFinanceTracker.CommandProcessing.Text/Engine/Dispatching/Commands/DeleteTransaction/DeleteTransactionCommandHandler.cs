@@ -83,6 +83,6 @@ internal sealed partial class DeleteTransactionCommandHandler(
     {
         LogParseFailure(failure);
 
-        return new TextCommandResponse.InvalidInput(CommandName, failure.Message);
+        return new TextCommandResponse.InvalidInput(failure.Reason, failure.Suggestion, failure.Examples);
     }
 }
