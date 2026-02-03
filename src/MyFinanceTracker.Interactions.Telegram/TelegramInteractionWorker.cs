@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Text;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -111,12 +112,13 @@ internal sealed partial class TelegramInteractionWorker(
     {
         var sb = new StringBuilder();
         sb.AppendLine("⚠️ <b>Input Error</b>");
-        sb.AppendLine(invalid.Details);
+
+        sb.AppendLine(WebUtility.HtmlEncode(invalid.Details));
         sb.AppendLine();
 
         if (invalid.Suggestion is not null)
         {
-            sb.AppendLine($"💡 Did you mean: <code>{invalid.Suggestion}</code>?");
+            sb.AppendLine($"💡 Did you mean: <code>{WebUtility.HtmlEncode(invalid.Suggestion)}</code>?");
         }
 
         if (invalid.Examples is { Count: > 0 })
@@ -124,7 +126,7 @@ internal sealed partial class TelegramInteractionWorker(
             sb.AppendLine("<b>Try like this:</b>");
             foreach (var example in invalid.Examples)
             {
-                sb.AppendLine($"• <code>{example}</code>");
+                sb.AppendLine($"• <code>{WebUtility.HtmlEncode(example)}</code>");
             }
         }
 
