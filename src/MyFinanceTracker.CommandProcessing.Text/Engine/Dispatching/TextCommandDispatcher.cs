@@ -21,8 +21,8 @@ internal sealed partial class TextCommandDispatcher(
 
             return new TextCommandResponse.LogicError("This command is recognized but currently not supported.");
         }
-        LogHandlerFound(handler);
 
+        LogHandlerFound(handler);
         return await handler.Handle(payload, ct);
     }
 }

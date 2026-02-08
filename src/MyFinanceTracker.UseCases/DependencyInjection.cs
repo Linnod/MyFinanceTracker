@@ -2,6 +2,8 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using MyFinanceTracker.UseCases.Category.List;
+using MyFinanceTracker.UseCases.Category.List.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Create.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Create.Validation;
@@ -20,6 +22,13 @@ public static class DependencyInjection
             {
                 cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
             })
+            .AddTransactionUseCases()
+            .AddCategoriesUseCases();
+    }
+
+    private static IServiceCollection AddTransactionUseCases(this IServiceCollection services)
+    {
+        return services
             .AddTransactionCreate()
             .AddTransactionDelete();
     }
@@ -46,5 +55,18 @@ public static class DependencyInjection
             .AddTransient<
                 IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>,
                 DeleteTransactionValidationBehavior>();
+    }
+
+    private static IServiceCollection AddCategoriesUseCases(this IServiceCollection services)
+    {
+        return services.AddListCategories();
+    }
+
+    private static IServiceCollection AddListCategories(this IServiceCollection services)
+    {
+        return services
+            .AddTransient<
+                IPipelineBehavior<ListCategoriesRequest, ListCategoriesResponse>,
+                ListCategoriesLoggingBehavior>();
     }
 }

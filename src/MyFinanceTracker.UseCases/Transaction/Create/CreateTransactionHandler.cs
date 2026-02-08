@@ -39,7 +39,7 @@ internal sealed class CreateTransactionHandler(
             request.Note);
     }
 
-    private async Task<(Category? Category, CreateTransactionResponse.ValidationError? Error)> GetCategory(
+    private async Task<(Domain.Entities.Category? Category, CreateTransactionResponse.ValidationError? Error)> GetCategory(
         CreateTransactionRequest request, CancellationToken ct)
     {
         var alias = string.IsNullOrWhiteSpace(request.CategoryAlias) && request.TransactionType == TransactionType.Income
@@ -55,7 +55,7 @@ internal sealed class CreateTransactionHandler(
         var category = await categoryRepository.GetByAlias(alias, ct);
         if (category is null)
         {
-            var allAliases = await categoryRepository.GetAllAliases(ct);
+            var allAliases = (await categoryRepository.GetAll(ct)).SelectMany(c => c.Aliases);
             var suggestion = FuzzyMatcher.GetClosest(alias, allAliases);
 
             return (null, CreateTransactionResponse.ValidationError.FromSingle(

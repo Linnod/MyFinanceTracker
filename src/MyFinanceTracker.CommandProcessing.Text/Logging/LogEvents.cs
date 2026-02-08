@@ -11,6 +11,7 @@ internal static class LogEvents
     public static class Receiver
     {
         private const int SubBase = Base + 0;
+
         public const int Entry = SubBase + 0;
         public const int Exit = SubBase + 1;
         public const int CriticalError = SubBase + 2;
@@ -19,6 +20,7 @@ internal static class LogEvents
     public static class Processor
     {
         private const int SubBase = Base + 10;
+
         public const int Entry = SubBase + 0;
         public const int Exit = SubBase + 1;
     }
@@ -26,6 +28,7 @@ internal static class LogEvents
     public static class Interpreter
     {
         private const int SubBase = Base + 20;
+
         public const int Entry = SubBase + 0;
         public const int Success = SubBase + 1;
         public const int EmptyInput = SubBase + 2;
@@ -35,6 +38,7 @@ internal static class LogEvents
     public static class Dispatcher
     {
         private const int SubBase = Base + 30;
+
         public const int Entry = SubBase + 0;
         public const int HandlerFound = SubBase + 1;
         public const int HandlerNotFound = SubBase + 2;
@@ -43,6 +47,7 @@ internal static class LogEvents
     public static class AddCommandHandler
     {
         private const int SubBase = Base + 100;
+
         public const int Entry = SubBase + 0;
         public const int ParseSuccess = SubBase + 1;
         public const int ParseFailure = SubBase + 2;
@@ -53,9 +58,21 @@ internal static class LogEvents
     public static class DeleteCommandHandler
     {
         private const int SubBase = Base + 110;
+
         public const int Entry = SubBase + 0;
         public const int ParseSuccess = SubBase + 1;
         public const int ParseFailure = SubBase + 2;
+        public const int SystemError = SubBase + 3;
+        public const int Exit = SubBase + 4;
+    }
+
+    public static class ListCategoriesCommandHandler
+    {
+        private const int SubBase = Base + 120;
+
+        public const int Entry = SubBase + 0;
+        // public const int ParseSuccess = SubBase + 1;
+        // public const int ParseFailure = SubBase + 2;
         public const int SystemError = SubBase + 3;
         public const int Exit = SubBase + 4;
     }

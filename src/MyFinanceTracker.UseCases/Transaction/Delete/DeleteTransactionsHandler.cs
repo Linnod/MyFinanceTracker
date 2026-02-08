@@ -16,7 +16,7 @@ internal sealed class DeleteTransactionsHandler(
         var category = await categoryRepository.GetByAlias(request.CategoryAlias!, ct);
         if (category is null)
         {
-            var allAliases = await categoryRepository.GetAllAliases(ct);
+            var allAliases = (await categoryRepository.GetAll(ct)).SelectMany(c => c.Aliases);
             var suggestion = FuzzyMatcher.GetClosest(request.CategoryAlias!, allAliases);
 
             return DeleteTransactionsResponse.ValidationError.FromSingle(

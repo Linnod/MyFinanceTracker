@@ -6,25 +6,6 @@ namespace MyFinanceTracker.CommandProcessing.Text.Engine.Interpretation;
 internal sealed partial class StrictTextCommandInterpreter(ILogger<StrictTextCommandInterpreter> logger)
     : ITextCommandInterpreter
 {
-    private static readonly Dictionary<string, TextCommandType> CommandMap = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "add", TextCommandType.AddTransaction },
-        { "new", TextCommandType.AddTransaction },
-        { "+", TextCommandType.AddTransaction },
-        { "добавить", TextCommandType.AddTransaction },
-
-        { "rem", TextCommandType.DeleteTransaction },
-        { "del", TextCommandType.DeleteTransaction },
-        { "delete", TextCommandType.DeleteTransaction },
-        { "remove", TextCommandType.DeleteTransaction },
-        { "удалить", TextCommandType.DeleteTransaction },
-        { "-", TextCommandType.DeleteTransaction }
-    };
-
-    private static readonly string[] CommandExamples = [.. CommandMap
-        .GroupBy(x => x.Value)
-        .Select(g => g.First().Key)];
-
     public Task<InterpretationResult> Interpret(string input)
     {
         LogInterpretationStarted(input);
@@ -32,32 +13,36 @@ internal sealed partial class StrictTextCommandInterpreter(ILogger<StrictTextCom
         return Task.FromResult(InternalInterpret(input));
     }
 
-    private InterpretationResult InternalInterpret(string input)
+    private static InterpretationResult InternalInterpret(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+            return new InterpretationResult.EmptyInput();
+
+        var parts = input.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+        var domainCandidate = parts[0];
+        if (!CommandRegistry.TryGetDomain(domainCandidate, out var domain))
         {
-            var result = new InterpretationResult.EmptyInput();
-            LogEmptyInput(result);
-            return result;
+            var suggestion = FuzzyMatcher.GetClosest(domainCandidate, CommandRegistry.AllDomainAliases);
+            return new InterpretationResult.Unrecognized(
+                domainCandidate,
+                suggestion,
+                CommandRegistry.GetGeneralExamples());
         }
 
-        var parts = input.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-        var commandCandidate = parts[0];
-
-        if (!CommandMap.TryGetValue(commandCandidate, out var type))
+        var actionCandidate = parts.Length > 1 ? parts[1] : string.Empty;
+        if (!domain!.Actions.TryGetValue(actionCandidate, out var type))
         {
-            var suggestion = FuzzyMatcher.GetClosest(commandCandidate, CommandMap.Keys);
-            var result = new InterpretationResult.Unrecognized(commandCandidate, suggestion, CommandExamples);
-            LogUnrecognizedCommand(result);
+            var domainAliases = CommandRegistry.GetActionAliases(domain.Name);
+            var suggestion = FuzzyMatcher.GetClosest(actionCandidate, domainAliases);
+            var examples = domain.Actions.Keys
+                .Where(k => k != string.Empty)
+                .Select(a => $"{domainCandidate} {a} ...")
+                .ToArray();
 
-            return result;
+            return new InterpretationResult.Unrecognized(actionCandidate, suggestion, examples);
         }
 
-        var payload = parts.Length > 1 ? parts[1].Trim() : string.Empty;
-        var success = new InterpretationResult.Identified(type, payload);
-
-        LogInterpretationSuccess(success);
-
-        return success;
+        var payload = parts.Length > 2 ? parts[2].Trim() : string.Empty;
+        return new InterpretationResult.Identified(type, payload);
     }
 }

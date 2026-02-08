@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Category\List\Behaviors\" />
     <Folder Include="Logging\" />
     <Folder Include="Transaction\Create\Behaviors\" />
     <Folder Include="Transaction\Create\Validation\" />

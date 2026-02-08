@@ -7,6 +7,7 @@ using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.Delete
 using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching;
 using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.AddTransaction;
 using MyFinanceTracker.CommandProcessing.Text.Engine.Interpretation;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.ListCategories;
 
 namespace MyFinanceTracker.CommandProcessing.Text;
 
@@ -26,7 +27,14 @@ public static class DependencyInjection
     {
         return services
             .AddAddTransactionCommand()
-            .AddDeleteTransactionCommand();
+            .AddDeleteTransactionCommand()
+            .AddListCategoriesCommand();
+    }
+
+    private static IServiceCollection AddListCategoriesCommand(this IServiceCollection services)
+    {
+        return services
+            .AddScoped<ICommandHandler, ListCategoriesCommandHandler>();
     }
 
     private static IServiceCollection AddAddTransactionCommand(this IServiceCollection services)

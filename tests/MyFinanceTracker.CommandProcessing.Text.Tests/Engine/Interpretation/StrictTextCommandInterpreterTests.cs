@@ -19,11 +19,14 @@ public class StrictTextCommandInterpreterTests
     }
 
     [Theory]
-    [InlineData("add expense food 100", TextCommandType.AddTransaction, "expense food 100")]
-    [InlineData("rem 12345", TextCommandType.DeleteTransaction, "12345")]
-    [InlineData("  ADD  payload  ", TextCommandType.AddTransaction, "payload")]
-    [InlineData("rem", TextCommandType.DeleteTransaction, "")]
-    async Task Interpret_ValidCommands_ReturnsIdentified(string input, TextCommandType expectedType, string expectedPayload)
+    [InlineData("t add food 100", TextCommandType.AddTransaction, "food 100")]
+    [InlineData("transaction rem 12345", TextCommandType.DeleteTransaction, "12345")]
+    [InlineData("c all", TextCommandType.ListCategories, "")]
+    [InlineData("  T  +  rent 500  ", TextCommandType.AddTransaction, "rent 500")]
+    async Task Interpret_ValidHierarchicalCommands_ReturnsIdentified(
+        string input, 
+        TextCommandType expectedType, 
+        string expectedPayload)
     {
         // act
         var result = await interpreter.Interpret(input);
@@ -34,22 +37,43 @@ public class StrictTextCommandInterpreterTests
         identified.Payload.Should().Be(expectedPayload);
     }
 
-    [Theory]
-    [InlineData("unknown_command some data")]
-    async Task Interpret_InvalidOrUnknownInput_ReturnsUnrecognized(string? input)
+    [Fact]
+    async Task Interpret_DomainError_ReturnsUnrecognizedWithDomainSuggestion()
     {
+        // arrange
+        var input = "tranz add food 100";
+
         // act
-        var result = await interpreter.Interpret(input!);
+        var result = await interpreter.Interpret(input);
 
         // assert
-        result.Should().BeOfType<InterpretationResult.Unrecognized>();
+        var unrecognized = result.Should().BeOfType<InterpretationResult.Unrecognized>().Subject;
+        unrecognized.Command.Should().Be("tranz");
+        unrecognized.Suggestion.Should().Be("tran");
+        unrecognized.Examples.Should().Contain(e => e.Contains("t ..."));
+    }
+
+    [Fact]
+    async Task Interpret_ActionError_ReturnsUnrecognizedWithActionSuggestion()
+    {
+        // arrange
+        var input = "t ad food 100";
+
+        // act
+        var result = await interpreter.Interpret(input);
+
+        // assert
+        var unrecognized = result.Should().BeOfType<InterpretationResult.Unrecognized>().Subject;
+        unrecognized.Command.Should().Be("ad");
+        unrecognized.Suggestion.Should().Be("add");
+        unrecognized.Examples.Should().Contain(e => e.StartsWith("t add"));
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]
-    async Task Interpret_InvalidOrUnknownInput_ReturnsEmptyInput(string? input)
+    async Task Interpret_EmptyInput_ReturnsEmptyInput(string? input)
     {
         // act
         var result = await interpreter.Interpret(input!);

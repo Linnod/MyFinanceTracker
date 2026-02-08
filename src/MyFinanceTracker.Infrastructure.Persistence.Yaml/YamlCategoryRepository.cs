@@ -22,13 +22,9 @@ internal sealed partial class YamlCategoryRepository(
         return Task.FromResult(category);
     }
 
-    public Task<IReadOnlyCollection<string>> GetAllAliases(CancellationToken ct = default)
+    public Task<IReadOnlyCollection<Category>> GetAll(CancellationToken ct = default)
     {
-        var allAliases = categories.Value
-            .SelectMany(c => c.Aliases)
-            .ToArray();
-
-        return Task.FromResult<IReadOnlyCollection<string>>(allAliases);
+        return Task.FromResult(categories.Value);
     }
 
     private void LogSearchResult(string alias, Category? category)
