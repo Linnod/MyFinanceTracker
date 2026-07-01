@@ -19,6 +19,7 @@ public static class DependencyInjection
             .AddSingleton<ITextCommandReceiver, TextCommandReceiver>()
             .AddScoped<ITextCommandProcessor, TextCommandProcessor>()
             .AddScoped<ITextCommandInterpreter, StrictTextCommandInterpreter>()
+            .AddSingleton<ICommandRegistry, CommandRegistry>()
             .AddScoped<ITextCommandDispatcher, TextCommandDispatcher>()
             .AddCommands();
     }
@@ -34,20 +35,20 @@ public static class DependencyInjection
     private static IServiceCollection AddListCategoriesCommand(this IServiceCollection services)
     {
         return services
-            .AddScoped<ICommandHandler, ListCategoriesCommandHandler>();
+            .AddScoped<ICommandHandler<ListCategoriesCommand>, ListCategoriesCommandHandler>();
     }
 
     private static IServiceCollection AddAddTransactionCommand(this IServiceCollection services)
     {
         return services
-            .AddScoped<ICommandHandler, AddTransactionCommandHandler>()
-            .AddSingleton<IAddTransactionCommandParser, AddTransactionCommandRegexParser>();
+            .AddScoped<ICommandHandler<AddTransactionCommand>, AddTransactionCommandHandler>()
+            .AddSingleton<IAddTransactionCommandPayloadParser, AddTransactionCommandPayloadRegexParser>();
     }
 
     private static IServiceCollection AddDeleteTransactionCommand(this IServiceCollection services)
     {
         return services
-            .AddScoped<ICommandHandler, DeleteTransactionCommandHandler>()
-            .AddSingleton<IDeleteTransactionCommandParser, DeleteTransactionCommandRegexParser>();
+            .AddScoped<ICommandHandler<DeleteTransactionCommand>, DeleteTransactionCommandHandler>()
+            .AddSingleton<IDeleteTransactionCommandPayloadParser, DeleteTransactionCommandPayloadRegexParser>();
     }
 }

@@ -1,12 +1,14 @@
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands;
+
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Interpretation;
 
 internal abstract record InterpretationResult
 {
     private InterpretationResult() { }
 
-    public sealed record Identified(TextCommandType Type, string Payload) : InterpretationResult
+    public sealed record Identified(ITextCommand Command) : InterpretationResult
     {
-        public override string ToString() => $"Identified {Type}";
+        public override string ToString() => $"Identified {Command.GetType().Name}";
     }
 
     public sealed record EmptyInput : InterpretationResult

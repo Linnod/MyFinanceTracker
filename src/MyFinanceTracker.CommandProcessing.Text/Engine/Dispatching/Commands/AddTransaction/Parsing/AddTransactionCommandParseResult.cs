@@ -4,16 +4,12 @@ internal abstract record AddTransactionCommandParseResult
 {
     private AddTransactionCommandParseResult() { }
 
-    public sealed record Success(RawAddTransactionCommand Command) : AddTransactionCommandParseResult
+    public sealed record Success(AddTransactionParsedPayload Payload) : AddTransactionCommandParseResult
     {
-        public override string ToString() => Command.ToString();
+        public override string ToString() => Payload.ToString();
     }
 
-    public sealed record Failure(
-        string Reason,
-        string Suggestion,
-        IReadOnlyCollection<string> Examples
-    ) : AddTransactionCommandParseResult
+    public sealed record Failure(string Reason) : AddTransactionCommandParseResult
     {
         public override string ToString()
         {

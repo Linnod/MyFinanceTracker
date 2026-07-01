@@ -18,7 +18,7 @@ internal sealed partial class TextCommandProcessor(
         var response = interpretation switch
         {
             InterpretationResult.Identified identified =>
-                await dispatcher.Dispatch(identified.Type, identified.Payload, ct),
+                await dispatcher.Dispatch(identified.Command, ct),
 
             InterpretationResult.Unrecognized unrecognized =>
                 new TextCommandResponse.InvalidInput(

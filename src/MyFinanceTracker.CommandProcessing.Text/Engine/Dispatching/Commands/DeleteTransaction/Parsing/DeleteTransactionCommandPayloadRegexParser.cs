@@ -3,16 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.DeleteTransaction.Parsing;
 
-internal sealed partial class DeleteTransactionCommandRegexParser : IDeleteTransactionCommandParser
+internal sealed partial class DeleteTransactionCommandPayloadRegexParser : IDeleteTransactionCommandPayloadParser
 {
-    private const string UsageHint = "rem <category> <date>";
-
-    private static readonly string[] StaticExamples =
-    [
-        "rem food 03.02.2026",
-        "rem taxi 04.02"
-    ];
-
     [GeneratedRegex(@"^\s*(?<category>[a-zA-Zа-яА-ЯёЁ_][^\d\s]*)\s+(?<date>\S+)\s*$", RegexOptions.IgnoreCase)]
     private static partial Regex CommandRegex();
 
@@ -36,7 +28,7 @@ internal sealed partial class DeleteTransactionCommandRegexParser : IDeleteTrans
             return dateError;
         }
 
-        var commandData = new RawDeleteTransactionCommand(
+        var commandData = new DeleteTransactionParsedPayload(
             CategoryAlias: match.Groups["category"].Value,
             Date: date!.Value
         );
@@ -45,7 +37,7 @@ internal sealed partial class DeleteTransactionCommandRegexParser : IDeleteTrans
     }
 
     private static DeleteTransactionCommandParseResult.Failure CreateFailure(string reason)
-        => new(reason, UsageHint, StaticExamples);
+        => new(reason);
 
     private static (DateOnly? Date, DeleteTransactionCommandParseResult.Failure? Error) ExtractDate(string value)
     {

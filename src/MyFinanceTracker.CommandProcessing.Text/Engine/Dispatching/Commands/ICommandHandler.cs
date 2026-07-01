@@ -1,7 +1,6 @@
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands;
 
-internal interface ICommandHandler
+internal interface ICommandHandler<in TCommand> where TCommand : ITextCommand
 {
-    bool CanHandle(TextCommandType type);
-    Task<TextCommandResponse> Handle(string payload, CancellationToken ct);
+    Task<TextCommandResponse> Handle(TCommand command, CancellationToken ct);
 }

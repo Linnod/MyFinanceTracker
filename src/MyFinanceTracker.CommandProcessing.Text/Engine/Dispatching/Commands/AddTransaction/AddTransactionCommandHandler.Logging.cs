@@ -10,8 +10,8 @@ internal sealed partial class AddTransactionCommandHandler
     [LoggerMessage(
         EventId = Entry,
         Level = LogLevel.Debug,
-        Message = "--> Handling payload: '{Payload}'")]
-    partial void LogHandlerEntry(string payload);
+        Message = "--> Handling: '{Command}'")]
+    partial void LogHandlerEntry(AddTransactionCommand command);
 
     [LoggerMessage(
         EventId = ParseSuccess,
@@ -24,12 +24,6 @@ internal sealed partial class AddTransactionCommandHandler
         Level = LogLevel.Information,
         Message = "!! Parse failed: {Result}")]
     partial void LogParseFailure(AddTransactionCommandParseResult result);
-
-    [LoggerMessage(
-        EventId = SystemError,
-        Level = LogLevel.Error,
-        Message = "!! System failure for input: {Input}")]
-    partial void LogSystemError(string input, Exception ex);
 
     [LoggerMessage(
         EventId = Exit,

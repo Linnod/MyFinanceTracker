@@ -4,9 +4,9 @@ using Xunit;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Tests.Engine.Dispatching.Commands.DeleteTransaction.Parsing;
 
-public class DeleteTransactionCommandRegexParserTests
+public class DeleteTransactionCommandPayloadRegexParserTests
 {
-    private readonly DeleteTransactionCommandRegexParser parser = new();
+    private readonly DeleteTransactionCommandPayloadRegexParser parser = new();
 
     [Theory]
     [InlineData("food 27.01.2026", "food", 2026, 1, 27)]
@@ -19,8 +19,8 @@ public class DeleteTransactionCommandRegexParserTests
 
         // assert
         var success = result.Should().BeOfType<DeleteTransactionCommandParseResult.Success>().Subject;
-        success.Command.CategoryAlias.Should().Be(expectedCategory);
-        success.Command.Date.Should().Be(new DateOnly(year, month, day));
+        success.Payload.CategoryAlias.Should().Be(expectedCategory);
+        success.Payload.Date.Should().Be(new DateOnly(year, month, day));
     }
 
     [Fact]
@@ -32,8 +32,6 @@ public class DeleteTransactionCommandRegexParserTests
         // assert
         var failure = result.Should().BeOfType<DeleteTransactionCommandParseResult.Failure>().Subject;
         failure.Reason.Should().Be("The input string is empty.");
-        failure.Suggestion.Should().NotBeNullOrWhiteSpace();
-        failure.Examples.Should().NotBeEmpty();
     }
 
     [Theory]
@@ -48,8 +46,6 @@ public class DeleteTransactionCommandRegexParserTests
         // assert
         var failure = result.Should().BeOfType<DeleteTransactionCommandParseResult.Failure>().Subject;
         failure.Reason.Should().Be("Invalid syntax.");
-        failure.Suggestion.Should().Be("rem <category> <date>");
-        failure.Examples.Should().Contain(x => x.StartsWith("rem "));
     }
 
     [Theory]
@@ -65,7 +61,5 @@ public class DeleteTransactionCommandRegexParserTests
         // assert
         var failure = result.Should().BeOfType<DeleteTransactionCommandParseResult.Failure>().Subject;
         failure.Reason.Should().Contain("Invalid date");
-        failure.Suggestion.Should().Be("rem <category> <date>");
-        failure.Examples.Should().NotBeEmpty();
     }
 }

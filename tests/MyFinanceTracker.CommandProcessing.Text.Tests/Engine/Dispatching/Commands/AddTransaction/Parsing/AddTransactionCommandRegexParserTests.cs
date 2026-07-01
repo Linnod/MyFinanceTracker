@@ -5,9 +5,9 @@ using Xunit;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Tests.Engine.Dispatching.Commands.AddTransaction.Parsing;
 
-public class AddTransactionCommandRegexParserTests
+public class AddTransactionCommandPayloadRegexParserTests
 {
-    private readonly AddTransactionCommandRegexParser parser = new();
+    private readonly AddTransactionCommandPayloadRegexParser parser = new();
 
     [Theory]
     [InlineData("income food 100", TransactionType.Income, "food", new[] { 100.0 })]
@@ -25,9 +25,9 @@ public class AddTransactionCommandRegexParserTests
 
         // assert
         var success = result.Should().BeOfType<AddTransactionCommandParseResult.Success>().Subject;
-        success.Command.Type.Should().Be(expectedType);
-        success.Command.CategoryAlias.Should().Be(expectedCategory);
-        success.Command.Amounts.Should().Equal(expectedAmounts.Select(x => (decimal)x));
+        success.Payload.Type.Should().Be(expectedType);
+        success.Payload.CategoryAlias.Should().Be(expectedCategory);
+        success.Payload.Amounts.Should().Equal(expectedAmounts.Select(x => (decimal)x));
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class AddTransactionCommandRegexParserTests
 
         // assert
         var success = result.Should().BeOfType<AddTransactionCommandParseResult.Success>().Subject;
-        success.Command.Amounts.Should().Equal(10m, 20.5m, 30.25m);
+        success.Payload.Amounts.Should().Equal(10m, 20.5m, 30.25m);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public class AddTransactionCommandRegexParserTests
 
         // assert
         var success = result.Should().BeOfType<AddTransactionCommandParseResult.Success>().Subject;
-        success.Command.Date.Should().Be(new DateOnly(year, month, day));
+        success.Payload.Date.Should().Be(new DateOnly(year, month, day));
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class AddTransactionCommandRegexParserTests
 
         // assert
         var success = result.Should().BeOfType<AddTransactionCommandParseResult.Success>().Subject;
-        success.Command.Note.Should().Be("Pizza with friends");
+        success.Payload.Note.Should().Be("Pizza with friends");
     }
 
     [Theory]
@@ -81,8 +81,6 @@ public class AddTransactionCommandRegexParserTests
         // assert
         var failure = result.Should().BeOfType<AddTransactionCommandParseResult.Failure>().Subject;
         failure.Reason.Should().Contain(expectedReasonPart);
-        failure.Suggestion.Should().NotBeNullOrWhiteSpace();
-        failure.Examples.Should().NotBeEmpty();
     }
 
     [Theory]
@@ -110,8 +108,5 @@ public class AddTransactionCommandRegexParserTests
         // assert
         var failure = result.Should().BeOfType<AddTransactionCommandParseResult.Failure>().Subject;
         failure.Reason.Should().Contain(expectedReasonPart);
-
-        failure.Suggestion.Should().Contain("<type>");
-        failure.Examples.Should().Contain(x => x.Contains("+ food"));
     }
 }

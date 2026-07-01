@@ -2,7 +2,7 @@ using MyFinanceTracker.Domain.Entities;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.AddTransaction.Parsing;
 
-internal record RawAddTransactionCommand(
+internal record AddTransactionParsedPayload(
     TransactionType Type,
     decimal[] Amounts,
     string? CategoryAlias = null,

@@ -35,15 +35,6 @@ internal static class LogEvents
         public const int UnrecognizedCommand = SubBase + 3;
     }
 
-    public static class Dispatcher
-    {
-        private const int SubBase = Base + 30;
-
-        public const int Entry = SubBase + 0;
-        public const int HandlerFound = SubBase + 1;
-        public const int HandlerNotFound = SubBase + 2;
-    }
-
     public static class AddCommandHandler
     {
         private const int SubBase = Base + 100;
@@ -51,7 +42,6 @@ internal static class LogEvents
         public const int Entry = SubBase + 0;
         public const int ParseSuccess = SubBase + 1;
         public const int ParseFailure = SubBase + 2;
-        public const int SystemError = SubBase + 3;
         public const int Exit = SubBase + 4;
     }
 
@@ -62,7 +52,6 @@ internal static class LogEvents
         public const int Entry = SubBase + 0;
         public const int ParseSuccess = SubBase + 1;
         public const int ParseFailure = SubBase + 2;
-        public const int SystemError = SubBase + 3;
         public const int Exit = SubBase + 4;
     }
 
@@ -71,9 +60,6 @@ internal static class LogEvents
         private const int SubBase = Base + 120;
 
         public const int Entry = SubBase + 0;
-        // public const int ParseSuccess = SubBase + 1;
-        // public const int ParseFailure = SubBase + 2;
-        public const int SystemError = SubBase + 3;
         public const int Exit = SubBase + 4;
     }
 }

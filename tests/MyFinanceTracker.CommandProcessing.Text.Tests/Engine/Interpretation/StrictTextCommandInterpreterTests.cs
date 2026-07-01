@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.CommandProcessing.Text.Engine;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.AddTransaction;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.DeleteTransaction;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.ListCategories;
 using MyFinanceTracker.CommandProcessing.Text.Engine.Interpretation;
 using NSubstitute;
 using Xunit;
@@ -10,31 +12,57 @@ namespace MyFinanceTracker.CommandProcessing.Text.Tests.Engine.Interpretation;
 public class StrictTextCommandInterpreterTests
 {
     private readonly ILogger<StrictTextCommandInterpreter> loggerMock;
+    private readonly ICommandRegistry commandRegistry;
     private readonly StrictTextCommandInterpreter interpreter;
 
     public StrictTextCommandInterpreterTests()
     {
         loggerMock = Substitute.For<ILogger<StrictTextCommandInterpreter>>();
-        interpreter = new StrictTextCommandInterpreter(loggerMock);
+        commandRegistry = new CommandRegistry();
+        interpreter = new StrictTextCommandInterpreter(commandRegistry, loggerMock);
     }
 
     [Theory]
-    [InlineData("t add food 100", TextCommandType.AddTransaction, "food 100")]
-    [InlineData("transaction rem 12345", TextCommandType.DeleteTransaction, "12345")]
-    [InlineData("c all", TextCommandType.ListCategories, "")]
-    [InlineData("  T  +  rent 500  ", TextCommandType.AddTransaction, "rent 500")]
-    async Task Interpret_ValidHierarchicalCommands_ReturnsIdentified(
-        string input, 
-        TextCommandType expectedType, 
-        string expectedPayload)
+    [InlineData("t add food 100", "food 100")]
+    [InlineData("  T  +  rent 500  ", "rent 500")]
+    public async Task Interpret_AddTransactionCommand_ReturnsIdentifiedWithCorrectPayload(string input, string expectedPayload)
     {
         // act
         var result = await interpreter.Interpret(input);
 
         // assert
         var identified = result.Should().BeOfType<InterpretationResult.Identified>().Subject;
-        identified.Type.Should().Be(expectedType);
-        identified.Payload.Should().Be(expectedPayload);
+        var command = identified.Command.Should().BeOfType<AddTransactionCommand>().Subject;
+        command.Payload.Should().Be(expectedPayload);
+    }
+
+    [Fact]
+    public async Task Interpret_DeleteTransactionCommand_ReturnsIdentifiedWithCorrectPayload()
+    {
+        // arrange
+        var input = "transaction rem 12345";
+
+        // act
+        var result = await interpreter.Interpret(input);
+
+        // assert
+        var identified = result.Should().BeOfType<InterpretationResult.Identified>().Subject;
+        var command = identified.Command.Should().BeOfType<DeleteTransactionCommand>().Subject;
+        command.Payload.Should().Be("12345");
+    }
+
+    [Fact]
+    public async Task Interpret_ListCategoriesCommand_ReturnsIdentifiedWithoutPayload()
+    {
+        // arrange
+        var input = "c all";
+
+        // act
+        var result = await interpreter.Interpret(input);
+
+        // assert
+        var identified = result.Should().BeOfType<InterpretationResult.Identified>().Subject;
+        identified.Command.Should().BeOfType<ListCategoriesCommand>();
     }
 
     [Fact]

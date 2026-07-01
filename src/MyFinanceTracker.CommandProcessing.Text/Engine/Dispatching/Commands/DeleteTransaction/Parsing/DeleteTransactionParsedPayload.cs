@@ -1,6 +1,6 @@
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.DeleteTransaction.Parsing;
 
-internal record RawDeleteTransactionCommand(
+internal record DeleteTransactionParsedPayload(
     string CategoryAlias,
     DateOnly Date
 )

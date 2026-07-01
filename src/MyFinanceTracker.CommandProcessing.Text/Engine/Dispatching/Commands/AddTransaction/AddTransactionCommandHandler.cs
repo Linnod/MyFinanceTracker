@@ -7,57 +7,57 @@ using MyFinanceTracker.UseCases.Transaction.Create;
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.AddTransaction;
 
 internal sealed partial class AddTransactionCommandHandler(
-    IAddTransactionCommandParser parser,
+    IAddTransactionCommandPayloadParser payloadParser,
     IMediator mediator,
     ILogger<AddTransactionCommandHandler> logger)
-    : BaseCommandHandler
+    : BaseCommandHandler, ICommandHandler<AddTransactionCommand>
 {
-    protected override string CommandName => "Adding a transaction";
 
-    protected override TextCommandType GetHandlingCommandType() => TextCommandType.AddTransaction;
-
-    public override async Task<TextCommandResponse> Handle(string payload, CancellationToken ct)
+    public async Task<TextCommandResponse> Handle(AddTransactionCommand command, CancellationToken ct)
     {
-        LogHandlerEntry(payload);
-        var response = await HandleInternal(payload, ct);
+        LogHandlerEntry(command);
+        var response = await HandleInternal(command, ct);
         LogHandlerExit(response);
 
         return response;
     }
 
-    private async Task<TextCommandResponse> HandleInternal(string payload, CancellationToken ct)
+    private async Task<TextCommandResponse> HandleInternal(AddTransactionCommand command, CancellationToken ct)
     {
-        var parseResult = await parser.Parse(payload);
-
+        var commandMetadata = command.GetMetadata();
+        var parseResult = await payloadParser.Parse(command.Payload);
         return parseResult switch
         {
-            AddTransactionCommandParseResult.Success success => await ProcessCommand(success, ct),
-            AddTransactionCommandParseResult.Failure failure => ProcessParseFailure(failure),
+            AddTransactionCommandParseResult.Success success => await ProcessParseSuccess(success, commandMetadata, ct),
+            AddTransactionCommandParseResult.Failure failure => ProcessParseFailure(failure, commandMetadata),
             _ => throw new UnreachableException($"Unknown parse result type: {parseResult.GetType().Name}")
         };
     }
 
-    private async Task<TextCommandResponse> ProcessCommand(AddTransactionCommandParseResult.Success success, CancellationToken ct)
+    private async Task<TextCommandResponse> ProcessParseSuccess(
+        AddTransactionCommandParseResult.Success success, 
+        CommandMetadataAttribute commandMetadata, 
+        CancellationToken ct)
     {
         LogParseSuccess(success);
 
-        var command = success.Command;
+        var parsedPayload = success.Payload;
         var request = new CreateTransactionRequest(
-            command.Type,
-            command.Amounts,
-            command.CategoryAlias,
-            command.Date,
-            command.Note);
+            parsedPayload.Type,
+            parsedPayload.Amounts,
+            parsedPayload.CategoryAlias,
+            parsedPayload.Date,
+            parsedPayload.Note);
 
         var result = await mediator.Send(request, ct);
-        return MapToResponse(result);
+        return MapToResponse(result, commandMetadata);
     }
 
-    private TextCommandResponse MapToResponse(CreateTransactionResponse result)
+    private TextCommandResponse MapToResponse(CreateTransactionResponse result,  CommandMetadataAttribute commandMetadata)
     {
         return result switch
         {
-            CreateTransactionResponse.Success s => MapSuccess(s),
+            CreateTransactionResponse.Success s => MapSuccess(s, commandMetadata),
 
             CreateTransactionResponse.ValidationError v =>
                 new TextCommandResponse.InvalidInput(
@@ -72,11 +72,11 @@ internal sealed partial class AddTransactionCommandHandler(
         };
     }
 
-    private TextCommandResponse.Success MapSuccess(CreateTransactionResponse.Success s)
+    private TextCommandResponse.Success MapSuccess(CreateTransactionResponse.Success s, CommandMetadataAttribute commandMetadata)
     {
         var totalAmount = s.Amounts.Sum();
         return new TextCommandResponse.Success(
-            CommandDescription: CommandName,
+            CommandDescription: commandMetadata.Description,
             PrimaryValue: $"{totalAmount} added to category '{s.CategoryName}'",
             Details: BuildDetails(s)
         );
@@ -102,9 +102,11 @@ internal sealed partial class AddTransactionCommandHandler(
         return details;
     }
 
-    private TextCommandResponse.InvalidInput ProcessParseFailure(AddTransactionCommandParseResult.Failure failure)
+    private TextCommandResponse.InvalidInput ProcessParseFailure(
+        AddTransactionCommandParseResult.Failure failure, 
+        CommandMetadataAttribute commandMetadata)
     {
         LogParseFailure(failure);
-        return new TextCommandResponse.InvalidInput(failure.Reason, failure.Suggestion, failure.Examples);
+        return new TextCommandResponse.InvalidInput(failure.Reason, commandMetadata.UsageHint, commandMetadata.Examples);
     }
 }

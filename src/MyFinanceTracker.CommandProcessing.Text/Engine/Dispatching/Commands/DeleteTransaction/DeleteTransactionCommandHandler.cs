@@ -7,54 +7,52 @@ using MyFinanceTracker.UseCases.Transaction.Delete;
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.DeleteTransaction;
 
 internal sealed partial class DeleteTransactionCommandHandler(
-    IDeleteTransactionCommandParser parser,
+    IDeleteTransactionCommandPayloadParser parser,
     IMediator mediator,
     ILogger<DeleteTransactionCommandHandler> logger)
-    : BaseCommandHandler
+    : BaseCommandHandler, ICommandHandler<DeleteTransactionCommand>
 {
-    protected override string CommandName => "Cleaning a category";
 
-    protected override TextCommandType GetHandlingCommandType() => TextCommandType.DeleteTransaction;
-
-    public override async Task<TextCommandResponse> Handle(string payload, CancellationToken ct)
+    public async Task<TextCommandResponse> Handle(DeleteTransactionCommand command, CancellationToken ct)
     {
-        LogCommandHandlerEntry(payload);
-        var response = await HandleInternal(payload, ct);
+        LogCommandHandlerEntry(command);
+        var response = await HandleInternal(command, ct);
 
         LogCommandHandlerExit(response);
         return response;
     }
 
-    private async Task<TextCommandResponse> HandleInternal(string payload, CancellationToken ct)
+    private async Task<TextCommandResponse> HandleInternal(DeleteTransactionCommand command, CancellationToken ct)
     {
-        var parseResult = await parser.Parse(payload);
-
+        var commandMetadata = command.GetMetadata();
+        var parseResult = await parser.Parse(command.Payload);
         return parseResult switch
         {
-            DeleteTransactionCommandParseResult.Success success => await ProcessCommand(success, ct),
-            DeleteTransactionCommandParseResult.Failure failure => ProcessParseFailure(failure),
+            DeleteTransactionCommandParseResult.Success success => await ProcessParseSuccess(success, commandMetadata, ct),
+            DeleteTransactionCommandParseResult.Failure failure => ProcessParseFailure(failure, commandMetadata),
             _ => throw new UnreachableException($"Unknown parse result type: {parseResult.GetType().Name}")
         };
     }
 
-    private async Task<TextCommandResponse> ProcessCommand(
+    private async Task<TextCommandResponse> ProcessParseSuccess(
         DeleteTransactionCommandParseResult.Success success,
+        CommandMetadataAttribute commandMetadata,
         CancellationToken ct)
     {
         LogParseSuccess(success);
 
-        var raw = success.Command;
-        var request = new DeleteTransactionsRequest(raw.CategoryAlias, raw.Date);
+        var parsedPayload = success.Payload;
+        var request = new DeleteTransactionsRequest(parsedPayload.CategoryAlias, parsedPayload.Date);
         var result = await mediator.Send(request, ct);
 
-        return MapToResponse(result);
+        return MapToResponse(result, commandMetadata);
     }
 
-    private TextCommandResponse MapToResponse(DeleteTransactionsResponse result)
+    private TextCommandResponse MapToResponse(DeleteTransactionsResponse result,  CommandMetadataAttribute commandMetadata)
     {
         return result switch
         {
-            DeleteTransactionsResponse.Success s => MapSuccess(s),
+            DeleteTransactionsResponse.Success s => MapSuccess(s, commandMetadata),
 
             DeleteTransactionsResponse.ValidationError v => new TextCommandResponse.InvalidInput(
                 Details: FormatValidationErrors(v.Errors),
@@ -66,10 +64,10 @@ internal sealed partial class DeleteTransactionCommandHandler(
         };
     }
 
-    private TextCommandResponse.Success MapSuccess(DeleteTransactionsResponse.Success data)
+    private TextCommandResponse.Success MapSuccess(DeleteTransactionsResponse.Success data, CommandMetadataAttribute commandMetadata)
     {
         return new TextCommandResponse.Success(
-            CommandDescription: CommandName,
+            CommandDescription: commandMetadata.Description,
             PrimaryValue: $"Cleared category '{data.CategoryName}'",
             Details:
             [
@@ -79,10 +77,11 @@ internal sealed partial class DeleteTransactionCommandHandler(
     }
 
     private TextCommandResponse.InvalidInput ProcessParseFailure(
-        DeleteTransactionCommandParseResult.Failure failure)
+        DeleteTransactionCommandParseResult.Failure failure,
+        CommandMetadataAttribute commandMetadata)
     {
         LogParseFailure(failure);
 
-        return new TextCommandResponse.InvalidInput(failure.Reason, failure.Suggestion, failure.Examples);
+        return new TextCommandResponse.InvalidInput(failure.Reason, commandMetadata.UsageHint, commandMetadata.Examples);
     }
 }

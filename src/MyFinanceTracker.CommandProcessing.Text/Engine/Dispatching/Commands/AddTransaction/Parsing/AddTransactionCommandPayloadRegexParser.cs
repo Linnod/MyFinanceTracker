@@ -4,17 +4,8 @@ using MyFinanceTracker.Domain.Entities;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.AddTransaction.Parsing;
 
-internal sealed partial class AddTransactionCommandRegexParser : IAddTransactionCommandParser
+internal sealed partial class AddTransactionCommandPayloadRegexParser : IAddTransactionCommandPayloadParser
 {
-    private const string UsageHint = "<type> <category?> <amounts> <date?> <note?>";
-
-    private static readonly string[] StaticExamples =
-    [
-        "+ food 150",
-        "income salary 5000 01.02",
-        "expense tax 100.50 20.01.2026 rent"
-    ];
-
     [GeneratedRegex(@"^\s*(?<type>income|expense)\s+(?:(?<category>[a-zA-Zа-яА-ЯёЁ_][^\d\s]*)\s+)?(?<amounts>\d+[.,]?\d*(?!\d+[.,]\d+[.,])(?:\s+(?!\d+[.,]\d+[.,])\d+[.,]?\d*)*)(?:\s+(?<date>\d{1,2}\.\d{1,2}\.\d{2,4}))?\s*(?<notes>.*)?$", RegexOptions.IgnoreCase)]
     private static partial Regex CommandRegex();
 
@@ -43,7 +34,7 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
              return dateError;
         }
 
-        return new AddTransactionCommandParseResult.Success(new RawAddTransactionCommand(
+        return new AddTransactionCommandParseResult.Success(new AddTransactionParsedPayload(
             Type: ExtractType(match.Groups["type"].Value),
             CategoryAlias: ExtractCategory(match.Groups["category"].Value),
             Amounts: amounts!,
@@ -53,7 +44,7 @@ internal sealed partial class AddTransactionCommandRegexParser : IAddTransaction
     }
 
     private static AddTransactionCommandParseResult.Failure CreateFailure(string reason)
-        => new(reason, UsageHint, StaticExamples);
+        => new(reason);
 
     private static (decimal[]? Values, AddTransactionCommandParseResult.Failure? Error) ExtractAmounts(string value)
     {

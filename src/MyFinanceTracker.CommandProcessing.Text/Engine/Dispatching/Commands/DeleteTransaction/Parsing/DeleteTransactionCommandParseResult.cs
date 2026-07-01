@@ -4,13 +4,9 @@ internal abstract record DeleteTransactionCommandParseResult
 {
     private DeleteTransactionCommandParseResult() { }
 
-    public sealed record Success(RawDeleteTransactionCommand Command) : DeleteTransactionCommandParseResult;
+    public sealed record Success(DeleteTransactionParsedPayload Payload) : DeleteTransactionCommandParseResult;
 
-    public sealed record Failure(
-        string Reason,
-        string Suggestion,
-        IReadOnlyCollection<string> Examples
-    ) : DeleteTransactionCommandParseResult
+    public sealed record Failure(string Reason) : DeleteTransactionCommandParseResult
     {
         public override string ToString()
         {

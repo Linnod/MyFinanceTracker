@@ -1,28 +1,23 @@
-using Microsoft.Extensions.Logging;
 using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.AddTransaction;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.DeleteTransaction;
+using MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.ListCategories;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching;
 
-internal sealed partial class TextCommandDispatcher(
-    IEnumerable<ICommandHandler> handlers,
-    ILogger<TextCommandDispatcher> logger) : ITextCommandDispatcher
+internal sealed class TextCommandDispatcher(
+    ICommandHandler<AddTransactionCommand> addTransactionHandler,
+    ICommandHandler<DeleteTransactionCommand> deleteTransactionHandler,
+    ICommandHandler<ListCategoriesCommand> listCategoriesHandler) : ITextCommandDispatcher
 {
-    public async Task<TextCommandResponse> Dispatch(
-        TextCommandType type,
-        string payload,
-        CancellationToken ct = default)
+    public Task<TextCommandResponse> Dispatch(ITextCommand command, CancellationToken ct = default)
     {
-        LogDispatchStarted(type, payload);
-
-        var handler = handlers.FirstOrDefault(h => h.CanHandle(type));
-        if (handler == null)
+        return command switch
         {
-            LogHandlerNotFound(type);
-
-            return new TextCommandResponse.LogicError("This command is recognized but currently not supported.");
-        }
-
-        LogHandlerFound(handler);
-        return await handler.Handle(payload, ct);
+            AddTransactionCommand c => addTransactionHandler.Handle(c, ct),
+            DeleteTransactionCommand c => deleteTransactionHandler.Handle(c, ct),
+            ListCategoriesCommand c => listCategoriesHandler.Handle(c, ct),
+            _ => throw new ArgumentException($"Unsupported command type: {command.GetType().Name}")
+        };
     }
 }

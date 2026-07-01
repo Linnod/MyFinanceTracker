@@ -3,7 +3,9 @@ using MyFinanceTracker.Common.Utilities;
 
 namespace MyFinanceTracker.CommandProcessing.Text.Engine.Interpretation;
 
-internal sealed partial class StrictTextCommandInterpreter(ILogger<StrictTextCommandInterpreter> logger)
+internal sealed partial class StrictTextCommandInterpreter(
+    ICommandRegistry commandRegistry, 
+    ILogger<StrictTextCommandInterpreter> logger)
     : ITextCommandInterpreter
 {
     public Task<InterpretationResult> Interpret(string input)
@@ -13,26 +15,28 @@ internal sealed partial class StrictTextCommandInterpreter(ILogger<StrictTextCom
         return Task.FromResult(InternalInterpret(input));
     }
 
-    private static InterpretationResult InternalInterpret(string input)
+    private InterpretationResult InternalInterpret(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+        {
             return new InterpretationResult.EmptyInput();
+        }
 
         var parts = input.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
         var domainCandidate = parts[0];
-        if (!CommandRegistry.TryGetDomain(domainCandidate, out var domain))
+        if (!commandRegistry.TryGetDomain(domainCandidate, out var domain))
         {
-            var suggestion = FuzzyMatcher.GetClosest(domainCandidate, CommandRegistry.AllDomainAliases);
+            var suggestion = FuzzyMatcher.GetClosest(domainCandidate, commandRegistry.AllDomainAliases);
             return new InterpretationResult.Unrecognized(
                 domainCandidate,
                 suggestion,
-                CommandRegistry.GetGeneralExamples());
+                commandRegistry.GetGeneralExamples());
         }
 
         var actionCandidate = parts.Length > 1 ? parts[1] : string.Empty;
-        if (!domain!.Actions.TryGetValue(actionCandidate, out var type))
+        if (!domain!.Actions.TryGetValue(actionCandidate, out var commandFactory))
         {
-            var domainAliases = CommandRegistry.GetActionAliases(domain.Name);
+            var domainAliases = commandRegistry.GetActionAliases(domain.Name);
             var suggestion = FuzzyMatcher.GetClosest(actionCandidate, domainAliases);
             var examples = domain.Actions.Keys
                 .Where(k => k != string.Empty)
@@ -43,6 +47,6 @@ internal sealed partial class StrictTextCommandInterpreter(ILogger<StrictTextCom
         }
 
         var payload = parts.Length > 2 ? parts[2].Trim() : string.Empty;
-        return new InterpretationResult.Identified(type, payload);
+        return new InterpretationResult.Identified(commandFactory(payload));
     }
 }

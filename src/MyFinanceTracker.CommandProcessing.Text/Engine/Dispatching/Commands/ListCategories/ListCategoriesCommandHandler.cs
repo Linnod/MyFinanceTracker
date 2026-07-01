@@ -6,20 +6,19 @@ namespace MyFinanceTracker.CommandProcessing.Text.Engine.Dispatching.Commands.Li
 
 internal sealed partial class ListCategoriesCommandHandler(
     IMediator mediator,
-    ILogger<ListCategoriesCommandHandler> logger) : BaseCommandHandler
+    ILogger<ListCategoriesCommandHandler> logger)
+     : BaseCommandHandler, ICommandHandler<ListCategoriesCommand>
 {
-    protected override string CommandName => "Listing categories";
-    protected override TextCommandType GetHandlingCommandType() => TextCommandType.ListCategories;
 
-    public async override Task<TextCommandResponse> Handle(string payload, CancellationToken ct)
+    public async Task<TextCommandResponse> Handle(ListCategoriesCommand command, CancellationToken ct)
     {
-        LogCommandHandlerEntry(payload);
+        LogCommandHandlerEntry();
 
         var response = await mediator.Send(new ListCategoriesRequest(), ct);
 
         var result = response switch
         {
-            ListCategoriesResponse.Success success => MapSuccess(success),
+            ListCategoriesResponse.Success success => MapSuccess(success, command.GetMetadata()),
             ListCategoriesResponse.Failure => new TextCommandResponse.LogicError("Domain service failure. Please try again later."),
             _ => new TextCommandResponse.SystemError("Unexpected response type from use case.")
         };
@@ -28,7 +27,7 @@ internal sealed partial class ListCategoriesCommandHandler(
         return result;
     }
 
-    private TextCommandResponse MapSuccess(ListCategoriesResponse.Success success)
+    private TextCommandResponse MapSuccess(ListCategoriesResponse.Success success, CommandMetadataAttribute commandMetadata)
     {
         var details = success.Categories
             .OrderByDescending(c => c.IsIncome)
@@ -41,7 +40,7 @@ internal sealed partial class ListCategoriesCommandHandler(
             .ToList();
 
         return new TextCommandResponse.Success(
-            CommandDescription: CommandName,
+            CommandDescription: commandMetadata.Description,
             PrimaryValue: "Available categories and their aliases:",
             Details: details
         );
