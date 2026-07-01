@@ -50,11 +50,7 @@ internal sealed partial class TelegramInteractionWorker(
         var userId = message.From?.Id;
         var username = message.From?.Username ?? message.From?.FirstName ?? "Unknown";
 
-        using (logger.BeginScope(new Dictionary<string, object>
-        {
-            ["TelegramUserId"] = userId ?? 0,
-            ["TelegramUser"] = username
-        }))
+        using (logger.BeginScope("TelegramUser: {TelegramUser}, UserId: {TelegramUserId}", username, userId ?? 0))
         {
             LogUpdateReceived(messageText);
 
