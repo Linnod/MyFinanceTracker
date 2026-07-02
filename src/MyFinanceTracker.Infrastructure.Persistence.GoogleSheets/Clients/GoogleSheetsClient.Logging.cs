@@ -3,7 +3,7 @@ using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Logging;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 
-using static LogEvents.GoogleSheets.Client;
+using static LogEvents.Client;
 
 internal partial class GoogleSheetsClient
 {

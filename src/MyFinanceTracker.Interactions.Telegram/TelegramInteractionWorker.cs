@@ -40,7 +40,7 @@ internal sealed partial class TelegramInteractionWorker(
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
-    private async Task HandleUpdate(ITelegramBotClient bot, Update update, CancellationToken ct)
+private async Task HandleUpdate(ITelegramBotClient bot, Update update, CancellationToken ct)
     {
         if (update.Message is not { Text: { } messageText } message)
         {
@@ -49,8 +49,9 @@ internal sealed partial class TelegramInteractionWorker(
 
         var userId = message.From?.Id;
         var username = message.From?.Username ?? message.From?.FirstName ?? "Unknown";
-
-        using (logger.BeginScope("TelegramUser: {TelegramUser}, UserId: {TelegramUserId}", username, userId ?? 0))
+        var correlationId = Guid.NewGuid();
+        using (logger.BeginScope("TelegramUser: {TelegramUser}, UserId: {TelegramUserId}, CorrelationId: {CorrelationId}", 
+                   username, userId ?? 0, correlationId))
         {
             LogUpdateReceived(messageText);
 

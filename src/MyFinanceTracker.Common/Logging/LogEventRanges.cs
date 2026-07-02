@@ -2,10 +2,26 @@ namespace MyFinanceTracker.Common.Logging;
 
 public static class LogEventRanges
 {
-    public const int InteractionsConsole = 1000;
-    public const int InteractionsTelegram = 2000;
-    public const int CommandProcessing = 3000;
-    public const int UseCases = 4000;
-    public const int PersistenceYaml = 5000;
-    public const int Infrastructure = 6000;
+    public static class Interactions
+    {
+        public const int Console = 10_100_000;
+        public const int Telegram = 10_200_000;
+    }
+
+    public static class CommandProcessing
+    {
+        public const int Text = 20_100_000;
+    }
+
+    public static class UseCases
+    {
+        public const int Transactions = 30_100_000;
+        public const int Categories = 30_200_000;
+    }
+
+    public static class Persistence
+    {
+        public const int Yaml = 40_100_000;
+        public const int GoogleSheets = 40_200_000; 
+    }
 }

@@ -3,7 +3,7 @@ using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Logging;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
 
-using static LogEvents.GoogleSheets.Repository;
+using static LogEvents.Repository;
 
 internal partial class GoogleSheetsTransactionRepository
 {

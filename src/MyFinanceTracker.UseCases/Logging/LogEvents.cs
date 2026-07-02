@@ -1,14 +1,16 @@
-namespace MyFinanceTracker.UseCases.Logging;
+using CoreRanges = MyFinanceTracker.Common.Logging.LogEventRanges.UseCases;
 
-using static MyFinanceTracker.Common.Logging.LogEventRanges;
+namespace MyFinanceTracker.UseCases.Logging;
 
 public static class LogEvents
 {
     public static class Transactions
     {
+        private const int Base = CoreRanges.Transactions;
+
         public static class Create
         {
-            private const int SubBase = UseCases + 100;
+            private const int SubBase = Base + 0;
             
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
@@ -18,7 +20,7 @@ public static class LogEvents
 
         public static class Delete
         {
-            private const int SubBase = UseCases + 200;
+            private const int SubBase = Base + 1_000;
             
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
@@ -29,15 +31,15 @@ public static class LogEvents
 
     public static class Categories
     {
+        private const int Base = CoreRanges.Categories;
+
         public static class List
         {
-            private const int SubBase = UseCases + 300;
+            private const int SubBase = Base + 0;
 
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
-            //public const int ValidationFailed = SubBase + 3;
             public const int SystemError = SubBase + 4;
-
         }
     }
 }
