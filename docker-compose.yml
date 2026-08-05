@@ -31,10 +31,15 @@ services:
         max-file: "3"
 
   tunnel:
-    container_name: cloudflared_tunnel
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://fintracker_app:5000
+    container_name: ngrok_tunnel
+    image: ngrok/ngrok:latest
     restart: always
+    command:
+      - "http"
+      - "--url=discourse-turbulent-abdominal.ngrok-free.dev"
+      - "http://fintracker_app:5000"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_TOKEN}
     logging:
       driver: "json-file"
       options:
