@@ -9,6 +9,7 @@ COPY ["src/MyFinanceTracker.Common/MyFinanceTracker.Common.csproj", "src/MyFinan
 COPY ["src/MyFinanceTracker.UseCases/MyFinanceTracker.UseCases.csproj", "src/MyFinanceTracker.UseCases/"]
 COPY ["src/MyFinanceTracker.Interactions.Telegram/MyFinanceTracker.Interactions.Telegram.csproj", "src/MyFinanceTracker.Interactions.Telegram/"]
 COPY ["src/MyFinanceTracker.Interactions.Console/MyFinanceTracker.Interactions.Console.csproj", "src/MyFinanceTracker.Interactions.Console/"]
+COPY ["src/MyFinanceTracker.Interactions.Api/MyFinanceTracker.Interactions.Api.csproj", "src/MyFinanceTracker.Interactions.Api/"]
 COPY ["src/MyFinanceTracker.Infrastructure.Persistence/MyFinanceTracker.Infrastructure.Persistence.csproj", "src/MyFinanceTracker.Infrastructure.Persistence/"]
 COPY ["src/MyFinanceTracker.Infrastructure.Persistence.Yaml/MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj", "src/MyFinanceTracker.Infrastructure.Persistence.Yaml/"]
 COPY ["src/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj", "src/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/"]
@@ -28,8 +29,7 @@ COPY . .
 WORKDIR "/app/src/MyFinanceTracker.Host"
 RUN dotnet publish "MyFinanceTracker.Host.csproj" -c Release -o /app/publish --no-restore
 
-# Stage 2: Final Runtime Image
-FROM mcr.microsoft.com/dotnet/runtime:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 
 COPY --from=build /app/publish .

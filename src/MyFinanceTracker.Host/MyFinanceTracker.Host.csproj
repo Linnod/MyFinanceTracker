@@ -3,6 +3,7 @@
     <ProjectReference Include="..\MyFinanceTracker.CommandProcessing.Text\MyFinanceTracker.CommandProcessing.Text.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.Interactions.Api\MyFinanceTracker.Interactions.Api.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Interactions.Console\MyFinanceTracker.Interactions.Console.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Interactions.Telegram\MyFinanceTracker.Interactions.Telegram.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj" />
