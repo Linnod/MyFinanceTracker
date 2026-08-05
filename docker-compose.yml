@@ -29,3 +29,14 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  tunnel:
+    container_name: cloudflared_tunnel
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://fintracker_app:5000
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
