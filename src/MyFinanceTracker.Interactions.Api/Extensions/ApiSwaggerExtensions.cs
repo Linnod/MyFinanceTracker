@@ -1,5 +1,6 @@
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using MyFinanceTracker.Domain.Entities;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MyFinanceTracker.Interactions.Api.Extensions;
@@ -16,6 +17,12 @@ internal static class ApiSwaggerExtensions
                 Title = "MyFinanceTracker REST API for ChatGPT",
                 Version = "v1",
                 Description = "API for managing personal finances via structured REST endpoints."
+            });
+
+            options.MapType<TransactionType>(() => new OpenApiSchema
+            {
+                Type = typeof(string).Name.ToLowerInvariant(),
+                Enum = [.. Enum.GetNames<TransactionType>().Select(name => new OpenApiString(name))]
             });
 
             options.OperationFilter<NgrokSkipWarningFilter>();
