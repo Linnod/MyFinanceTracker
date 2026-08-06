@@ -19,5 +19,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>8e0d14af-df41-45ef-a376-e6ee9b97aa43</UserSecretsId>
+
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+    <ContainerRepository>myfinancetracker</ContainerRepository>
+    <ContainerImageTags>latest</ContainerImageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ContainerEnvironmentVariable Include="DOTNET_ENVIRONMENT" Value="Production" />
+  </ItemGroup>
 </Project>

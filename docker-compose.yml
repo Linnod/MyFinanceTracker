@@ -1,8 +1,7 @@
 services:
   fintracker-bot:
     container_name: fintracker_app
-    image: ghcr.io/linnod/myfinancetracker:latest
-    build: .
+    image: myfinancetracker:latest
     restart: always
     ports:
       - "5000:5000"
@@ -29,19 +28,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  tunnel:
-    container_name: ngrok_tunnel
-    image: ngrok/ngrok:latest
-    restart: always
-    command:
-      - "http"
-      - "--url=discourse-turbulent-abdominal.ngrok-free.dev"
-      - "http://fintracker_app:5000"
-    environment:
-      - NGROK_AUTHTOKEN=${NGROK_TOKEN}
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
