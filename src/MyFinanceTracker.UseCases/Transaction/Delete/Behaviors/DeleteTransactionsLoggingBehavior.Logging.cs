@@ -13,7 +13,7 @@ internal sealed partial class DeleteTransactionsLoggingBehavior
 
     [LoggerMessage(
         EventId = LogEvents.Transactions.Delete.Completed,
-        Level = LogLevel.Debug,
+        Level = LogLevel.Information,
         Message = "Deletion completed: {Response} (Time: {Ms}ms)")]
     partial void LogSuccess(DeleteTransactionsResponse.Success response, long ms);
 

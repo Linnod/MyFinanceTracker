@@ -15,7 +15,7 @@ internal sealed partial class CreateTransactionLoggingBehavior
 
     [LoggerMessage(
         EventId = Completed,
-        Level = LogLevel.Debug,
+        Level = LogLevel.Information,
         Message = "Transaction completed: {Response} (Time: {Ms}ms)")]
     partial void LogSuccess(CreateTransactionResponse.Success response, long ms);
 

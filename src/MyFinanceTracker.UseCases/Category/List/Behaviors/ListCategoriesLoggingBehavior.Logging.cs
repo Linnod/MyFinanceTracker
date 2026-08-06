@@ -15,7 +15,7 @@ internal sealed partial class ListCategoriesLoggingBehavior
 
     [LoggerMessage(
         EventId = Completed,
-        Level = LogLevel.Information,
+        Level = LogLevel.Debug,
         Message = "Categories list retrieved. Count: {Count} (Time: {Ms}ms)")]
     partial void LogSuccess(int count, long ms);
 
