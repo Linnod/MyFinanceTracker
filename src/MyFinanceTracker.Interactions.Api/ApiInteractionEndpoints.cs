@@ -76,7 +76,7 @@ internal static class ApiInteractionEndpoints
     }
 
     public static async Task<IResult> DeleteTransactions(
-        [FromBody] DeleteTransactionsDto dto,
+        [AsParameters] DeleteTransactionsDto dto,
         [FromServices] IMediator mediator,
         CancellationToken ct)
     {
