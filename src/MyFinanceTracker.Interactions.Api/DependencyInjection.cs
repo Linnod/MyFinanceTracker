@@ -1,3 +1,5 @@
+using MyFinanceTracker.Interactions.Api.Extensions;
+
 namespace MyFinanceTracker.Interactions.Api;
 
 public static class DependencyInjection

@@ -1,80 +1,113 @@
 using System.Diagnostics;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using MyFinanceTracker.CommandProcessing.Text;
+using MyFinanceTracker.Interactions.Api.Dtos;
+using MyFinanceTracker.UseCases.Category.List;
+using MyFinanceTracker.UseCases.Transaction.Create;
+using MyFinanceTracker.UseCases.Transaction.Delete;
 
 namespace MyFinanceTracker.Interactions.Api;
 
 internal static class ApiInteractionEndpoints
 {
     public static async Task<IResult> GetCategories(
-        [FromServices] ITextCommandReceiver receiver,
+        [FromServices] IMediator mediator,
         CancellationToken ct)
     {
-        var response = await receiver.Receive(new TextCommandRequest("c list"), ct);
+        var response = await mediator.Send(new ListCategoriesRequest(), ct);
 
         return response switch
         {
-            TextCommandResponse.Success success => Results.Ok(new
+            ListCategoriesResponse.Success success => Results.Ok(new
             {
-                Status = "Success",
-                Message = success.PrimaryValue,
-                Categories = success.Details.Select(d => new
+                success.Categories.Count,
+                Categories = success.Categories.Select(c => new
                 {
-                    d.Name,
-                    Aliases = d.Value,
-                    Type = d.Icon == "💰" ? "Income" : "Expense" //TODO: fix relying on icon
+                    c.Id,
+                    c.Name,
+                    c.IsIncome,
+                    c.Aliases
                 })
             }),
-            _ => Results.Problem("Failed to retrieve categories")
+            ListCategoriesResponse.Failure => Results.Problem("Domain service failure."),
+            _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
         };
     }
 
-    public static async Task<IResult> ExecuteCommand(
-        [FromBody] ProcessCommandRequest request,
-        [FromServices] ITextCommandReceiver receiver,
+    public static async Task<IResult> CreateTransaction(
+        [FromBody] CreateTransactionDto dto,
+        [FromServices] IMediator mediator,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Text))
+        var request = new CreateTransactionRequest(
+            dto.Type,
+            dto.Amounts,
+            dto.CategoryAlias,
+            dto.Date,
+            dto.Note
+        );
+
+        var response = await mediator.Send(request, ct);
+
+        return response switch
         {
-            return Results.BadRequest(new
+            CreateTransactionResponse.Success success => Results.Ok(new
             {
-                Status = "InvalidInput",
-                Error = "Command text cannot be empty."
-            });
-        }
+                Message = $"{success.Amounts.Sum()} added to category '{success.CategoryName}'",
+                success.CategoryName,
+                success.Amounts,
+                success.Date,
+                success.Note
+            }),
 
-        var response = await receiver.Receive(new TextCommandRequest(request.Text), ct);
+            CreateTransactionResponse.ValidationError validation => Results.BadRequest(new
+            {
+                Errors = validation.Errors.Select(e => new
+                {
+                    e.PropertyName,
+                    e.Message,
+                    e.Suggestion
+                })
+            }),
 
-        return MapResponseToResult(response);
+            CreateTransactionResponse.Failure => Results.Problem("Domain service failure."),
+            _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
+        };
     }
 
-    private static IResult MapResponseToResult(TextCommandResponse response) => response switch
+    public static async Task<IResult> DeleteTransactions(
+        [FromBody] DeleteTransactionsDto dto,
+        [FromServices] IMediator mediator,
+        CancellationToken ct)
     {
-        TextCommandResponse.Success success => Results.Ok(new
+        var request = new DeleteTransactionsRequest(
+            dto.CategoryAlias,
+            dto.Date
+        );
+
+        var response = await mediator.Send(request, ct);
+
+        return response switch
         {
-            Status = "Success",
-            success.PrimaryValue,
-            success.Details
-        }),
+            DeleteTransactionsResponse.Success success => Results.Ok(new
+            {
+                Message = $"Cleared category '{success.CategoryName}' for {success.Date:dd.MM.yyyy}",
+                success.CategoryName,
+                success.Date
+            }),
 
-        TextCommandResponse.InvalidInput invalid => Results.BadRequest(new
-        {
-            Status = "InvalidInput",
-            Error = invalid.Details,
-            invalid.Suggestion,
-            invalid.Examples
-        }),
+            DeleteTransactionsResponse.ValidationError validation => Results.BadRequest(new
+            {
+                Errors = validation.Errors.Select(e => new
+                {
+                    e.PropertyName,
+                    e.Message,
+                    e.Suggestion
+                })
+            }),
 
-        TextCommandResponse.LogicError logicError => Results.UnprocessableEntity(new
-        {
-            Status = "LogicError",
-            logicError.Message
-        }),
-
-        TextCommandResponse.SystemError systemError => Results.Problem(
-            title: "System Error",
-            detail: systemError.Message),
-
-        _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
-    };
+            DeleteTransactionsResponse.Failure => Results.Problem("Domain service failure."),
+            _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
+        };
+    }
 }

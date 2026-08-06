@@ -1,4 +1,6 @@
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace MyFinanceTracker.Interactions.Api.Extensions;
 
@@ -11,10 +13,12 @@ internal static class ApiSwaggerExtensions
         {
             options.SwaggerDoc("v1", new()
             {
-                Title = "MyFinanceTracker API for ChatGPT Actions",
+                Title = "MyFinanceTracker REST API for ChatGPT",
                 Version = "v1",
-                Description = "API for managing personal finances via CLI text commands."
+                Description = "API for managing personal finances via structured REST endpoints."
             });
+
+            options.OperationFilter<NgrokSkipWarningFilter>();
 
             options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
             {
@@ -44,9 +48,33 @@ internal static class ApiSwaggerExtensions
 
     public static WebApplication UseApiSwagger(this WebApplication app)
     {
-        app.UseSwagger();
+        app.UseSwagger(options =>
+        {
+            options.PreSerializeFilters.Add((swaggerDoc, httpReq) =>
+            {
+                var scheme = httpReq.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? httpReq.Scheme;
+                var host = httpReq.Headers["X-Forwarded-Host"].FirstOrDefault() ?? httpReq.Host.Value;
+                swaggerDoc.Servers = [new OpenApiServer { Url = $"{scheme}://{host}" }];
+            });
+        });
+
         app.UseSwaggerUI();
-        
         return app;
+    }
+
+    private sealed class NgrokSkipWarningFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            operation.Parameters ??= [];
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "ngrok-skip-browser-warning",
+                In = ParameterLocation.Query,
+                Required = false,
+                Schema = new OpenApiSchema { Type = "string", Default = new OpenApiString("true") },
+                Description = "Skip Ngrok warning page"
+            });
+        }
     }
 }

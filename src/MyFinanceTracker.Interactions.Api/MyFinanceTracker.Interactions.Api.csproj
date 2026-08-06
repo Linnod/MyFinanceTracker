@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.CommandProcessing.Text\MyFinanceTracker.CommandProcessing.Text.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj" />
   </ItemGroup>
 
   <ItemGroup>

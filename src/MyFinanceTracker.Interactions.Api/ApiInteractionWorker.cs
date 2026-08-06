@@ -1,10 +1,10 @@
+using MediatR;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.CommandProcessing.Text;
 
 namespace MyFinanceTracker.Interactions.Api;
 
 internal sealed class ApiInteractionWorker(
-    ITextCommandReceiver textCommandReceiver,
+    IServiceProvider serviceProvider,
     IOptions<ApiInteractionOptions> options,
     ILogger<ApiInteractionWorker> logger) : BackgroundService
 {
@@ -12,9 +12,9 @@ internal sealed class ApiInteractionWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("--> [ApiInteractionWorker] Starting Web API on port {Port}...", _options.Port); //TODO: use LogEventRanges
+        logger.LogInformation("--> [ApiInteractionWorker] Starting REST Web API on port {Port}...", _options.Port);
 
-        var app = ApiServerBuilder.Build(_options, textCommandReceiver);
+        var app = ApiServerBuilder.Build(_options, serviceProvider);
 
         try
         {
