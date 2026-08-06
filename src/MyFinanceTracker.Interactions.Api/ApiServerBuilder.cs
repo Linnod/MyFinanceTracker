@@ -3,7 +3,7 @@ using MyFinanceTracker.Interactions.Api.Extensions;
 
 namespace MyFinanceTracker.Interactions.Api;
 
-internal static class ApiServerBuilder
+internal static partial class ApiServerBuilder
 {
     public static WebApplication Build(ApiInteractionOptions options, IServiceProvider rootServiceProvider)
     {
@@ -26,21 +26,26 @@ internal static class ApiServerBuilder
         {
             if (context.Request.Path.StartsWithSegments("/api"))
             {
-                if (!context.Request.Headers.TryGetValue("X-Api-Key", out var extractedKey) ||
-                    !string.Equals(extractedKey, options.ApiKey, StringComparison.Ordinal))
-                {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    await context.Response.WriteAsJsonAsync(new
-                    {
-                        Error = "Invalid or missing API Key."
-                    });
-                    return;
-                }
-
                 using var scope = rootServiceProvider.CreateScope();
                 context.RequestServices = scope.ServiceProvider;
 
+                var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                    .CreateLogger("MyFinanceTracker.Interactions.Api");
+
+                LogRequestReceived(logger, context.Request.Method, context.Request.Path);
+
+                if (!context.Request.Headers.TryGetValue("X-Api-Key", out var extractedKey) ||
+                    !string.Equals(extractedKey, options.ApiKey, StringComparison.Ordinal))
+                {
+                    LogUnauthorized(logger, context.Request.Path);
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsJsonAsync(new { Error = "Invalid or missing API Key." });
+                    return;
+                }
+
                 await next();
+
+                LogRequestFinished(logger, context.Request.Method, context.Request.Path, context.Response.StatusCode);
                 return;
             }
 

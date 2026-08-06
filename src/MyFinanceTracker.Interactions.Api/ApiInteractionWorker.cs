@@ -1,9 +1,8 @@
-using MediatR;
 using Microsoft.Extensions.Options;
 
 namespace MyFinanceTracker.Interactions.Api;
 
-internal sealed class ApiInteractionWorker(
+internal sealed partial class ApiInteractionWorker(
     IServiceProvider serviceProvider,
     IOptions<ApiInteractionOptions> options,
     ILogger<ApiInteractionWorker> logger) : BackgroundService
@@ -12,7 +11,7 @@ internal sealed class ApiInteractionWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("--> [ApiInteractionWorker] Starting REST Web API on port {Port}...", _options.Port);
+        LogStarted(_options.Port);
 
         var app = ApiServerBuilder.Build(_options, serviceProvider);
 
@@ -22,7 +21,7 @@ internal sealed class ApiInteractionWorker(
         }
         catch (OperationCanceledException)
         {
-            logger.LogInformation("--> [ApiInteractionWorker] Web API stopped.");
+            LogStopped();
         }
     }
 }
