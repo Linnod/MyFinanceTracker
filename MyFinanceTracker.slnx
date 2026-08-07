@@ -4,6 +4,7 @@
     <Project Path="src/MyFinanceTracker.UseCases/MyFinanceTracker.UseCases.csproj" />
     <Project Path="src/MyFinanceTracker.Common/MyFinanceTracker.Common.csproj" />
     <Project Path="src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj" />
+    <Project Path="src/MyFinanceTracker.CommandProcessing.Text.Regex/MyFinanceTracker.CommandProcessing.Text.Regex.csproj" />
     <Project Path="src/MyFinanceTracker.CommandProcessing.Text/MyFinanceTracker.CommandProcessing.Text.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence/MyFinanceTracker.Infrastructure.Persistence.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.Yaml/MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
@@ -14,8 +15,8 @@
   </Folder>
 
   <Folder Name="/tests/">
+    <Project Path="tests/MyFinanceTracker.CommandProcessing.Text.Tests.Regex/MyFinanceTracker.CommandProcessing.Text.Regex.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Domain.Tests/MyFinanceTracker.Domain.Tests.csproj" />
-    <Project Path="tests/MyFinanceTracker.CommandProcessing.Text.Tests/MyFinanceTracker.CommandProcessing.Text.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.csproj" />
   </Folder>

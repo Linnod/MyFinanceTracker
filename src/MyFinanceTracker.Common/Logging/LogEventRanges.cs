@@ -11,7 +11,11 @@ public static class LogEventRanges
 
     public static class CommandProcessing
     {
-        public const int Text = 20_100_000;
+        public static class Text
+        {
+            public const int Core = 20_100_000;
+            public const int Regex = 20_200_000;
+        }
     }
 
     public static class UseCases

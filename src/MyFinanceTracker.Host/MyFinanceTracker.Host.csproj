@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="..\MyFinanceTracker.CommandProcessing.Text.Regex\MyFinanceTracker.CommandProcessing.Text.Regex.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.CommandProcessing.Text\MyFinanceTracker.CommandProcessing.Text.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.CommandProcessing.Text;
+using MyFinanceTracker.CommandProcessing.Text.Regex;
 using MyFinanceTracker.Host;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
@@ -9,7 +10,7 @@ using MyFinanceTracker.UseCases;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddYamlCategoryRepository(builder.Configuration)
-    .AddTextCommandProcessing()
+    .AddTextCommandProcessing(b => b.UseRegex())
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)
     .AddConfiguredInteractions(builder.Configuration);
