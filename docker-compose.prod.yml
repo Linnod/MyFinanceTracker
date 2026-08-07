@@ -1,4 +1,7 @@
 services:
+  fintracker-bot:
+    image: ghcr.io/linnod/myfinancetracker:latest
+    
   tunnel:
     container_name: ngrok_tunnel
     image: ngrok/ngrok:latest
