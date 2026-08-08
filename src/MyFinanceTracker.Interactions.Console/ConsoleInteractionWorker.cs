@@ -11,6 +11,9 @@ internal sealed partial class ConsoleInteractionWorker(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        System.Console.InputEncoding = System.Text.Encoding.UTF8;
+        System.Console.OutputEncoding = System.Text.Encoding.UTF8;
+
         LogStarted();
         PrintWelcomeMessage();
 

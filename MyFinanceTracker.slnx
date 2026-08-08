@@ -4,6 +4,7 @@
     <Project Path="src/MyFinanceTracker.UseCases/MyFinanceTracker.UseCases.csproj" />
     <Project Path="src/MyFinanceTracker.Common/MyFinanceTracker.Common.csproj" />
     <Project Path="src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj" />
+    <Project Path="src/MyFinanceTracker.CommandProcessing.Text.Gemini/MyFinanceTracker.CommandProcessing.Text.Gemini.csproj" />
     <Project Path="src/MyFinanceTracker.CommandProcessing.Text.Regex/MyFinanceTracker.CommandProcessing.Text.Regex.csproj" />
     <Project Path="src/MyFinanceTracker.CommandProcessing.Text/MyFinanceTracker.CommandProcessing.Text.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence/MyFinanceTracker.Infrastructure.Persistence.csproj" />
@@ -15,6 +16,7 @@
   </Folder>
 
   <Folder Name="/tests/">
+    <Project Path="tests/MyFinanceTracker.CommandProcessing.Text.Gemini.Tests/MyFinanceTracker.CommandProcessing.Text.Gemini.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.CommandProcessing.Text.Tests.Regex/MyFinanceTracker.CommandProcessing.Text.Regex.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Domain.Tests/MyFinanceTracker.Domain.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.csproj" />
