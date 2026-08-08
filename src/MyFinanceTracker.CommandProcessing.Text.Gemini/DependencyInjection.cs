@@ -1,5 +1,7 @@
+using Google.GenAI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using MyFinanceTracker.CommandProcessing.Text.Gemini.Configuration;
 using MyFinanceTracker.CommandProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.CommandProcessing.Text.Gemini.Execution;
@@ -15,6 +17,11 @@ public static class DependencyInjection
     {
         builder.Services
             .ConfigureGeminiOptions(configuration)
+            .AddScoped(sp => 
+            {
+                var options = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
+                return new Client(apiKey: options.ApiKey);
+            })
             .AddScoped<ITextCommandProcessor, GeminiTextCommandProcessor>()
             .AddScoped<IGeminiSystemPromptBuilder, GeminiSystemPromptBuilder>()
             .AddSingleton<IGeminiToolDeclarationProvider, GeminiToolDeclarationProvider>()

@@ -14,6 +14,7 @@ internal sealed partial class GeminiTextCommandProcessor(
     IGeminiToolDeclarationProvider declarationProvider,
     IGeminiToolExecutor toolExecutor,
     IOptions<GeminiOptions> options,
+    Client client,
     ILogger<GeminiTextCommandProcessor> logger) : ITextCommandProcessor
 {
     private readonly GeminiOptions _options = options.Value;
@@ -34,7 +35,6 @@ internal sealed partial class GeminiTextCommandProcessor(
                 Temperature = _options.Temperature
             };
 
-            var client = new Client(apiKey: _options.ApiKey);
             var response = await client.Models.GenerateContentAsync(
                 model: _options.Model,
                 contents: request.Input,
@@ -45,7 +45,7 @@ internal sealed partial class GeminiTextCommandProcessor(
             var functionCalls = response.FunctionCalls;
             if (functionCalls != null && functionCalls.Count > 0)
             {
-                var result = ExecuteTools(functionCalls, ct);
+                var result = await ExecuteTools(functionCalls, ct);
 
                 LogExecuteExit(result);
                 return result;
@@ -68,13 +68,14 @@ internal sealed partial class GeminiTextCommandProcessor(
         }
     }
 
-    private TextCommandResponse ExecuteTools(List<FunctionCall> functionCalls, CancellationToken ct)
+    private async Task<TextCommandResponse> ExecuteTools(List<FunctionCall> functionCalls, CancellationToken ct)
     {
         var results = new List<TextCommandResponse>();
         foreach (var call in functionCalls)
         {
-            results.Add(toolExecutor.ExecuteToolCallAsync(call, ct).GetAwaiter().GetResult());
+            results.Add(await toolExecutor.ExecuteToolCallAsync(call, ct));
         }
+        
         return CombineResponses(results);
     }
 
