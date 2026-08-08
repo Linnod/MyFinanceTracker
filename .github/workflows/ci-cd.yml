@@ -40,6 +40,7 @@ jobs:
         dotnet publish src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj 
         -c Release 
         /t:PublishContainer 
+        /p:ContainerRegistry=ghcr.io
         /p:ContainerRepository=$IMAGE_NAME 
         /p:ContainerImageTags=latest
 
