@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing.Text.Regex.Dispatching;
+using MyFinanceTracker.InputProcessing.Text.Regex.Dispatching.Commands;
 using MyFinanceTracker.InputProcessing.Text.Regex.Interpretation;
 
 namespace MyFinanceTracker.InputProcessing.Text.Regex;
@@ -43,15 +44,48 @@ internal sealed partial class RegexTextInputProcessor(
         return interpretation switch
         {
             InterpretationResult.Identified identified =>
-                await dispatcher.Dispatch(identified.Command, ct),
+                await MapExecutionResult(await dispatcher.Dispatch(identified.Command, ct), line),
 
             InterpretationResult.Unrecognized unrecognized =>
                 new ActionResult.InvalidSyntax(
                     ErrorCode: unrecognized.ErrorCode,
                     Suggestion: unrecognized.Suggestion,
-                    Examples: unrecognized.Examples),
+                    Examples: unrecognized.Examples
+                ) { RawInput = line },
 
             _ => throw new UnreachableException($"Interpretation result {interpretation.GetType().Name} was not handled.")
         };
+    }
+
+    private static Task<ActionResult> MapExecutionResult(CommandExecutionResult executionResult, string rawInput)
+    {
+        ActionResult actionResult = executionResult switch
+        {
+            CommandExecutionResult.Transaction.Added added =>
+                new ActionResult.Transaction.Added(added.Transactions) { RawInput = rawInput },
+
+            CommandExecutionResult.Transaction.Deleted deleted =>
+                new ActionResult.Transaction.Deleted(deleted.CategoryName, deleted.Date) { RawInput = rawInput },
+
+            CommandExecutionResult.Category.Listed listed =>
+                new ActionResult.Category.Listed(listed.Categories) { RawInput = rawInput },
+
+            CommandExecutionResult.InvalidSyntax syntax =>
+                new ActionResult.InvalidSyntax(
+                    ErrorCode: syntax.ErrorCode,
+                    Suggestion: syntax.Suggestion,
+                    Examples: syntax.Examples
+                ) { RawInput = rawInput },
+
+            CommandExecutionResult.InvalidInput invalidInput =>
+                new ActionResult.InvalidInput(invalidInput.Errors) { RawInput = rawInput },
+
+            CommandExecutionResult.Failure failure =>
+                new ActionResult.Failure(failure.Message) { RawInput = rawInput },
+
+            _ => throw new UnreachableException($"Execution result {executionResult.GetType().Name} was not mapped.")
+        };
+
+        return Task.FromResult(actionResult);
     }
 }

@@ -6,6 +6,8 @@ public abstract record ActionResult
 {
     private ActionResult() { }
 
+    public required string RawInput { get; init; }
+
     public static class Transaction
     {
         public sealed record Added(IReadOnlyList<Domain.Entities.Transaction> Transactions) : ActionResult;

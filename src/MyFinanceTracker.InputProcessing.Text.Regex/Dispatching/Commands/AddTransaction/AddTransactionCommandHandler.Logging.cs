@@ -15,6 +15,6 @@ internal sealed partial class AddTransactionCommandHandler
     [LoggerMessage(
         EventId = Exit,
         Level = LogLevel.Debug,
-        Message = "<-- Finished with result: {Action}")]
-    partial void LogHandlerExit(ActionResult action);
+        Message = "<-- Finished with result: {Result}")]
+    partial void LogHandlerExit(CommandExecutionResult result);
 }

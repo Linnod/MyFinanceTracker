@@ -50,9 +50,14 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             {
                                 Type = Type.String,
                                 Description = "Optional note or comment describing the transaction."
+                            },
+                            ["recognizedInput"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this specific action in user's language (e.g. 'Расход 100 € в категорию еда')."
                             }
                         },
-                        Required = ["type", "amounts"]
+                        Required = ["type", "amounts", "recognizedInput"]
                     }
                 },
                 new FunctionDeclaration
@@ -73,9 +78,14 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             {
                                 Type = Type.String,
                                 Description = "Specific date in YYYY-MM-DD format."
+                            },
+                            ["recognizedInput"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this deletion action in user's language (e.g. 'Удаление транзакций из категории Еда за 11.08.2026')."
                             }
                         },
-                        Required = ["categoryAlias", "date"]
+                        Required = ["categoryAlias", "date", "recognizedInput"]
                     }
                 },
                 new FunctionDeclaration
@@ -84,7 +94,16 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                     Description = "List all available categories and their aliases.",
                     Parameters = new Schema
                     {
-                        Type = Type.Object
+                        Type = Type.Object,
+                        Properties = new Dictionary<string, Schema> 
+                        {
+                            ["recognizedInput"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'Просмотр списка категорий')."
+                            }    
+                        },
+                        Required = ["recognizedInput"]
                     }
                 }
             ]

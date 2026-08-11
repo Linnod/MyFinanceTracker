@@ -15,6 +15,6 @@ internal sealed partial class ListCategoriesCommandHandler
     [LoggerMessage(
         EventId = Exit,
         Level = LogLevel.Debug,
-        Message = "<-- Finished with result: {Action}")]
-    private partial void LogHandlerExit(ActionResult action);
+        Message = "<-- Finished with result: {Result}")]
+    private partial void LogHandlerExit(CommandExecutionResult result);
 }

@@ -3,6 +3,7 @@ using Google.GenAI.Types;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Domain.Entities;
+using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using NSubstitute;
@@ -23,16 +24,16 @@ public class GeminiToolExecutorTests
     }
 
     [Fact]
-    async Task ExecuteToolCallAsync_WhenAddTransactionCall_ShouldSendCreateTransactionRequest()
+    public async Task ExecuteToolCallAsync_WhenAddTransactionCall_ShouldSendCreateTransactionRequest()
     {
         // Arrange
         var functionCall = new FunctionCall
         {
-            Name = "add_transaction",
+            Name = GeminiToolDeclarationProvider.ToolNames.AddTransaction,
             Args = new Dictionary<string, object>
             {
                 ["type"] = "expense",
-                ["amounts"] = 100m,
+                ["amounts"] = new[] { 100m },
                 ["categoryAlias"] = "food",
                 ["date"] = "2026-08-08"
             }
@@ -45,7 +46,7 @@ public class GeminiToolExecutorTests
                 id: Guid.NewGuid(),
                 type: TransactionType.Expense,
                 category: category,
-                amount: 100m,
+                amount: -100m,
                 date: new DateOnly(2026, 8, 8),
                 note: null
             )

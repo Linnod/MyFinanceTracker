@@ -1,92 +1,35 @@
-using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
 
 internal static class GeminiArgsParser
 {
-    public static string? GetString(this IDictionary<string, object>? args, string key)
+    private static readonly JsonSerializerOptions Options = new()
     {
-        if (args == null || !args.TryGetValue(key, out var raw) || raw == null)
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+        Converters = 
+        { 
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) 
+        }
+    };
+
+    public static T? BindArgs<T>(this IDictionary<string, object>? args) where T : class
+    {
+        if (args == null || args.Count == 0)
         {
             return null;
         }
 
-        return raw switch
+        try
         {
-            JsonElement elem => elem.ValueKind == JsonValueKind.String ? elem.GetString() : elem.ToString(),
-            _ => raw.ToString()
-        };
-    }
-
-    public static DateOnly? GetDateOnly(this IDictionary<string, object>? args, string key)
-    {
-        var str = args.GetString(key);
-        return DateOnly.TryParse(str, CultureInfo.InvariantCulture, out var date) ? date : null;
-    }
-
-    public static decimal[] GetDecimalArray(this IDictionary<string, object>? args, string key)
-    {
-        if (args == null || !args.TryGetValue(key, out var raw) || raw == null)
-        {
-            return [];
+            var jsonNode = JsonSerializer.SerializeToNode(args);
+            return jsonNode?.Deserialize<T>(Options);
         }
-
-        return raw switch
+        catch (JsonException)
         {
-            JsonElement elem => ParseJsonElement(elem),
-            System.Collections.IEnumerable enumerable when raw is not string => ParseEnumerable(enumerable),
-            _ => ParseSingleDecimal(raw)
-        };
-    }
-
-    private static decimal[] ParseJsonElement(JsonElement elem)
-    {
-        if (elem.ValueKind == JsonValueKind.Array)
-        {
-            var list = new List<decimal>();
-            foreach (var item in elem.EnumerateArray())
-            {
-                if (TryExtractDecimal(item, out var val))
-                {
-                    list.Add(val);
-                }
-            }
-            return list.ToArray();
+            return null;
         }
-
-        return TryExtractDecimal(elem, out var single) ? [single] : [];
-    }
-
-    private static decimal[] ParseEnumerable(System.Collections.IEnumerable enumerable)
-    {
-        var list = new List<decimal>();
-        foreach (var item in enumerable)
-        {
-            if (item != null && TryParseDecimal(item.ToString(), out var val))
-            {
-                list.Add(val);
-            }
-        }
-        return list.ToArray();
-    }
-
-    private static decimal[] ParseSingleDecimal(object raw)
-    {
-        return TryParseDecimal(raw.ToString(), out var single) ? [single] : [];
-    }
-
-    private static bool TryExtractDecimal(JsonElement item, out decimal result)
-    {
-        if (item.ValueKind == JsonValueKind.Number && item.TryGetDecimal(out result))
-        {
-            return true;
-        }
-        return TryParseDecimal(item.ToString(), out result);
-    }
-
-    private static bool TryParseDecimal(string? str, out decimal result)
-    {
-        return decimal.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
     }
 }

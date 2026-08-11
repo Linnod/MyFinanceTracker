@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.InputProcessing.Text.Regex;
 using MyFinanceTracker.Host;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;

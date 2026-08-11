@@ -1,12 +1,12 @@
+using System.Diagnostics;
 using Google.GenAI.Types;
 using MediatR;
-using MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
+using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
-using MyFinanceTracker.Domain.Entities;
+using MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
 using MyFinanceTracker.UseCases.Category.List;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
-using Microsoft.Extensions.Logging;
 
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 
@@ -14,6 +14,10 @@ internal sealed partial class GeminiToolExecutor(
     IMediator mediator, 
     ILogger<GeminiToolExecutor> logger) : IGeminiToolExecutor
 {
+    private const string DefaultRawInputForAddingTransaction = "Adding transaction";
+    private const string DefaultRawInputForDeletingTransactions = "Deleting transactions";
+    private const string DefaultRawInputForListingCategories = "Listing Categories";
+
     public async Task<ActionResult> ExecuteToolCall(FunctionCall functionCall, CancellationToken ct)
     {
         LogExecutingTool(functionCall.Name);
@@ -22,34 +26,32 @@ internal sealed partial class GeminiToolExecutor(
 
         var result = functionCall.Name switch
         {
-            GeminiToolDeclarationProvider.ToolNames.AddTransaction => await HandleAddTransactionAsync(args, ct),
-            GeminiToolDeclarationProvider.ToolNames.DeleteTransactions => await HandleDeleteTransactionsAsync(args, ct),
-            GeminiToolDeclarationProvider.ToolNames.ListCategories => await HandleListCategoriesAsync(ct),
-            _ => new ActionResult.Failure($"Unsupported function call: '{functionCall.Name}'")
+            GeminiToolDeclarationProvider.ToolNames.AddTransaction => await HandleAddTransaction(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.DeleteTransactions => await HandleDeleteTransactions(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.ListCategories => await HandleListCategories(args, ct),
+            _ => throw new UnreachableException($"Unsupported function call: '{functionCall.Name}'")
         };
 
         LogExecutedTool(functionCall.Name);
         return result;
     }
 
-    private async Task<ActionResult> HandleAddTransactionAsync(IDictionary<string, object>? args, CancellationToken ct)
+    private async Task<ActionResult> HandleAddTransaction(IDictionary<string, object>? args, CancellationToken ct)
     {
-        var typeStr = args.GetString("type") ?? "expense";
-        var type = string.Equals(typeStr, "income", StringComparison.OrdinalIgnoreCase)
-            ? TransactionType.Income
-            : TransactionType.Expense;
+        var typedArgs = args.BindArgs<AddTransactionArgs>();
+        if (typedArgs is null)
+        {
+            return new ActionResult.Failure() { RawInput = DefaultRawInputForAddingTransaction };
+        }
 
-        var amounts = args.GetDecimalArray("amounts");
-        var categoryAlias = args.GetString("categoryAlias");
-        var date = args.GetDateOnly("date");
-        var note = args.GetString("note");
+        var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForAddingTransaction);
 
-        var items = amounts.Select(amount => new CreateTransactionItem(
-            TransactionType: type,
+        var items = typedArgs.Amounts.Select(amount => new CreateTransactionItem(
+            TransactionType: typedArgs.Type,
             Amount: amount,
-            CategoryAlias: categoryAlias,
-            Date: date,
-            Note: note
+            CategoryAlias: typedArgs.CategoryAlias,
+            Date: typedArgs.Date,
+            Note: typedArgs.Note
         )).ToList();
 
         var request = new CreateTransactionsRequest(items);
@@ -57,41 +59,81 @@ internal sealed partial class GeminiToolExecutor(
 
         return response switch
         {
-            CreateTransactionsResponse.Success s => new ActionResult.Transaction.Added(s.Transactions),
+            CreateTransactionsResponse.Success s => new ActionResult.Transaction.Added(s.Transactions)
+            {
+                RawInput = rawInput
+            },
 
-            CreateTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors),
+            CreateTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
+            {
+                RawInput = rawInput
+            },
 
             _ => new ActionResult.Failure()
+            {
+                RawInput = rawInput
+            }
         };
     }
 
-    private async Task<ActionResult> HandleDeleteTransactionsAsync(IDictionary<string, object>? args, CancellationToken ct)
+    private async Task<ActionResult> HandleDeleteTransactions(IDictionary<string, object>? args, CancellationToken ct)
     {
-        var categoryAlias = args.GetString("categoryAlias");
-        var date = args.GetDateOnly("date");
+        var typedArgs = args.BindArgs<DeleteTransactionsArgs>();
+        if (typedArgs is null)
+        {
+            return new ActionResult.Failure() { RawInput = DefaultRawInputForDeletingTransactions };
+        }
 
-        var request = new DeleteTransactionsRequest(categoryAlias, date);
+        var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForDeletingTransactions);
+
+        var request = new DeleteTransactionsRequest(typedArgs.CategoryAlias, typedArgs.Date);
         var response = await mediator.Send(request, ct);
 
         return response switch
         {
-            DeleteTransactionsResponse.Success s => new ActionResult.Transaction.Deleted(s.CategoryName, s.Date),
+            DeleteTransactionsResponse.Success s => new ActionResult.Transaction.Deleted(s.CategoryName, s.Date)
+            {
+                RawInput = rawInput
+            },
 
-            DeleteTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors),
+            DeleteTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
+            {
+                RawInput = rawInput
+            },
 
             _ => new ActionResult.Failure()
+            {
+                RawInput = rawInput
+            }
         };
     }
 
-    private async Task<ActionResult> HandleListCategoriesAsync(CancellationToken ct)
+    private async Task<ActionResult> HandleListCategories(IDictionary<string, object>? args, CancellationToken ct)
     {
+        var typedArgs = args.BindArgs<ListCategoriesArgs>();
+        if (typedArgs is null)
+        {
+            return new ActionResult.Failure() { RawInput = DefaultRawInputForListingCategories };
+        }
+
+        var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForListingCategories);
+
         var response = await mediator.Send(new ListCategoriesRequest(), ct);
-        
+
         return response switch
         {
-            ListCategoriesResponse.Success success => new ActionResult.Category.Listed(success.Categories),
+            ListCategoriesResponse.Success success => new ActionResult.Category.Listed(success.Categories)
+            {
+                RawInput = rawInput
+            },
 
             _ => new ActionResult.Failure()
+            {
+                RawInput = rawInput
+            }
         };
     }
+
+    private static string GetRecognizedInput(string? recognizedInput, string fallback) =>
+        string.IsNullOrWhiteSpace(recognizedInput) ? fallback : recognizedInput;
 }

@@ -12,18 +12,18 @@ internal sealed partial class AddTransactionCommandHandler(
     ILogger<AddTransactionCommandHandler> logger)
     : ICommandHandler<AddTransactionCommand>
 {
-    public async Task<ActionResult> Handle(AddTransactionCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> Handle(AddTransactionCommand command, CancellationToken ct)
     {
         LogHandlerEntry(command);
 
         var parseResult = await payloadParser.Parse(command.Payload);
-        ActionResult action = parseResult switch
+        CommandExecutionResult action = parseResult switch
         {
             AddTransactionCommandParseResult.Success success => 
                 await ProcessParseSuccess(success, ct),
 
             AddTransactionCommandParseResult.Failure failure => 
-                new ActionResult.InvalidSyntax(
+                new CommandExecutionResult.InvalidSyntax(
                     ErrorCode: failure.ErrorCode,
                     Examples: command.GetMetadata().Examples
                 ),
@@ -35,7 +35,7 @@ internal sealed partial class AddTransactionCommandHandler(
         return action;
     }
 
-    private async Task<ActionResult> ProcessParseSuccess(
+    private async Task<CommandExecutionResult> ProcessParseSuccess(
         AddTransactionCommandParseResult.Success success, 
         CancellationToken ct)
     {
@@ -53,15 +53,15 @@ internal sealed partial class AddTransactionCommandHandler(
         return response switch
         {
             CreateTransactionsResponse.Success s => 
-                new ActionResult.Transaction.Added(s.Transactions),
+                new CommandExecutionResult.Transaction.Added(s.Transactions),
 
             CreateTransactionsResponse.ValidationError v => 
-                new ActionResult.InvalidInput(
+                new CommandExecutionResult.InvalidInput(
                     Errors: v.Errors
                 ),
 
             CreateTransactionsResponse.Failure => 
-                new ActionResult.Failure(),
+                new CommandExecutionResult.Failure(),
 
             _ => throw new UnreachableException($"Unknown response type: {response.GetType().Name}")
         };

@@ -4,5 +4,5 @@ namespace MyFinanceTracker.InputProcessing.Text.Regex.Dispatching;
 
 internal interface ITextCommandDispatcher
 {
-    Task<ActionResult> Dispatch(ITextCommand command, CancellationToken ct);
+    Task<CommandExecutionResult> Dispatch(ITextCommand command, CancellationToken ct);
 }

@@ -37,12 +37,12 @@ internal static class ConsoleCommands
                     break;
 
                 case ActionResult.InvalidSyntax syntax:
-                    WriteWarning($"⚠️ Syntax Error: {syntax.ErrorCode}");
+                    WriteWarning($"⚠️ Syntax Error for '{syntax.RawInput}': {syntax.ErrorCode}");
                     WriteSuggestionAndExamples(syntax.Suggestion, syntax.Examples);
                     break;
 
                 case ActionResult.InvalidInput input:
-                    WriteWarning("⚠️ Validation Error(s):");
+                    WriteWarning($"⚠️ Validation Error(s) for '{input.RawInput}':");
                     System.Console.ForegroundColor = ConsoleColor.Yellow;
                     foreach (var err in input.Errors)
                     {
@@ -56,12 +56,12 @@ internal static class ConsoleCommands
                     break;
 
                 case ActionResult.DomainError domainError:
-                    WriteWarning($"⚠️ Domain Error: {domainError.ErrorCode}");
+                    WriteWarning($"⚠️ Domain Error for '{domainError.RawInput}': {domainError.ErrorCode}");
                     WriteSuggestionAndExamples(domainError.Suggestion, domainError.Examples);
                     break;
 
-                case ActionResult.Failure:
-                    WriteError("Action failed due to pipeline processing failure.");
+                case ActionResult.Failure failure:
+                    WriteError($"Action for '{failure.RawInput}' failed due to pipeline processing failure.");
                     break;
 
                 default:

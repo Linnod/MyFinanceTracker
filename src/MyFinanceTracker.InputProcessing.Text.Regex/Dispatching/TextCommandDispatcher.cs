@@ -10,7 +10,7 @@ internal sealed class TextCommandDispatcher(
     ICommandHandler<DeleteTransactionCommand> deleteTransactionHandler,
     ICommandHandler<ListCategoriesCommand> listCategoriesHandler) : ITextCommandDispatcher
 {
-    public Task<ActionResult> Dispatch(ITextCommand command, CancellationToken ct)
+    public Task<CommandExecutionResult> Dispatch(ITextCommand command, CancellationToken ct)
     {
         return command switch
         {

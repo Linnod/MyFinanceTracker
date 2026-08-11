@@ -27,12 +27,13 @@ internal sealed class GeminiSystemPromptBuilder(IMediator mediator) : IGeminiSys
             {categoriesInfo}
 
             RULES:
-            1. If the user wants to record spending or income, call `add_transaction`. Match category aliases intelligently to available categories above. If a spending or income item does not match any available category, pass the user's exact phrase as `category_alias` (e.g. `category_alias: "someweirdcategory"`).
+            1. If the user wants to record spending or income, call `add_transaction`. Match category aliases intelligently to available categories above. If a spending or income item does not match any available category, pass the user's exact phrase as `categoryAlias` (e.g. `categoryAlias: "someweirdcategory"`).
             2. If the user wants to delete or clear transactions for a category on a date, call `delete_transactions`.
             3. If the user asks for a list of categories, call `list_categories`.
             4. If input is completely unrelated or ambiguous, respond concisely in text explaining what is wrong.
             5. If the user mentions multiple expenses or incomes for DIFFERENT categories or items in a single input, issue multiple parallel `add_transaction` tool calls (one for each item/category).
-            6. If multiple amounts belong to the SAME category, combine them into a single `add_transaction` call with array of amounts.
+            6. ALWAYS pass `amounts` as a JSON array of numbers, even if there is only one amount (e.g. `amounts: [100]` or `amounts: [100.5, 50]`). NEVER pass a scalar single number for `amounts`.
+            7. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Расход 100 € в категорию еда'). NEVER leave `recognizedInput` empty or null.
             """;
     }
 

@@ -68,12 +68,12 @@ internal static class TelegramResponseFormatter
                     break;
 
                 case ActionResult.InvalidSyntax syntax:
-                    sb.AppendLine($"⚠️ <b>Syntax Error:</b> <code>{WebUtility.HtmlEncode(syntax.ErrorCode)}</code>");
+                    sb.AppendLine($"⚠️ <b>Syntax Error</b> for '<b>{WebUtility.HtmlEncode(syntax.RawInput)}</b>': <code>{WebUtility.HtmlEncode(syntax.ErrorCode)}</code>");
                     AppendSuggestionAndExamples(sb, syntax.Suggestion, syntax.Examples);
                     break;
 
                 case ActionResult.InvalidInput input:
-                    sb.AppendLine("⚠️ <b>Validation Error(s):</b>");
+                    sb.AppendLine($"⚠️ <b>Validation Error(s)</b> for '<b>{WebUtility.HtmlEncode(input.RawInput)}</b>':");
                     foreach (var err in input.Errors)
                     {
                         sb.AppendLine($"• <code>{WebUtility.HtmlEncode(err.ErrorCode)}</code>");
@@ -85,12 +85,12 @@ internal static class TelegramResponseFormatter
                     break;
 
                 case ActionResult.DomainError domainError:
-                    sb.AppendLine($"⚠️ <b>Domain Error:</b> <code>{WebUtility.HtmlEncode(domainError.ErrorCode)}</code>");
+                    sb.AppendLine($"⚠️ <b>Domain Error</b> for '<b>{WebUtility.HtmlEncode(domainError.RawInput)}</b>': <code>{WebUtility.HtmlEncode(domainError.ErrorCode)}</code>");
                     AppendSuggestionAndExamples(sb, domainError.Suggestion, domainError.Examples);
                     break;
 
-                case ActionResult.Failure:
-                    sb.AppendLine("❌ <b>Action Failed</b>");
+                case ActionResult.Failure failure:
+                    sb.AppendLine($"❌ <b>Action Failed</b> for '<b>{WebUtility.HtmlEncode(failure.RawInput)}</b>'");
                     break;
 
                 default:

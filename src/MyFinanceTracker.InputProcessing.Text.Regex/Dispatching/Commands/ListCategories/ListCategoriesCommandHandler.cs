@@ -10,16 +10,16 @@ internal sealed partial class ListCategoriesCommandHandler(
     ILogger<ListCategoriesCommandHandler> logger)
      : ICommandHandler<ListCategoriesCommand>
 {
-    public async Task<ActionResult> Handle(ListCategoriesCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> Handle(ListCategoriesCommand command, CancellationToken ct)
     {
         LogHandlerEntry();
 
         var response = await mediator.Send(new ListCategoriesRequest(), ct);
 
-        ActionResult action = response switch
+        CommandExecutionResult action = response switch
         {
             ListCategoriesResponse.Success success => MapSuccess(success),
-            ListCategoriesResponse.Failure => new ActionResult.Failure(),
+            ListCategoriesResponse.Failure => new CommandExecutionResult.Failure(),
             _ => throw new UnreachableException($"Unknown response type: {response.GetType().Name}")
         };
 
@@ -27,13 +27,13 @@ internal sealed partial class ListCategoriesCommandHandler(
         return action;
     }
 
-    private static ActionResult.Category.Listed MapSuccess(ListCategoriesResponse.Success success)
+    private static CommandExecutionResult.Category.Listed MapSuccess(ListCategoriesResponse.Success success)
     {
         var categories = success.Categories
             .OrderByDescending(c => c.IsIncome)
             .ThenBy(c => c.Name)
             .ToList();
 
-        return new ActionResult.Category.Listed(categories);
+        return new CommandExecutionResult.Category.Listed(categories);
     }
 }

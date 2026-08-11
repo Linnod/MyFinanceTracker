@@ -12,7 +12,7 @@ internal sealed partial class DeleteTransactionCommandHandler(
     ILogger<DeleteTransactionCommandHandler> logger)
     : ICommandHandler<DeleteTransactionCommand>
 {
-    public async Task<ActionResult> Handle(DeleteTransactionCommand command, CancellationToken ct)
+    public async Task<CommandExecutionResult> Handle(DeleteTransactionCommand command, CancellationToken ct)
     {
         LogHandlerEntry(command);
 
@@ -24,7 +24,7 @@ internal sealed partial class DeleteTransactionCommandHandler(
                 await ProcessParseSuccess(success, ct),
 
             DeleteTransactionCommandParseResult.Failure failure => 
-                new ActionResult.InvalidSyntax(
+                new CommandExecutionResult.InvalidSyntax(
                     ErrorCode: failure.ErrorCode,
                     Examples: command.GetMetadata().Examples
                 ),
@@ -36,7 +36,7 @@ internal sealed partial class DeleteTransactionCommandHandler(
         return action;
     }
 
-    private async Task<ActionResult> ProcessParseSuccess(
+    private async Task<CommandExecutionResult> ProcessParseSuccess(
         DeleteTransactionCommandParseResult.Success success,
         CancellationToken ct)
     {
@@ -46,13 +46,13 @@ internal sealed partial class DeleteTransactionCommandHandler(
         return response switch
         {
             DeleteTransactionsResponse.Success s => 
-                new ActionResult.Transaction.Deleted(s.CategoryName, s.Date),
+                new CommandExecutionResult.Transaction.Deleted(s.CategoryName, s.Date),
 
             DeleteTransactionsResponse.ValidationError v => 
-                new ActionResult.InvalidInput(v.Errors),
+                new CommandExecutionResult.InvalidInput(v.Errors),
 
             DeleteTransactionsResponse.Failure => 
-                new ActionResult.Failure(),
+                new CommandExecutionResult.Failure(),
 
             _ => throw new UnreachableException($"Unknown response type: {response.GetType().Name}")
         };
