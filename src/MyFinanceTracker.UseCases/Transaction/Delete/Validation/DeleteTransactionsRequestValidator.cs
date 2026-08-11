@@ -9,16 +9,16 @@ internal sealed class DeleteTransactionsRequestValidator : AbstractValidator<Del
     {
         RuleFor(x => x.CategoryAlias)
             .NotEmpty()
-            .WithMessage("Category alias is required for deletion.");
+            .WithErrorCode(ValidationErrorCode.Common.Required);
 
         RuleFor(x => x.Date)
             .NotNull()
-            .WithMessage("Specific date is required to clear transactions.")
+            .WithErrorCode(ValidationErrorCode.Common.Required)
             .DependentRules(() =>
             {
                 RuleFor(x => x.Date!.Value.Year)
                     .InclusiveBetween(FinancialRules.MinAllowedYear, FinancialRules.MaxAllowedYear)
-                    .WithMessage($"Date must be between {FinancialRules.MinAllowedYear} and {FinancialRules.MaxAllowedYear}.");
+                    .WithErrorCode(ValidationErrorCode.Common.DateOutOfRange);
             });
     }
 }

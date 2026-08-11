@@ -6,29 +6,33 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
 internal class FormulaService(IGoogleSheetsClient client, FormulaBuilder builder)
 {
-    public async Task<List<ValueRange>> PrepareValueRangesAsync(
-        GoogleSheetBatch batch,
+    public async Task<List<ValueRange>> PrepareValueRanges(
+        IReadOnlyList<GoogleSheetUpdate> updates,
         CancellationToken ct)
     {
-        var ranges = batch.Updates
-            .Select(u => $"{batch.SheetName}!{u.CellAddress}")
+        if (updates.Count == 0)
+        {
+             return [];
+        }
+
+        var ranges = updates
+            .Select(u => $"{u.SheetName}!{u.CellAddress}")
             .ToList();
         var currentFormulas = await client.GetFormulas(ranges, ct);
 
-        return [.. batch.Updates.Zip(currentFormulas, (update, currentFormula) => new ValueRange
+        return [.. updates.Zip(currentFormulas, (update, currentFormula) => new ValueRange
         {
-            Range = $"{batch.SheetName}!{update.CellAddress}",
+            Range = $"{update.SheetName}!{update.CellAddress}",
             Values = [[builder.Merge(currentFormula, update.Content)]]
         })];
     }
 
-    public List<ValueRange> PrepareForOverwrite(GoogleSheetBatch batch)
+    public List<ValueRange> PrepareForOverwrite(GoogleSheetUpdate update)
     {
-
-        return [.. batch.Updates.Select(u => new ValueRange
+        return [new ValueRange
         {
-            Range = $"{batch.SheetName}!{u.CellAddress}",
-            Values = [[ u.Content ]]
-        })];
+            Range = $"{update.SheetName}!{update.CellAddress}",
+            Values = [[ update.Content ]]
+        }];
     }
 }

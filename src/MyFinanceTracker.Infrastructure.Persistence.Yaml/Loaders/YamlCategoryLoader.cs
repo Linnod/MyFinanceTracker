@@ -12,7 +12,7 @@ internal class YamlCategoryLoader(
 {
     private readonly string resolvedPath = Path.Combine(AppContext.BaseDirectory, options.Value.FilePath);
 
-    public IReadOnlyCollection<Category> Load()
+    public IReadOnlyList<Category> Load()
     {
         if (!File.Exists(resolvedPath))
         {
@@ -49,6 +49,12 @@ internal class YamlCategoryLoader(
             return [];
         }
 
+        var invalidCategory = data.Categories.FirstOrDefault(c => c.Aliases == null || c.Aliases.Count == 0);
+        if (invalidCategory != null)
+        {
+            throw CategoryLoaderException.MissingAliases(invalidCategory.Id);
+        }
+
         var duplicateId = data.Categories
             .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
@@ -58,11 +64,11 @@ internal class YamlCategoryLoader(
             throw CategoryLoaderException.DuplicateId(duplicateId.Key);
         }
 
-        var allAliasesWithIds = data.Categories
-            .SelectMany(c => c.Aliases.Append(c.Id))
+        var allAliases = data.Categories
+            .SelectMany(c => c.Aliases)
             .ToList();
 
-        var duplicateAlias = allAliasesWithIds
+        var duplicateAlias = allAliases
             .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
 
@@ -71,8 +77,8 @@ internal class YamlCategoryLoader(
             throw CategoryLoaderException.DuplicateAlias(duplicateAlias.Key);
         }
 
-        var hasDefaultIncome = allAliasesWithIds
-            .Contains(FinancialRules.DefaultIncomeCategoryAlias, StringComparer.OrdinalIgnoreCase);
+        var hasDefaultIncome = data.Categories.Any(c => 
+            c.Aliases.Contains(FinancialRules.DefaultIncomeCategoryAlias, StringComparer.OrdinalIgnoreCase));
 
         if (!hasDefaultIncome)
         {

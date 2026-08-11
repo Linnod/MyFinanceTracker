@@ -20,6 +20,11 @@ internal class CategoryLoaderException : Exception
         return new CategoryLoaderException($"Duplicate alias found in YAML configuration: {alias}");
     }
 
+    public static CategoryLoaderException MissingAliases(string categoryId)
+    {
+        return new CategoryLoaderException($"Category with ID '{categoryId}' must have at least one alias in YAML configuration.");
+    }
+
     public static CategoryLoaderException DeserializationFailed(string path, Exception inner)
     {
         return new CategoryLoaderException($"Failed to deserialize YAML category file at: {path}", inner);

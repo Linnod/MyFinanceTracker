@@ -1,11 +1,15 @@
 using FluentAssertions;
+using Microsoft.Extensions.Options;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
-namespace MyFinanceTracker.Infrastructure.GoogleSheets.Tests.Services;
+namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.Services;
 
 public class FormulaBuilderTests
 {
-    private readonly FormulaBuilder formulaBuilder = new();
+    private readonly FormulaBuilder formulaBuilder = new(
+        Options.Create(new GoogleSheetsOptions { DecimalSeparator = "." })
+    );
 
     [Theory]
     [InlineData(null, "+100", "=100")]
@@ -17,7 +21,7 @@ public class FormulaBuilderTests
     [InlineData("-10", "+5", "=-10+5")]
     [InlineData("=SUM(A1:A5)", "+100", "=SUM(A1:A5)+100")]
     [InlineData("  100  ", " +50 ", "=100+50")]
-    public void Merge_ShouldProduceValidGoogleSheetsFormula(string? current, string delta, string expected)
+    void Merge_ShouldProduceValidGoogleSheetsFormula(string? current, string delta, string expected)
     {
         // arrange
         // act

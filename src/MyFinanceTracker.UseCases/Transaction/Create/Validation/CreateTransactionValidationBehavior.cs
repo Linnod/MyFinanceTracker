@@ -3,22 +3,22 @@ using MediatR;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create.Validation;
 
-internal sealed class CreateTransactionValidationBehavior(IValidator<CreateTransactionRequest> validator)
-    : IPipelineBehavior<CreateTransactionRequest, CreateTransactionResponse>
+internal sealed class CreateTransactionsValidationBehavior(IValidator<CreateTransactionsRequest> validator)
+    : IPipelineBehavior<CreateTransactionsRequest, CreateTransactionsResponse>
 {
-    public async Task<CreateTransactionResponse> Handle(
-        CreateTransactionRequest request,
-        RequestHandlerDelegate<CreateTransactionResponse> next,
+    public async Task<CreateTransactionsResponse> Handle(
+        CreateTransactionsRequest request,
+        RequestHandlerDelegate<CreateTransactionsResponse> next,
         CancellationToken ct)
     {
         var result = await validator.ValidateAsync(request, ct);
         if (!result.IsValid)
         {
             var errors = result.Errors
-                .Select(e => new ValidationErrorItem(e.PropertyName, e.ErrorMessage))
+                .Select(e => new ValidationErrorItem(e.ErrorCode))
                 .ToList();
                 
-            return new CreateTransactionResponse.ValidationError(errors);
+            return new CreateTransactionsResponse.ValidationError(errors);
         }
 
         return await next();

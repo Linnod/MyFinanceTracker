@@ -19,15 +19,28 @@ public static class FuzzyMatcher
 
     internal static int ComputeDistance(string s, string t)
     {
-        if (string.IsNullOrEmpty(s)) return t?.Length ?? 0;
-        if (string.IsNullOrEmpty(t)) return s?.Length ?? 0;
+        if (string.IsNullOrEmpty(s))
+        {
+             return t?.Length ?? 0;
+        }
+        if (string.IsNullOrEmpty(t))
+        {
+             return s?.Length ?? 0;
+        }
 
         int n = s.Length;
         int m = t.Length;
         int[,] d = new int[n + 1, m + 1];
 
-        for (int i = 0; i <= n; d[i, 0] = i++) ;
-        for (int j = 0; j <= m; d[0, j] = j++) ;
+        for (int i = 0; i <= n; i++)
+        {
+            d[i, 0] = i;
+        }
+
+        for (int j = 0; j <= m; j++)
+        {
+            d[0, j] = j;
+        }
 
         for (int i = 1; i <= n; i++)
         {

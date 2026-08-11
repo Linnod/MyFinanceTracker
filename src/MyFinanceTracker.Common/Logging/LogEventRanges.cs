@@ -9,7 +9,7 @@ public static class LogEventRanges
         public const int Api = 10_300_000;
     }
 
-    public static class CommandProcessing
+    public static class InputProcessing
     {
         public static class Text
         {

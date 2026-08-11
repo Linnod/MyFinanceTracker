@@ -5,51 +5,51 @@ using MyFinanceTracker.Domain.Repositories;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
-internal sealed class CreateTransactionHandler(
+internal sealed class CreateTransactionsHandler(
     ICategoryRepository categoryRepository,
     ITransactionRepository transactionRepository)
-    : IRequestHandler<CreateTransactionRequest, CreateTransactionResponse>
+    : IRequestHandler<CreateTransactionsRequest, CreateTransactionsResponse>
 {
-    public async Task<CreateTransactionResponse> Handle(CreateTransactionRequest request, CancellationToken ct)
+    public async Task<CreateTransactionsResponse> Handle(CreateTransactionsRequest request, CancellationToken ct)
     {
-        var (category, error) = await GetCategory(request, ct);
-        if (error != null)
+        var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
+
+        foreach (var item in request.Items)
         {
-            return error;
+            var (category, error) = await ResolveCategory(item, ct);
+            if (error != null)
+            {
+                return error;
+            }
+
+            transactions.Add(new Domain.Entities.Transaction(
+                id: Guid.NewGuid(),
+                type: item.TransactionType,
+                category: category!,
+                amount: item.Amount,
+                date: item.Date ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                note: item.Note
+            ));
         }
-
-        var finalDate = request.Date ?? DateOnly.FromDateTime(DateTime.UtcNow);
-
-        var transactions = request.Amounts.Select(amount =>
-            new Domain.Entities.Transaction(
-                Guid.NewGuid(),
-                request.TransactionType,
-                category!,
-                ApplyBusinessRulesToAmount(amount, request.TransactionType),
-                finalDate,
-                request.Note
-            )).ToList();
 
         await transactionRepository.AddRange(transactions, ct);
 
-        return new CreateTransactionResponse.Success(
-            category!.Name,
-            request.Amounts,
-            finalDate,
-            request.Note);
+        return new CreateTransactionsResponse.Success(transactions);
     }
 
-    private async Task<(Domain.Entities.Category? Category, CreateTransactionResponse.ValidationError? Error)> GetCategory(
-        CreateTransactionRequest request, CancellationToken ct)
+    private async Task<(Domain.Entities.Category? Category, CreateTransactionsResponse? Error)> ResolveCategory(
+        CreateTransactionItem item,
+        CancellationToken ct)
     {
-        var alias = string.IsNullOrWhiteSpace(request.CategoryAlias) && request.TransactionType == TransactionType.Income
+        var alias = string.IsNullOrWhiteSpace(item.CategoryAlias) && item.TransactionType == TransactionType.Income
             ? FinancialRules.DefaultIncomeCategoryAlias
-            : request.CategoryAlias;
+            : item.CategoryAlias;
+
         if (string.IsNullOrWhiteSpace(alias))
         {
-            return (null, CreateTransactionResponse.ValidationError.FromSingle(
-                nameof(request.CategoryAlias),
-                $"Category is required for {request.TransactionType.ToString().ToLower()}"));
+            return (null, new CreateTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryRequired)
+            ]));
         }
 
         var category = await categoryRepository.GetByAlias(alias, ct);
@@ -58,18 +58,11 @@ internal sealed class CreateTransactionHandler(
             var allAliases = (await categoryRepository.GetAll(ct)).SelectMany(c => c.Aliases);
             var suggestion = FuzzyMatcher.GetClosest(alias, allAliases);
 
-            return (null, CreateTransactionResponse.ValidationError.FromSingle(
-                nameof(request.CategoryAlias),
-                $"Unknown category: '{alias}'",
-                suggestion));
+            return (null, new CreateTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, suggestion)
+            ]));
         }
 
         return (category, null);
-    }
-
-    private static decimal ApplyBusinessRulesToAmount(decimal amount, TransactionType type)
-    {
-        var absAmount = Math.Abs(amount);
-        return type == TransactionType.Expense ? -absAmount : absAmount;
     }
 }

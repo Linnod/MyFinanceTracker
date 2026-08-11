@@ -37,12 +37,12 @@ public static class DependencyInjection
     {
         return services
             .AddTransient<
-                IPipelineBehavior<CreateTransactionRequest, CreateTransactionResponse>,
-                CreateTransactionLoggingBehavior>()
-            .AddScoped<IValidator<CreateTransactionRequest>, CreateTransactionRequestValidator>()
+                IPipelineBehavior<CreateTransactionsRequest, CreateTransactionsResponse>,
+                CreateTransactionsLoggingBehavior>()
+            .AddScoped<IValidator<CreateTransactionsRequest>, CreateTransactionsRequestValidator>()
             .AddTransient<
-                IPipelineBehavior<CreateTransactionRequest, CreateTransactionResponse>,
-                CreateTransactionValidationBehavior>();
+                IPipelineBehavior<CreateTransactionsRequest, CreateTransactionsResponse>,
+                CreateTransactionsValidationBehavior>();
     }
 
     private static IServiceCollection AddTransactionDelete(this IServiceCollection services)

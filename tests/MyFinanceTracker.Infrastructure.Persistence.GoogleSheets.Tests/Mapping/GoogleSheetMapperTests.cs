@@ -15,7 +15,7 @@ public class GoogleSheetMapperTests
     };
 
     [Fact]
-    public void Map_ShouldGroupMultipleTransactionsIntoOneUpdate()
+    void Map_ShouldGroupMultipleTransactionsIntoOneUpdate()
     {
         // arrange
         var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
@@ -40,16 +40,16 @@ public class GoogleSheetMapperTests
     }
 
     [Theory]
-    [InlineData(true, 100, "+100")]
-    [InlineData(false, 100, "-100")]
-    [InlineData(false, 10.55, "-10.55")]
-    public void Map_ShouldApplyCorrectSignsAndFormat(bool isIncome, decimal amount, string expectedDelta)
+    [InlineData(TransactionType.Income, 100, "+100")]
+    [InlineData(TransactionType.Expense, 100, "-100")]
+    [InlineData(TransactionType.Expense, 10.55, "-10.55")]
+    void Map_ShouldApplyCorrectSignsAndFormat(TransactionType type, decimal amount, string expectedDelta)
     {
         // arrange
         var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
         var sut = new GoogleSheetMapper(options);
-        var category = new Category("B", "Test", [], isIncome);
-        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, amount, new DateOnly(2026, 1, 1), "");
+        var category = new Category("B", "Test", ["test"], isIncome: type == TransactionType.Income);
+        var transaction = new Transaction(Guid.NewGuid(), type, category, amount, new DateOnly(2026, 1, 1), "");
 
         // act
         var result = sut.MapForAddition([transaction]);
@@ -59,7 +59,7 @@ public class GoogleSheetMapperTests
     }
 
     [Fact]
-    public void Map_ShouldRespectDecimalSeparatorFromOptions()
+    void Map_ShouldRespectDecimalSeparatorFromOptions()
     {
         // arrange
         var optionsWithComma = Microsoft.Extensions.Options.Options.Create(new GoogleSheetsOptions
@@ -68,7 +68,7 @@ public class GoogleSheetMapperTests
             DecimalSeparator = ","
         });
         var sut = new GoogleSheetMapper(optionsWithComma);
-        var category = new Category("C", "Food", []);
+        var category = new Category("C", "Food", ["food"]);
         var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10.5m, new DateOnly(2026, 1, 1), "");
 
         // act
@@ -82,7 +82,7 @@ public class GoogleSheetMapperTests
     [InlineData(1, 2, "A3")]
     [InlineData(31, 0, "A31")]
     [InlineData(15, 5, "A20")]
-    public void Map_ShouldCalculateCellAddressCorrectly(int day, int headerRows, string expectedCell)
+    void Map_ShouldCalculateCellAddressCorrectly(int day, int headerRows, string expectedCell)
     {
         // arrange
         var customOptions = Microsoft.Extensions.Options.Options.Create(new GoogleSheetsOptions
@@ -91,7 +91,7 @@ public class GoogleSheetMapperTests
             DecimalSeparator = "."
         });
         var sut = new GoogleSheetMapper(customOptions);
-        var category = new Category("A", "Food", []);
+        var category = new Category("A", "Food", ["food"]);
         var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10, new DateOnly(2026, 1, day), "");
 
         // act
@@ -102,7 +102,7 @@ public class GoogleSheetMapperTests
     }
 
     [Fact]
-    public void MapForClearance_ShouldReturnZeroAndCorrectAddress()
+    void MapForClearance_ShouldReturnZeroAndCorrectAddress()
     {
         // arrange
         var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);

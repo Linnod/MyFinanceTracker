@@ -3,7 +3,7 @@ using MediatR;
 
 namespace MyFinanceTracker.UseCases.Transaction.Delete.Validation;
 
-internal class DeleteTransactionValidationBehavior(IValidator<DeleteTransactionsRequest> validator)
+internal sealed class DeleteTransactionValidationBehavior(IValidator<DeleteTransactionsRequest> validator)
     : IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>
 {
     public async Task<DeleteTransactionsResponse> Handle(
@@ -15,7 +15,7 @@ internal class DeleteTransactionValidationBehavior(IValidator<DeleteTransactions
         if (!result.IsValid)
         {
             var errors = result.Errors
-                .Select(e => new ValidationErrorItem(e.PropertyName, e.ErrorMessage))
+                .Select(e => new ValidationErrorItem(e.ErrorCode))
                 .ToList();
 
             return new DeleteTransactionsResponse.ValidationError(errors);

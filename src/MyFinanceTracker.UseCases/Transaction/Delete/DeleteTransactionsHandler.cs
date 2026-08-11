@@ -19,10 +19,9 @@ internal sealed class DeleteTransactionsHandler(
             var allAliases = (await categoryRepository.GetAll(ct)).SelectMany(c => c.Aliases);
             var suggestion = FuzzyMatcher.GetClosest(request.CategoryAlias!, allAliases);
 
-            return DeleteTransactionsResponse.ValidationError.FromSingle(
-                nameof(request.CategoryAlias),
-                $"Unknown category: '{request.CategoryAlias!}'",
-                suggestion);
+            return new DeleteTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, suggestion)
+            ]);
         }
 
         await transactionRepository.DeleteRange(category, request.Date!.Value, ct);

@@ -1,9 +1,16 @@
 using System.Globalization;
+using Microsoft.Extensions.Options;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
-internal class FormulaBuilder
+internal class FormulaBuilder(IOptions<GoogleSheetsOptions> options)
 {
+    private readonly NumberFormatInfo numberFormat = new()
+    {
+        NumberDecimalSeparator = options.Value.DecimalSeparator
+    };
+
     public string Merge(string? currentValue, string delta)
     {
         var baseValue = (currentValue ?? string.Empty).Trim();
@@ -22,7 +29,7 @@ internal class FormulaBuilder
         return "=" + baseValue + cleanDelta;
     }
 
-    private static bool IsZeroOrEmpty(string value)
+    private bool IsZeroOrEmpty(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -34,7 +41,7 @@ internal class FormulaBuilder
             return false;
         }
 
-        if (decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
+        if (decimal.TryParse(value, NumberStyles.Any, numberFormat, out var number))
         {
             return number == 0;
         }

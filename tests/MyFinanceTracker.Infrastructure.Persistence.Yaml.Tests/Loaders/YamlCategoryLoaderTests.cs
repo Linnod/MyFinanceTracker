@@ -47,6 +47,7 @@ public class YamlCategoryLoaderTests : IDisposable
               - id: FOOD
                 name: Products
                 isIncome: false
+                aliases: [eat, meal]
             """);
         var sut = CreateSut();
 
@@ -67,10 +68,13 @@ public class YamlCategoryLoaderTests : IDisposable
               - id: {FinancialRules.DefaultIncomeCategoryAlias}
                 name: Income
                 isIncome: true
+                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
               - id: A
                 name: First
+                aliases: [first]
               - id: A
                 name: Second
+                aliases: [second]
             """);
         var sut = CreateSut();
 
@@ -88,13 +92,14 @@ public class YamlCategoryLoaderTests : IDisposable
         // arrange:
         WriteYaml($"""
             categories:
-              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+              - id: A
                 name: Income
                 isIncome: true
-              - id: A
+                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
+              - id: B
                 name: Food
                 aliases: [test]
-              - id: B
+              - id: C
                 name: Drinks
                 aliases: [test]
             """);
@@ -114,9 +119,10 @@ public class YamlCategoryLoaderTests : IDisposable
         // arrange
         WriteYaml($"""
             categories:
-              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+              - id: INCOME
                 name: Salary
                 isIncome: true
+                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
               - id: FOOD
                 name: Products
                 isIncome: false
@@ -129,8 +135,15 @@ public class YamlCategoryLoaderTests : IDisposable
 
         // assert
         result.Should().HaveCount(2);
-        result.Should().ContainSingle(c => c.Id == FinancialRules.DefaultIncomeCategoryAlias && c.IsIncome);
-        result.Should().ContainSingle(c => c.Id == "FOOD" && c.Aliases.Contains("eat"));
+        
+        result.Should().ContainSingle(c => 
+            c.Id == "INCOME" && 
+            c.IsIncome && 
+            c.Aliases.Contains(FinancialRules.DefaultIncomeCategoryAlias));
+
+        result.Should().ContainSingle(c => 
+            c.Id == "FOOD" && 
+            c.Aliases.Contains("eat"));
     }
 
     [Fact]

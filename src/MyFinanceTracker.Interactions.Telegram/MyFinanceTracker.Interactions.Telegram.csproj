@@ -13,7 +13,7 @@
     <PackageReference Include="Telegram.Bot" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.CommandProcessing.Text\MyFinanceTracker.CommandProcessing.Text.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text\MyFinanceTracker.InputProcessing.Text.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Logging\" />

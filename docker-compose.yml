@@ -10,8 +10,6 @@ services:
       - DOTNET_ENVIRONMENT=Production
       - Telegram__Token=${TG_TOKEN}
       - Telegram__AllowedUserId=${TG_USER_ID}
-      - Api__ApiKey=${API_KEY}
-      - Api__Port=5000
       - GoogleSheets__SpreadsheetId=${GOOGLE_SHEET_ID}
       - GoogleSheets__CredentialsFilePath=/app/secrets/google-api-credentials.json
       - GoogleSheets__HeaderRowsCount=3
@@ -19,7 +17,6 @@ services:
       - YamlPersistence__FilePath=/app/data/categories.yaml
       - Interactions__EnableConsole=false
       - Interactions__EnableTelegram=true
-      - Interactions__EnableApi=true
       - Gemini__ApiKey=${GEMINI_API_KEY}
       - Gemini__Model=${GEMINI_MODEL}
       - Gemini__Temperature=${GEMINI_TEMPERATURE}

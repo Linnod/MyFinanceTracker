@@ -3,16 +3,26 @@ using MyFinanceTracker.Domain.Entities;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create.Validation;
 
-internal sealed class CreateTransactionRequestValidator : AbstractValidator<CreateTransactionRequest>
+internal sealed class CreateTransactionsRequestValidator : AbstractValidator<CreateTransactionsRequest>
 {
-    public CreateTransactionRequestValidator()
+    public CreateTransactionsRequestValidator()
     {
-        RuleFor(x => x.Amounts)
-            .NotEmpty().WithMessage("At least one amount is required.")
-            .Must(a => a.All(v => v > 0)).WithMessage("All amounts must be greater than zero.");
+        RuleFor(x => x.Items)
+            .NotEmpty()
+            .WithErrorCode(ValidationErrorCode.Common.Required);
 
-        RuleFor(x => x.Date)
-            .Must(d => !d.HasValue || (d.Value.Year >= FinancialRules.MinAllowedYear && d.Value.Year <= FinancialRules.MaxAllowedYear))
-            .WithMessage($"Date must be between {FinancialRules.MinAllowedYear} and {FinancialRules.MaxAllowedYear}.");
+        RuleForEach(x => x.Items).ChildRules(item =>
+        {
+            item.RuleFor(i => i.Amount)
+                .GreaterThan(0)
+                .WithErrorCode(ValidationErrorCode.Common.MustBePositive);
+
+            item.When(i => i.Date.HasValue, () =>
+            {
+                item.RuleFor(i => i.Date!.Value.Year)
+                    .InclusiveBetween(FinancialRules.MinAllowedYear, FinancialRules.MaxAllowedYear)
+                    .WithErrorCode(ValidationErrorCode.Common.DateOutOfRange);
+            });
+        });
     }
 }

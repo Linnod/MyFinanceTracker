@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.CommandProcessing.Text;
+using MyFinanceTracker.InputProcessing.Text;
 
 namespace MyFinanceTracker.Interactions.Console;
 
 internal sealed partial class ConsoleInteractionWorker(
-    ITextCommandReceiver textCommandReceiver,
+    ITextInputReceiver textCommandReceiver,
     ILogger<ConsoleInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,7 +53,7 @@ internal sealed partial class ConsoleInteractionWorker(
 
             try
             {
-                var response = await textCommandReceiver.Receive(new TextCommandRequest(input), ct);
+                var response = await textCommandReceiver.Receive(new TextInput(input), ct);
                 HandleResponse(response);
             }
             catch (Exception ex)
@@ -64,15 +64,15 @@ internal sealed partial class ConsoleInteractionWorker(
         }
     }
 
-    private static void HandleResponse(TextCommandResponse response)
+    private static void HandleResponse(ProcessingResult response)
     {
         switch (response)
         {
-            case TextCommandResponse.Success success:
-                ConsoleCommands.WriteSuccess(success);
+            case ProcessingResult.Completed completed:
+                ConsoleCommands.WriteCompleted(completed);
                 break;
 
-            case TextCommandResponse.InvalidInput invalid:
+            case ProcessingResult.InvalidInput invalid:
                 ConsoleCommands.WriteError($"Input error: {invalid.Details}");
 
                 if (invalid.Suggestion is not null)
@@ -90,11 +90,11 @@ internal sealed partial class ConsoleInteractionWorker(
                 }
                 break;
 
-            case TextCommandResponse.LogicError logicError:
+            case ProcessingResult.LogicError logicError:
                 ConsoleCommands.WriteError(logicError.Message);
                 break;
 
-            case TextCommandResponse.SystemError systemError:
+            case ProcessingResult.SystemError systemError:
                 ConsoleCommands.WriteError($"System failure: {systemError.Message}");
                 break;
 
@@ -106,7 +106,7 @@ internal sealed partial class ConsoleInteractionWorker(
     private static void PrintWelcomeMessage()
     {
         ConsoleCommands.WriteInfo(">>> Finance Tracker 2026 is active.");
-        ConsoleCommands.WriteInfo(">>> Usage: add <type> <category?> <amounts> <date?>");
-        ConsoleCommands.WriteInfo(">>> Example: add expense food 100 200");
+        ConsoleCommands.WriteInfo(">>> Usage: t add <type> <category?> <amounts> <date?>");
+        ConsoleCommands.WriteInfo(">>> Example: t add expense food 100 200");
     }
 }

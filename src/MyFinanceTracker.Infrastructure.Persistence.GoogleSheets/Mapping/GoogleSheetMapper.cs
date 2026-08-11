@@ -46,13 +46,9 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 
     private static string BuildDeltaString(List<Transaction> transactions, NumberFormatInfo nfi)
     {
-        var isIncome = transactions.First().Category.IsIncome;
-
         return string.Concat(transactions.Select(t =>
         {
-            decimal val = isIncome ? t.Amount : -t.Amount;
-
-            return val.ToString("+0.##;-0.##;0", nfi);
+            return t.Amount.ToString("+0.##;-0.##;0", nfi);
         }));
     }
 }

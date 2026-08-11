@@ -9,7 +9,7 @@ internal sealed partial class YamlCategoryRepository(
     ICategoryLoader loader,
     ILogger<YamlCategoryRepository> logger) : ICategoryRepository
 {
-    private readonly Lazy<IReadOnlyCollection<Category>> categories = new(loader.Load, LazyThreadSafetyMode.ExecutionAndPublication);
+    private readonly Lazy<IReadOnlyList<Category>> categories = new(loader.Load, LazyThreadSafetyMode.ExecutionAndPublication);
 
     public Task<Category?> GetByAlias(string alias, CancellationToken ct = default)
     {
@@ -22,7 +22,7 @@ internal sealed partial class YamlCategoryRepository(
         return Task.FromResult(category);
     }
 
-    public Task<IReadOnlyCollection<Category>> GetAll(CancellationToken ct = default)
+    public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct = default)
     {
         return Task.FromResult(categories.Value);
     }

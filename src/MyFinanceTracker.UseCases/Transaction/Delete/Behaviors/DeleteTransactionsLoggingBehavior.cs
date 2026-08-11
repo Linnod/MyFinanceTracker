@@ -21,13 +21,19 @@ internal sealed partial class DeleteTransactionsLoggingBehavior(
             var response = await next();
             sw.Stop();
 
-            if (response is DeleteTransactionsResponse.Success success)
+            switch (response)
             {
-                LogSuccess(success, sw.ElapsedMilliseconds);
-            }
-            else if (response is DeleteTransactionsResponse.ValidationError validationError)
-            {
-                LogValidationError(validationError, sw.ElapsedMilliseconds);
+                case DeleteTransactionsResponse.Success success:
+                    LogSuccess(success, sw.ElapsedMilliseconds);
+                    break;
+
+                case DeleteTransactionsResponse.ValidationError validationError:
+                    LogValidationError(validationError, sw.ElapsedMilliseconds);
+                    break;
+
+                case DeleteTransactionsResponse.Failure:
+                    LogFailure(sw.ElapsedMilliseconds);
+                    break;
             }
 
             return response;

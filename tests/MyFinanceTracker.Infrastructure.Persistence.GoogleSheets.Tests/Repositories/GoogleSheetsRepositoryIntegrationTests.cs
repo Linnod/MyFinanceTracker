@@ -25,7 +25,7 @@ public class GoogleSheetsRepositoryIntegrationTests
         });
 
         var mapper = new GoogleSheetMapper(options);
-        var formulaBuilder = new FormulaBuilder();
+        var formulaBuilder = new FormulaBuilder(options);
         var clientMock = Substitute.For<IGoogleSheetsClient>();
         var formulaService = new FormulaService(clientMock, formulaBuilder);
         var loggerLock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
@@ -64,7 +64,7 @@ public class GoogleSheetsRepositoryIntegrationTests
 
         var mapper = new GoogleSheetMapper(options);
         var clientMock = Substitute.For<IGoogleSheetsClient>();
-        var formulaService = new FormulaService(clientMock, new FormulaBuilder());
+        var formulaService = new FormulaService(clientMock, new FormulaBuilder(options));
         var loggerLock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
         var sut = new GoogleSheetsTransactionRepository(mapper, clientMock, formulaService, loggerLock);
 
