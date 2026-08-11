@@ -10,17 +10,17 @@ internal sealed partial class StrictTextCommandInterpreter
         EventId = Entry,
         Level = LogLevel.Debug,
         Message = "--> Interpreting: '{Input}'")]
-    partial void LogInterpretationStarted(InterpretationInput input);
+    partial void LogStarted(InterpretationInput input);
 
     [LoggerMessage(
         EventId = Success,
         Level = LogLevel.Debug,
         Message = "++ Success: {Result}")]
-    partial void LogInterpretationSuccess(InterpretationResult.Identified result);
+    partial void LogIdentified(InterpretationResult.Identified result);
 
     [LoggerMessage(
-        EventId = UnrecognizedCommand,
+        EventId = Unrecognized,
         Level = LogLevel.Information,
         Message = "!! Failed: {Result}")]
-    partial void LogUnrecognizedCommand(InterpretationResult.Unrecognized result);
+    partial void LogUnrecognized(InterpretationResult.Unrecognized result);
 }

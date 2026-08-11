@@ -10,7 +10,7 @@ internal sealed partial class StrictTextCommandInterpreter(
 {
     public Task<InterpretationResult> Interpret(InterpretationInput input)
     {
-        LogInterpretationStarted(input);
+        LogStarted(input);
 
         return Task.FromResult(InternalInterpret(input.Value));
     }
@@ -22,11 +22,14 @@ internal sealed partial class StrictTextCommandInterpreter(
         if (!commandRegistry.TryGetDomain(domainCandidate, out var domain))
         {
             var suggestion = FuzzyMatcher.GetClosest(domainCandidate, commandRegistry.AllDomainAliases);
-            return new InterpretationResult.Unrecognized(
-                input,
+            var unrecognizedResult = new InterpretationResult.Unrecognized(
+                domainCandidate,
                 ErrorCode.Syntax.InvalidFormat,
                 suggestion,
                 commandRegistry.GetGeneralExamples());
+
+            LogUnrecognized(unrecognizedResult);
+            return unrecognizedResult;
         }
 
         var actionCandidate = parts.Length > 1 ? parts[1] : string.Empty;
@@ -38,16 +41,21 @@ internal sealed partial class StrictTextCommandInterpreter(
                 .Where(k => k != string.Empty)
                 .Select(a => $"{domainCandidate} {a} ...")
                 .ToArray();
-
-            return new InterpretationResult.Unrecognized(
-                input, 
+            var unrecognizedResult = new InterpretationResult.Unrecognized(
+                actionCandidate, 
                 ErrorCode.Syntax.InvalidFormat, 
                 suggestion, 
                 examples
             );
+            LogUnrecognized(unrecognizedResult);
+
+            return unrecognizedResult;
         }
 
         var payload = parts.Length > 2 ? parts[2].Trim() : string.Empty;
-        return new InterpretationResult.Identified(commandFactory(payload));
+        var identifiedResult = new InterpretationResult.Identified(commandFactory(payload));
+        LogIdentified(identifiedResult);
+
+        return identifiedResult;
     }
 }

@@ -76,7 +76,7 @@ public class StrictTextCommandInterpreterTests
 
         // assert
         var unrecognized = result.Should().BeOfType<InterpretationResult.Unrecognized>().Subject;
-        unrecognized.Input.Should().Be("tranz add food 100");
+        unrecognized.FailedToken.Should().Be("tranz");
         unrecognized.Suggestion.Should().Be("tran");
         unrecognized.Examples.Should().Contain(e => e.Contains("t ..."));
     }
@@ -92,7 +92,7 @@ public class StrictTextCommandInterpreterTests
 
         // assert
         var unrecognized = result.Should().BeOfType<InterpretationResult.Unrecognized>().Subject;
-        unrecognized.Input.Should().Be("t ad food 100");
+        unrecognized.FailedToken.Should().Be("ad");
         unrecognized.Suggestion.Should().Be("add");
         unrecognized.Examples.Should().Contain(e => e.StartsWith("t add"));
     }

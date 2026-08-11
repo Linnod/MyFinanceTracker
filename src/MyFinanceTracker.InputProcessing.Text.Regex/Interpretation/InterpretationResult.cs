@@ -12,12 +12,12 @@ internal abstract record InterpretationResult
     }
 
     public sealed record Unrecognized(
-        string Input,
+        string FailedToken,
         string ErrorCode,
         string? Suggestion = null,
         IReadOnlyCollection<string>? Examples = null
     ) : InterpretationResult
     {
-        public override string ToString() => $"{nameof(Unrecognized)} {Input}: {ErrorCode}";
+        public override string ToString() => $"{nameof(Unrecognized)} token {FailedToken}: {ErrorCode}";
     }
 }

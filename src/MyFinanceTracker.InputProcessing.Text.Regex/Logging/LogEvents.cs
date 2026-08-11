@@ -20,7 +20,7 @@ internal static class LogEvents
 
         public const int Entry = SubBase + 1;
         public const int Success = SubBase + 2;
-        public const int UnrecognizedCommand = SubBase + 3;
+        public const int Unrecognized = SubBase + 3;
     }
 
     public static class Commands
