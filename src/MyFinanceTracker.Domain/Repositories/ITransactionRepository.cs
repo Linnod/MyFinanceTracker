@@ -4,6 +4,6 @@ namespace MyFinanceTracker.Domain.Repositories;
 
 public interface ITransactionRepository
 {
-    Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct = default);
-    Task DeleteRange(Category category, DateOnly date, CancellationToken ct = default);
+    Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct);
+    Task DeleteRange(Category category, DateOnly date, CancellationToken ct);
 }

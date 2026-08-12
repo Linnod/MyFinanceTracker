@@ -24,7 +24,7 @@ public class GeminiToolExecutorTests
     }
 
     [Fact]
-    public async Task ExecuteToolCallAsync_WhenAddTransactionCall_ShouldSendCreateTransactionRequest()
+    async Task ExecuteToolCall_WhenAddTransactionCall_ShouldSendCreateTransactionRequest()
     {
         // Arrange
         var functionCall = new FunctionCall

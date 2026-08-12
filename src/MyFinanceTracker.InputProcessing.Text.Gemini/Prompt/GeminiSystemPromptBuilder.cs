@@ -6,7 +6,7 @@ namespace MyFinanceTracker.InputProcessing.Text.Gemini.Prompt;
 
 internal sealed class GeminiSystemPromptBuilder(IMediator mediator) : IGeminiSystemPromptBuilder
 {
-    public async Task<string> BuildSystemInstructionAsync(CancellationToken ct = default)
+    public async Task<string> BuildSystemInstruction(CancellationToken ct)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var categoriesResponse = await mediator.Send(new ListCategoriesRequest(), ct);

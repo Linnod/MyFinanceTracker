@@ -15,7 +15,6 @@ internal sealed partial class TelegramInteractionWorker(
     IOptions<TelegramInteractionOptions> options,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
-    private readonly TelegramInteractionOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -53,7 +52,7 @@ internal sealed partial class TelegramInteractionWorker(
         {
             LogUpdateReceived(messageText);
 
-            if (userId != _options.AllowedUserId)
+            if (userId != options.Value.AllowedUserId)
             {
                 LogUnauthorized(userId);
                 return;

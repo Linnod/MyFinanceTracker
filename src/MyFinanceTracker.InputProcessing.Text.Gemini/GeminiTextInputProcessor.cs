@@ -17,7 +17,6 @@ internal sealed partial class GeminiTextInputProcessor(
     Client client,
     ILogger<GeminiTextInputProcessor> logger) : ITextInputProcessor
 {
-    private readonly GeminiOptions _options = options.Value;
 
     public async Task<ProcessingResult> Process(TextInput input, CancellationToken ct)
     {
@@ -29,14 +28,14 @@ internal sealed partial class GeminiTextInputProcessor(
             {
                 SystemInstruction = new Content
                 {
-                    Parts = [new Part { Text = await promptBuilder.BuildSystemInstructionAsync(ct) }]
+                    Parts = [new Part { Text = await promptBuilder.BuildSystemInstruction(ct) }]
                 },
                 Tools = [.. declarationProvider.GetToolDeclarations()],
-                Temperature = _options.Temperature
+                Temperature = options.Value.Temperature
             };
 
             var response = await client.Models.GenerateContentAsync(
-                model: _options.Model,
+                model: options.Value.Model,
                 contents: input.Text,
                 config: config,
                 ct

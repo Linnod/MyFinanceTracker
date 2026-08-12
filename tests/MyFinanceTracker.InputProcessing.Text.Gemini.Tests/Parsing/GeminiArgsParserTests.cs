@@ -16,7 +16,7 @@ public class GeminiArgsParserTests
         string? RecognizedInput);
 
     [Fact]
-    public void BindArgs_WhenArgsIsNull_ShouldReturnNull()
+    void BindArgs_WhenArgsIsNull_ShouldReturnNull()
     {
         // Arrange
         IDictionary<string, object>? args = null;
@@ -29,7 +29,7 @@ public class GeminiArgsParserTests
     }
 
     [Fact]
-    public void BindArgs_WhenArgsIsEmpty_ShouldReturnNull()
+    void BindArgs_WhenArgsIsEmpty_ShouldReturnNull()
     {
         // Arrange
         var args = new Dictionary<string, object>();
@@ -77,7 +77,7 @@ public class GeminiArgsParserTests
     }
 
     [Fact]
-    public void BindArgs_WhenNumbersArePassedAsStrings_ShouldBindNumbersCorrectly()
+    void BindArgs_WhenNumbersArePassedAsStrings_ShouldBindNumbersCorrectly()
     {
         // Arrange
         using var jsonDoc = JsonDocument.Parse("""

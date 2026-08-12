@@ -23,7 +23,7 @@ internal sealed partial class YamlCategoryRepository : ICategoryRepository
             .ToDictionary(x => x.Alias, x => x.Category, StringComparer.OrdinalIgnoreCase);
     }
 
-    public Task<Category?> GetByAlias(string alias, CancellationToken ct = default)
+    public Task<Category?> GetByAlias(string alias, CancellationToken ct)
     {
         LogSearching(alias);
 
@@ -34,7 +34,7 @@ internal sealed partial class YamlCategoryRepository : ICategoryRepository
         return Task.FromResult(category);
     }
 
-    public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct = default) 
+    public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct) 
         => Task.FromResult(categories);
 
     private void LogSearchResult(string alias, Category? category)

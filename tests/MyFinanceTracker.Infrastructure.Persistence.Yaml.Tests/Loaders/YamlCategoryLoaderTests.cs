@@ -9,24 +9,24 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.Loaders;
 
 public class YamlCategoryLoaderTests : IDisposable
 {
-    private readonly string _testFileName = $"categories_{Guid.NewGuid()}.yaml";
+    private readonly string testFileName = $"categories_{Guid.NewGuid()}.yaml";
 
     public void Dispose()
     {
-        if (File.Exists(_testFileName))
+        if (File.Exists(testFileName))
         {
-            File.Delete(_testFileName);
+            File.Delete(testFileName);
         }
         GC.SuppressFinalize(this);
     }
 
     private YamlCategoryLoader CreateSut()
     {
-        var options = Options.Create(new YamlPersistenceOptions { FilePath = _testFileName });
+        var options = Options.Create(new YamlPersistenceOptions { FilePath = testFileName });
         return new YamlCategoryLoader(options);
     }
 
-    private void WriteYaml(string content) => File.WriteAllText(_testFileName, content);
+    private void WriteYaml(string content) => File.WriteAllText(testFileName, content);
 
     [Fact]
     void Load_ShouldThrowFileNotFound_WhenFileDoesNotExist()
@@ -149,11 +149,14 @@ public class YamlCategoryLoaderTests : IDisposable
     [Fact]
     void Load_ShouldThrowDeserializationFailed_WhenYamlIsInvalid()
     {
+        //arrange
         WriteYaml("invalid: [ [ [ yaml structure");
         var sut = CreateSut();
 
+        //act
         var act = () => sut.Load();
 
+        //assert
         act.Should().Throw<CategoryLoaderException>()
             .WithMessage("*Failed to deserialize*");
     }

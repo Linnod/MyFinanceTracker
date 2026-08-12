@@ -6,7 +6,7 @@ using MyFinanceTracker.UseCases.Category.List;
 using NSubstitute;
 using Xunit;
 
-namespace MyFinanceTracker.InputProcessing.Text.Gemini.Tests.Services;
+namespace MyFinanceTracker.InputProcessing.Text.Gemini.Tests.Prompt;
 
 public class GeminiSystemPromptBuilderTests
 {
@@ -19,7 +19,7 @@ public class GeminiSystemPromptBuilderTests
     }
 
     [Fact]
-    public async Task BuildSystemInstructionAsync_WhenCategoriesExist_ShouldIncludeCategoriesInPrompt()
+    async Task BuildSystemInstruction_WhenCategoriesExist_ShouldIncludeCategoriesInPrompt()
     {
         // Arrange
         var categories = new List<Category>
@@ -32,7 +32,7 @@ public class GeminiSystemPromptBuilderTests
             .Returns(new ListCategoriesResponse.Success(categories));
 
         // Act
-        var result = await builder.BuildSystemInstructionAsync();
+        var result = await builder.BuildSystemInstruction(CancellationToken.None);
 
         // Assert
         result.Should().Contain("Groceries");
