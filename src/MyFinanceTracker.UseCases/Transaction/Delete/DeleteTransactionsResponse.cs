@@ -18,7 +18,7 @@ public abstract record DeleteTransactionsResponse
     {
         public override string ToString() => Errors.Count == 0 
             ? "No validation errors" 
-            : string.Join("; ", Errors.Select(e => $"e.ErrorCode"));
+            : string.Join("; ", Errors.Select(e => e.ErrorCode));
     }
 
     public sealed record Failure() : DeleteTransactionsResponse
