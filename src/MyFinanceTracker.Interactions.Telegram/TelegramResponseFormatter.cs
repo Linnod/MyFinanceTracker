@@ -15,11 +15,6 @@ internal static class TelegramResponseFormatter
 
         ProcessingResult.InvalidInput invalid => BuildInvalidInputMessage(invalid),
 
-        ProcessingResult.LogicError logicError => $"""
-            ❌ <b>Logic Error</b>
-            {WebUtility.HtmlEncode(logicError.Message)}
-            """,
-
         ProcessingResult.SystemError systemError => $"""
             🔌 <b>System Hiccup</b>
             Something went wrong. We're looking into it.

@@ -60,12 +60,12 @@ internal sealed partial class GeminiTextInputProcessor(
             }
 
             LogEmptyResponse();
-            return new ProcessingResult.InvalidInput("Gemini did not produce any output or tool call.");
+            return new ProcessingResult.SystemError("Unable to process your input. Please try again.");
         }
         catch (Exception ex)
         {
             LogError(ex);
-            return new ProcessingResult.SystemError("AI processing failed. Try again later.", ex);
+            return new ProcessingResult.SystemError("Failed to process your request. Please try again later.", ex);
         }
     }
 

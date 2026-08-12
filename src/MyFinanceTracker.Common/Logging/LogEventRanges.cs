@@ -6,7 +6,6 @@ public static class LogEventRanges
     {
         public const int Console = 10_100_000;
         public const int Telegram = 10_200_000;
-        public const int Api = 10_300_000;
     }
 
     public static class InputProcessing

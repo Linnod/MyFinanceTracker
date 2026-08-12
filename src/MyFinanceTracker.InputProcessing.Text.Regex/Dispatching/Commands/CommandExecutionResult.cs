@@ -10,12 +10,12 @@ internal abstract record CommandExecutionResult
     {
         public sealed record Added(IReadOnlyList<Domain.Entities.Transaction> Transactions) : CommandExecutionResult
         {
-            public override string ToString() => $"ADDED ({Transactions.Count} items)";
+            public override string ToString() => $"Added ({Transactions.Count} items)";
         }
 
         public sealed record Deleted(string CategoryName, DateOnly Date) : CommandExecutionResult
         {
-            public override string ToString() => $"DELETED '{CategoryName}' on {Date:dd.MM.yyyy}";
+            public override string ToString() => $"Deleted '{CategoryName}' on {Date:dd.MM.yyyy}";
         }
     }
 
@@ -23,7 +23,7 @@ internal abstract record CommandExecutionResult
     {
         public sealed record Listed(IReadOnlyList<Domain.Entities.Category> Categories) : CommandExecutionResult
         {
-            public override string ToString() => $"LISTED ({Categories.Count} categories)";
+            public override string ToString() => $"Listed ({Categories.Count} categories)";
         }
     }
 
@@ -33,18 +33,18 @@ internal abstract record CommandExecutionResult
         IReadOnlyCollection<string>? Examples = null
     ) : CommandExecutionResult
     {
-        public override string ToString() => $"INVALID SYNTAX [{ErrorCode}]";
+        public override string ToString() => $"Invalid syntax: {ErrorCode}";
     }
 
     public sealed record InvalidInput(IReadOnlyCollection<ValidationErrorItem> Errors) : CommandExecutionResult
     {
         public override string ToString() =>
-            $"VALIDATION ERROR [{string.Join(", ", Errors.Select(e => e.ErrorCode))}]";
+            $"Validation error: {string.Join(", ", Errors.Select(e => e.ErrorCode))}";
     }
 
     public sealed record Failure(string? Message = null) : CommandExecutionResult
     {
         public override string ToString() =>
-            $"FAILURE{(Message is not null ? $": {Message}" : string.Empty)}";
+            $"Failure{(Message is not null ? $": {Message}" : string.Empty)}";
     }
 }

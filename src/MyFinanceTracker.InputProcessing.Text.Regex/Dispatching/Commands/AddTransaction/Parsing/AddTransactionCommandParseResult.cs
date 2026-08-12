@@ -11,9 +11,6 @@ internal abstract record AddTransactionCommandParseResult
 
     public sealed record Failure(string ErrorCode) : AddTransactionCommandParseResult
     {
-        public override string ToString()
-        {
-            return $"[Failure] {ErrorCode}";
-        }
+        public override string ToString() => $"Failure: {ErrorCode}";
     }
 }

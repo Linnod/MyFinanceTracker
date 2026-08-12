@@ -9,12 +9,12 @@ internal sealed partial class DeleteTransactionCommandPayloadRegexParser
     [LoggerMessage(
         EventId = ParseSuccess,
         Level = LogLevel.Debug,
-        Message = "++ Parse successful: {Result}")]
+        Message = "Successfully parsed delete transaction payload: {Result}")]
     partial void LogParseSuccess(DeleteTransactionCommandParseResult result);
 
     [LoggerMessage(
         EventId = ParseFailure,
         Level = LogLevel.Information,
-        Message = "!! Parse failed: {Result}")]
+        Message = "Failed to parse delete transaction payload: {Result}")]
     partial void LogParseFailure(DeleteTransactionCommandParseResult result);
 }

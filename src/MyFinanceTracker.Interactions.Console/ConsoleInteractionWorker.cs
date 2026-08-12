@@ -47,7 +47,7 @@ internal sealed partial class ConsoleInteractionWorker(
         }
 
         var correlationId = Guid.NewGuid();
-        using (logger.BeginScope("ID: {CorrelationId}", correlationId))
+        using (logger.BeginScope("CorrelationId: {CorrelationId}", correlationId))
         {
             LogCommandReceived(input);
 
@@ -88,10 +88,6 @@ internal sealed partial class ConsoleInteractionWorker(
                         ConsoleCommands.WriteInfo($"  > {example}");
                     }
                 }
-                break;
-
-            case ProcessingResult.LogicError logicError:
-                ConsoleCommands.WriteError(logicError.Message);
                 break;
 
             case ProcessingResult.SystemError systemError:

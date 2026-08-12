@@ -9,18 +9,18 @@ public sealed partial class TextInputReceiver
     [LoggerMessage(
         EventId = Entry,
         Level = LogLevel.Information,
-        Message = "--> Processing input: '{Input}'")]
+        Message = "Processing input '{Input}'")]
     partial void LogReceiveEntry(TextInput input);
 
     [LoggerMessage(
         EventId = Exit,
         Level = LogLevel.Information,
-        Message = "<-- Result: {Response}")]
+        Message = "Processing finished with result: {Response}")]
     partial void LogReceiveExit(ProcessingResult response);
 
     [LoggerMessage(
         EventId = CriticalError,
         Level = LogLevel.Error,
-        Message = "!!! Critical error during command processing. Raw input: '{Input}'")]
+        Message = "Critical error during command processing. Raw input: '{Input}'")]
     partial void LogCriticalSystemError(TextInput input, Exception ex);
 }

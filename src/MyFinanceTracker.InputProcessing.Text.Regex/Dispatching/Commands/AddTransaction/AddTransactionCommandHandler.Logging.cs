@@ -9,12 +9,12 @@ internal sealed partial class AddTransactionCommandHandler
     [LoggerMessage(
         EventId = Entry,
         Level = LogLevel.Debug,
-        Message = "--> Handling: '{Command}'")]
+        Message = "Handling add transaction command '{Command}'")]
     partial void LogHandlerEntry(AddTransactionCommand command);
 
     [LoggerMessage(
         EventId = Exit,
         Level = LogLevel.Debug,
-        Message = "<-- Finished with result: {Result}")]
+        Message = "Handling finished with result: {Result}")]
     partial void LogHandlerExit(CommandExecutionResult result);
 }

@@ -8,9 +8,6 @@ internal abstract record DeleteTransactionCommandParseResult
 
     public sealed record Failure(string ErrorCode) : DeleteTransactionCommandParseResult
     {
-        public override string ToString()
-        {
-            return $"[Failure] {ErrorCode}";
-        }
+        public override string ToString() => $"Failure: {ErrorCode}";
     }
 }

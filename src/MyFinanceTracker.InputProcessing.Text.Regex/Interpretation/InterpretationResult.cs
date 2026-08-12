@@ -8,7 +8,7 @@ internal abstract record InterpretationResult
 
     public sealed record Identified(ITextCommand Command) : InterpretationResult
     {
-        public override string ToString() => $"{nameof(Identified)} {Command.GetType().Name}";
+        public override string ToString() => $"Identified {Command.GetType().Name}";
     }
 
     public sealed record Unrecognized(
@@ -18,6 +18,6 @@ internal abstract record InterpretationResult
         IReadOnlyCollection<string>? Examples = null
     ) : InterpretationResult
     {
-        public override string ToString() => $"{nameof(Unrecognized)} token {FailedToken}: {ErrorCode}";
+        public override string ToString() => $"Unrecognized token '{FailedToken}': {ErrorCode}";
     }
 }

@@ -6,29 +6,27 @@ using static MyFinanceTracker.Interactions.Console.Logging.LogEvents.Worker;
 
 internal sealed partial class ConsoleInteractionWorker
 {
-    private const string LogPrefix = "[" + nameof(ConsoleInteractionWorker) + "]";
-
     [LoggerMessage(
         EventId = Started,
         Level = LogLevel.Information,
-        Message = "--> " + LogPrefix + " Console interaction worker started")]
+        Message = "Console interaction worker started")]
     partial void LogStarted();
 
     [LoggerMessage(
         EventId = CommandReceived,
         Level = LogLevel.Information,
-        Message = "--> " + LogPrefix + " Received command: '{Input}'")]
+        Message = "Received command '{Input}'")]
     partial void LogCommandReceived(string input);
 
     [LoggerMessage(
         EventId = ProcessingError,
         Level = LogLevel.Error,
-        Message = "!! " + LogPrefix + " Error processing command '{Input}'")]
+        Message = "Error processing command '{Input}'")]
     partial void LogCommandFailed(Exception ex, string input);
 
     [LoggerMessage(
         EventId = FatalError,
         Level = LogLevel.Critical,
-        Message = "!! " + LogPrefix + " FATAL: Worker loop crashed")]
+        Message = "Worker loop crashed unexpectedly")]
     partial void LogLoopCrashed(Exception ex);
 }

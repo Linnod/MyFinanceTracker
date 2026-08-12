@@ -8,12 +8,12 @@ public abstract record ProcessingResult
         IReadOnlyList<ActionResult> Actions
     ) : ProcessingResult
     {
-        public override string ToString() => $"COMPLETED ({Actions.Count} actions)";
+        public override string ToString() => $"Completed ({Actions.Count} actions)";
     }
 
     public sealed record EmptyInput() : ProcessingResult
     {
-        public override string ToString() => "EMPTY INPUT | Provided input is empty.";
+        public override string ToString() => "EmptyInput";
     }
 
     public sealed record InvalidInput(
@@ -22,17 +22,12 @@ public abstract record ProcessingResult
         IReadOnlyCollection<string>? Examples = null
     ) : ProcessingResult
     {
-        public override string ToString() => $"INVALID INPUT | {Details}";
-    }
-
-    public sealed record LogicError(string Message) : ProcessingResult
-    {
-        public override string ToString() => $"[LOGIC ERROR] {Message}";
+        public override string ToString() => $"InvalidInput: {Details}";
     }
 
     public sealed record SystemError(string Message, Exception? Exception = null) : ProcessingResult
     {
-        public override string ToString() => $"[SYSTEM ERROR] {Message}";
+        public override string ToString() => $"SystemError: {Message}";
     }
 
     public override string ToString() => GetType().Name;
