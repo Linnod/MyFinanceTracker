@@ -4,8 +4,15 @@ public static class FuzzyMatcher
 {
     public static string? GetClosest(string input, IEnumerable<string> candidates, int maxDistance = 2)
     {
-        if (string.IsNullOrWhiteSpace(input) || input.Length < 2)
+        if (string.IsNullOrWhiteSpace(input))
+        {
             return null;
+        }
+
+        if (input.Length < maxDistance)
+        {
+            return null;
+        }
 
         var result = candidates
             .Select(c => new { Value = c, Distance = ComputeDistance(input, c) })
@@ -17,12 +24,13 @@ public static class FuzzyMatcher
         return result?.Value;
     }
 
-    internal static int ComputeDistance(string s, string t)
+    private static int ComputeDistance(string s, string t)
     {
         if (string.IsNullOrEmpty(s))
         {
              return t?.Length ?? 0;
         }
+
         if (string.IsNullOrEmpty(t))
         {
              return s?.Length ?? 0;
