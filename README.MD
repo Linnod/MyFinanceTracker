@@ -44,6 +44,22 @@ src/
 └── MyFinanceTracker.Host/
 ```
 
+
+## Quick Start
+
+1. Create your own Google Sheets tracker from the template:
+
+   https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZq9c/copy
+
+2. Open the copied spreadsheet and note its ID from the URL.
+
+3. Configure the `SpreadsheetId` value in `appsettings.Local.json`.
+
+4. Create a Google Service Account and grant it access to your copied spreadsheet.
+
+5. Run the application and start tracking your expenses.
+
+
 ## Configuration
 
 ### appsettings.Local.json
