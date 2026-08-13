@@ -2,17 +2,17 @@
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-blue)]()
 
-Personal finance tracker built with Clean Architecture, CQRS, Google Sheets persistence, Telegram integration, and AI-powered command parsing.
+Personal finance tracker that stores transactions in Google Sheets and supports natural language expense tracking through Console and Telegram interfaces.
 
 ## Features
 
-- Clean Architecture + CQRS
-- Google Gemini integration
-- Natural language expense parsing
+- Natural language transaction parsing
 - Google Sheets persistence
 - Telegram Bot support
 - Console interaction mode
+- Google Gemini integration
 - YAML-based category configuration
+- Clean Architecture + CQRS
 - Structured logging
 
 ## Architecture
@@ -71,7 +71,7 @@ https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZ
 3. Create a Service Account.
 4. Download the credentials JSON file.
 
-Place the file next to the application:
+Place the credentials file next to the application binaries:
 
 ```text
 google-api-credentials.json
@@ -99,7 +99,7 @@ Create `appsettings.Local.json`:
 ### 5. Run the application
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/MyFinanceTracker.git
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/MyFinanceTracker.git
 cd MyFinanceTracker
 
 dotnet build
@@ -140,8 +140,6 @@ dotnet run --project src/MyFinanceTracker.Host
 
 ### Telegram Mode
 
-To run the Telegram bot:
-
 ```json
 {
   "Interactions": {
@@ -158,8 +156,6 @@ Make sure that:
 
 ### Console Mode
 
-To run as a console application:
-
 ```json
 {
   "Interactions": {
@@ -169,42 +165,73 @@ To run as a console application:
 }
 ```
 
-### Categories Configuration
+## Categories Configuration
+
+Create a `categories.yaml` file next to the application binaries.
+
+```text
+MyFinanceTracker.Host/
+├── appsettings.json
+├── appsettings.Local.json
+├── categories.yaml
+├── google-api-credentials.json
+└── MyFinanceTracker.Host.exe
+```
+
+The category IDs are designed to work with the provided Google Sheets template:
+
+https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZq9c/copy
+
+### Example categories.yaml
 
 ```yaml
-Categories:
-  - Name: Food
-    IsIncome: false
-    Aliases:
-      - groceries
-      - supermarket
-      - lunch
-
-  - Name: Salary
-    IsIncome: true
-    Aliases:
-      - paycheck
+categories:
+  - id: "B"
+    name: "Income"
+    isIncome: true
+    aliases:
       - income
+      - salary
+      - paycheck
+
+  - id: "C"
+    name: "Food"
+    isIncome: false
+    aliases:
+      - food
+      - grocery
+      - supermarket
+
+  - id: "N"
+    name: "Restaurants"
+    isIncome: false
+    aliases:
+      - restaurant
+      - cafe
+      - fastfood
+
+  - id: "AL"
+    name: "Other"
+    isIncome: false
+    aliases:
+      - other
+      - misc
 ```
+
+> **Important**
+>
+> Category IDs must match the column IDs used by the Google Sheets template.
+> Transactions are written to spreadsheet columns based on the category `id`.
+
+> **Important**
+>
+> At least one income category must contain the alias `income`.
+> This alias is used as the default income category by the application.
 
 ## Usage Examples
 
-### Natural Language
-
-```text
-Spent 15.50 on groceries today
-Spent 8.40 at a cafe
-Received salary 2500
-```
-
-### Example Commands
-
 ```text
 Spent 15.50 on groceries
-Received 2500 salary
 Spent 8.40 at Starbucks
+Received salary 2500
 ```
-
-## Contributing
-
-Contributions, bug reports, and feature requests are welcome.
