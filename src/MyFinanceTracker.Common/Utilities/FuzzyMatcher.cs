@@ -14,26 +14,41 @@ public static class FuzzyMatcher
             return null;
         }
 
-        var result = candidates
-            .Select(c => new { Value = c, Distance = ComputeDistance(input, c) })
-            .Where(x => x.Distance <= maxDistance)
-            .OrderBy(x => x.Distance)
-            .ThenBy(x => x.Value.Length)
-            .FirstOrDefault();
+        string? bestMatch = null;
+        var minDistance = maxDistance + 1;
 
-        return result?.Value;
+        foreach (var candidate in candidates)
+        {
+            var distance = ComputeDistance(input, candidate);
+            if (distance > maxDistance)
+            {
+                continue;
+            }
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                bestMatch = candidate;
+            }
+            else if (distance == minDistance && bestMatch != null && candidate.Length < bestMatch.Length)
+            {
+                bestMatch = candidate;
+            }
+        }
+
+        return bestMatch;
     }
 
     private static int ComputeDistance(string s, string t)
     {
         if (string.IsNullOrEmpty(s))
         {
-             return t?.Length ?? 0;
+            return t?.Length ?? 0;
         }
 
         if (string.IsNullOrEmpty(t))
         {
-             return s?.Length ?? 0;
+            return s?.Length ?? 0;
         }
 
         int n = s.Length;
@@ -66,6 +81,7 @@ public static class FuzzyMatcher
                 }
             }
         }
+
         return d[n, m];
     }
 }
