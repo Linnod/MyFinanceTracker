@@ -1,0 +1,23 @@
+using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands;
+
+namespace MyFinanceTracker.InputProcessing.Text.Structured.Interpretation;
+
+internal abstract record InterpretationResult
+{
+    private InterpretationResult() { }
+
+    public sealed record Identified(ITextCommand Command) : InterpretationResult
+    {
+        public override string ToString() => $"Identified {Command.GetType().Name}";
+    }
+
+    public sealed record Unrecognized(
+        string FailedToken,
+        string ErrorCode,
+        string? Suggestion = null,
+        IReadOnlyCollection<string>? Examples = null
+    ) : InterpretationResult
+    {
+        public override string ToString() => $"Unrecognized token '{FailedToken}': {ErrorCode}";
+    }
+}

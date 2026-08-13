@@ -9,7 +9,7 @@ Personal finance tracker built with Clean Architecture, CQRS, Google Sheets pers
 
 - Clean Architecture + CQRS
 - Google Gemini integration
-- Regex-based command parser
+- Structured-based command parser
 - Google Sheets persistence
 - Telegram Bot support
 - Structured logging
@@ -99,7 +99,7 @@ dotnet run --project src/MyFinanceTracker.Host
 Spent 15.50 on groceries today at Walmart
 ```
 
-### Regex Commands
+### Structured Commands
 
 ```bash
 t add expense Food 15.50 "Walmart"

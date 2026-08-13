@@ -13,7 +13,7 @@ public static class LogEventRanges
         public static class Text
         {
             public const int Core = 20_100_000;
-            public const int Regex = 20_200_000;
+            public const int Structured = 20_200_000;
             public const int Gemini = 20_300_000;
         }
     }
