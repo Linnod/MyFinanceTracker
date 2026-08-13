@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -78,6 +79,14 @@ internal sealed partial class TelegramInteractionWorker(
 
     private Task HandlePollingError(ITelegramBotClient bot, Exception ex, CancellationToken ct)
     {
+        if (ex.GetBaseException() is SocketException
+            {
+                SocketErrorCode: SocketError.ConnectionReset
+            })
+        {
+            return Task.CompletedTask;
+        }
+
         LogPollingError(ex);
         return Task.CompletedTask;
     }
