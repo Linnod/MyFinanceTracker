@@ -13,6 +13,8 @@ internal sealed partial class GoogleSheetsTransactionRepository(
     FormulaService formulaService,
     ILogger<GoogleSheetsTransactionRepository> logger) : ITransactionRepository
 {
+    private static readonly SemaphoreSlim semaphore = new(1, 1);
+
     public async Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct)
     {
         var transactionList = transactions.ToList();
@@ -21,20 +23,36 @@ internal sealed partial class GoogleSheetsTransactionRepository(
              return;
         }
 
-        LogAddingTransactions(transactionList.Count);
+        await semaphore.WaitAsync(ct);
+        try
+        {
+            LogAddingTransactions(transactionList.Count);
 
-        var updates = mapper.MapForAddition(transactionList);
-        var updateData = await formulaService.PrepareValueRanges(updates, ct);
-        await client.SendBatchUpdate(updateData, ct);
+            var updates = mapper.MapForAddition(transactionList);
+            var updateData = await formulaService.PrepareValueRanges(updates, ct);
+            await client.SendBatchUpdate(updateData, ct);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 
     public async Task DeleteRange(Category category, DateOnly date, CancellationToken ct)
     {
-        LogDeletingTransactions(category.Name, date);
+        await semaphore.WaitAsync(ct);
+        try
+        {
+            LogDeletingTransactions(category.Name, date);
 
-        var update = mapper.MapForClearance(category.Id, date);
-        var updateData = formulaService.PrepareForOverwrite(update);
+            var update = mapper.MapForClearance(category.Id, date);
+            var updateData = formulaService.PrepareForOverwrite(update);
 
-        await client.SendBatchUpdate(updateData, ct);
+            await client.SendBatchUpdate(updateData, ct);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
     }
 }
