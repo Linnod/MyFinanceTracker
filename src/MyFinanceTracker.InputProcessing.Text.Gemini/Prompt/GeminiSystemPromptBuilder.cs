@@ -32,8 +32,8 @@ internal sealed class GeminiSystemPromptBuilder(IMediator mediator) : IGeminiSys
             3. If the user asks for a list of categories, call `list_categories`.
             4. If input is completely unrelated or ambiguous, respond concisely in text explaining what is wrong.
             5. If the user mentions multiple expenses or incomes for DIFFERENT categories or items in a single input, issue multiple parallel `add_transaction` tool calls (one for each item/category).
-            6. ALWAYS pass `amounts` as a JSON array of numbers, even if there is only one amount (e.g. `amounts: [100]` or `amounts: [100.5, 50]`). NEVER pass a scalar single number for `amounts`.
-            7. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Расход 100 € в категорию еда'). NEVER leave `recognizedInput` empty or null.
+            6. ALWAYS pass `amounts` as a JSON array of positive numbers (absolute values, > 0), even if there is only one amount (e.g. `amounts: [100]` or `amounts: [100.5, 50]`). NEVER pass negative numbers, zero, or a scalar single number.
+            7. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Expense 100 EUR in Food' or 'Income 1500 EUR in Salary'). NEVER leave `recognizedInput` empty or null.
             """;
     }
 

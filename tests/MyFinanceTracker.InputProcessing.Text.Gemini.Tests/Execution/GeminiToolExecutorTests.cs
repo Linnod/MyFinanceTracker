@@ -46,7 +46,7 @@ public class GeminiToolExecutorTests
                 id: Guid.NewGuid(),
                 type: TransactionType.Expense,
                 category: category,
-                amount: -100m,
+                amount: 100m,
                 date: new DateOnly(2026, 8, 8),
                 note: null
             )

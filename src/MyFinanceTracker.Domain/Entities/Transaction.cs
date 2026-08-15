@@ -29,9 +29,9 @@ public record Transaction
             throw new DomainException("Transaction category is required.");
         }
 
-        if (amount == 0)
+        if (amount <= 0)
         {
-            throw new DomainException("Transaction amount cannot be zero.");
+            throw new DomainException("Transaction amount must be greater than zero.");
         }
 
         if (date.Year < FinancialRules.MinAllowedYear || date.Year > FinancialRules.MaxAllowedYear)
@@ -42,7 +42,7 @@ public record Transaction
         Id = id;
         Type = type;
         Category = category;
-        Amount = type == TransactionType.Expense ? -Math.Abs(amount) : Math.Abs(amount);
+        Amount = type == TransactionType.Expense ? -amount : amount;
         Date = date;
         Note = note;
     }
