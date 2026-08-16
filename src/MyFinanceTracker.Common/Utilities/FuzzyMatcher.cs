@@ -2,24 +2,35 @@ namespace MyFinanceTracker.Common.Utilities;
 
 public static class FuzzyMatcher
 {
-    public static string? GetClosest(string input, IEnumerable<string> candidates, int maxDistance = 2)
+    public static string? GetClosest(
+        string input,
+        IEnumerable<string> candidates,
+        int maxDistance = 2)
     {
         if (string.IsNullOrWhiteSpace(input))
         {
             return null;
         }
 
-        if (input.Length < maxDistance)
-        {
-            return null;
-        }
+        input = input.Trim().ToLowerInvariant();
 
         string? bestMatch = null;
         var minDistance = maxDistance + 1;
 
         foreach (var candidate in candidates)
         {
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                continue;
+            }
+
+            if (Math.Abs(input.Length - candidate.Length) > maxDistance)
+            {
+                continue;
+            }
+
             var distance = ComputeDistance(input, candidate);
+
             if (distance > maxDistance)
             {
                 continue;
@@ -30,7 +41,9 @@ public static class FuzzyMatcher
                 minDistance = distance;
                 bestMatch = candidate;
             }
-            else if (distance == minDistance && bestMatch != null && candidate.Length < bestMatch.Length)
+            else if (distance == minDistance &&
+                     bestMatch != null &&
+                     candidate.Length < bestMatch.Length)
             {
                 bestMatch = candidate;
             }
@@ -48,7 +61,7 @@ public static class FuzzyMatcher
 
         if (string.IsNullOrEmpty(t))
         {
-            return s?.Length ?? 0;
+            return s.Length;
         }
 
         int n = s.Length;
@@ -69,15 +82,22 @@ public static class FuzzyMatcher
         {
             for (int j = 1; j <= m; j++)
             {
-                int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+                int cost = s[i - 1] == t[j - 1] ? 0 : 1;
 
                 d[i, j] = Math.Min(
-                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                    Math.Min(
+                        d[i - 1, j] + 1,
+                        d[i, j - 1] + 1),
                     d[i - 1, j - 1] + cost);
 
-                if (i > 1 && j > 1 && s[i - 1] == t[j - 2] && s[i - 2] == t[j - 1])
+                if (i > 1 &&
+                    j > 1 &&
+                    s[i - 1] == t[j - 2] &&
+                    s[i - 2] == t[j - 1])
                 {
-                    d[i, j] = Math.Min(d[i, j], d[i - 2, j - 2] + cost);
+                    d[i, j] = Math.Min(
+                        d[i, j],
+                        d[i - 2, j - 2] + cost);
                 }
             }
         }
