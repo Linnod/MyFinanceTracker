@@ -6,9 +6,11 @@ using MyFinanceTracker.Infrastructure.Persistence.Yaml;
 using MyFinanceTracker.InputProcessing.Text;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.InputProcessing.Text.Gemini;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services
+    .AddSingleton(TimeProvider.System)
     .AddYamlCategoryRepository(builder.Configuration)
     .AddTextInputProcessing(b => b.UseGemini(builder.Configuration))
     .AddUseCases()

@@ -7,7 +7,8 @@ namespace MyFinanceTracker.UseCases.Transaction.Create;
 
 internal sealed class CreateTransactionsHandler(
     ICategoryRepository categoryRepository,
-    ITransactionRepository transactionRepository)
+    ITransactionRepository transactionRepository,
+    TimeProvider timeProvider)
     : IRequestHandler<CreateTransactionsRequest, CreateTransactionsResponse>
 {
     public async Task<CreateTransactionsResponse> Handle(CreateTransactionsRequest request, CancellationToken ct)
@@ -17,6 +18,7 @@ internal sealed class CreateTransactionsHandler(
             .SelectMany(c => c.Aliases.Select(alias => new { Alias = alias, Category = c }))
             .ToDictionary(x => x.Alias, x => x.Category, StringComparer.OrdinalIgnoreCase);
         var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
+        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
         foreach (var item in request.Items)
         {
             var (category, error) = ResolveCategory(item, categoriesByAlias);
@@ -30,7 +32,7 @@ internal sealed class CreateTransactionsHandler(
                 type: item.TransactionType,
                 category: category!,
                 amount: item.Amount,
-                date: item.Date ?? DateOnly.FromDateTime(DateTime.UtcNow),
+                date: item.Date ?? today,
                 note: item.Note
             ));
         }

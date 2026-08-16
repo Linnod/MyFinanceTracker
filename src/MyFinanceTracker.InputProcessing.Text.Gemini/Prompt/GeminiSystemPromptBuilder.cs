@@ -4,11 +4,11 @@ using MyFinanceTracker.UseCases.Category.List;
 
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Prompt;
 
-internal sealed class GeminiSystemPromptBuilder(IMediator mediator) : IGeminiSystemPromptBuilder
+internal sealed class GeminiSystemPromptBuilder(IMediator mediator, TimeProvider timeProvider) : IGeminiSystemPromptBuilder
 {
     public async Task<string> BuildSystemInstruction(CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
         var categoriesResponse = await mediator.Send(new ListCategoriesRequest(), ct);
 
         var categoriesInfo = categoriesResponse switch
@@ -22,7 +22,7 @@ internal sealed class GeminiSystemPromptBuilder(IMediator mediator) : IGeminiSys
             Your task is to understand user natural language input in any language (English, Russian, etc.) and invoke the appropriate tool/function call.
 
             CONTEXT:
-            - Today's date UTC is: {today:yyyy-MM-dd} ({today.DayOfWeek}). Use this to accurately resolve relative dates like "yesterday", "day before yesterday", "last Monday", etc.
+            - Today's date is: {today:yyyy-MM-dd} ({today.DayOfWeek}). Use this to accurately resolve relative dates like "yesterday", "day before yesterday", "last Monday", etc.
             - Available Categories in system:
             {categoriesInfo}
 

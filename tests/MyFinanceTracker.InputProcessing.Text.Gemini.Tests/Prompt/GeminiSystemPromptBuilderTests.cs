@@ -15,7 +15,7 @@ public class GeminiSystemPromptBuilderTests
 
     public GeminiSystemPromptBuilderTests()
     {
-        builder = new GeminiSystemPromptBuilder(mediator);
+        builder = new GeminiSystemPromptBuilder(mediator, TimeProvider.System);
     }
 
     [Fact]

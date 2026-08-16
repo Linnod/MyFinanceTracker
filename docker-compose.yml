@@ -6,7 +6,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - TZ=Etc/UTC
+      - TZ=Europe/Madrid
       - DOTNET_ENVIRONMENT=Production
       - Telegram__Token=${TG_TOKEN}
       - Telegram__AllowedUserId=${TG_USER_ID}
