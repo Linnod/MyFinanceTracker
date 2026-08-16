@@ -5,7 +5,6 @@
     <Project Path="src/MyFinanceTracker.Common/MyFinanceTracker.Common.csproj" />
     <Project Path="src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj" />
     <Project Path="src/MyFinanceTracker.InputProcessing.Text.Gemini/MyFinanceTracker.InputProcessing.Text.Gemini.csproj" />
-    <Project Path="src/MyFinanceTracker.Infrastructure.Persistence/MyFinanceTracker.Infrastructure.Persistence.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.Yaml/MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
     <Project Path="src/MyFinanceTracker.InputProcessing.Text.Structured/MyFinanceTracker.InputProcessing.Text.Structured.csproj" />

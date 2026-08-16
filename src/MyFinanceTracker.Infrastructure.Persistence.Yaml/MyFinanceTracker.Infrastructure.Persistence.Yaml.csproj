@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
-    <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />

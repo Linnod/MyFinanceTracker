@@ -7,7 +7,6 @@
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Interactions.Console\MyFinanceTracker.Interactions.Console.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Interactions.Telegram\MyFinanceTracker.Interactions.Telegram.csproj" />
-    <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj" />
   </ItemGroup>
   <ItemGroup>
