@@ -10,7 +10,7 @@ Personal finance tracker that stores transactions in Google Sheets and supports 
 - Google Sheets persistence
 - Telegram Bot support
 - Console interaction mode
-- Google Gemini integration
+- Gemini-powered natural language processing
 - YAML-based category configuration
 - Clean Architecture + CQRS
 - Structured logging
@@ -50,10 +50,21 @@ src/
 ├── MyFinanceTracker.Domain/
 ├── MyFinanceTracker.Common/
 ├── MyFinanceTracker.UseCases/
-├── MyFinanceTracker.Infrastructure.Persistence/
+├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/
+├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
 ├── MyFinanceTracker.InputProcessing.Text/
-├── MyFinanceTracker.Interactions/
+├── MyFinanceTracker.InputProcessing.Text.Gemini/
+├── MyFinanceTracker.InputProcessing.Text.Structured/
+├── MyFinanceTracker.Interactions.Console/
+├── MyFinanceTracker.Interactions.Telegram/
 └── MyFinanceTracker.Host/
+
+tests/
+├── MyFinanceTracker.Domain.Tests/
+├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
+├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
+├── MyFinanceTracker.InputProcessing.Text.Gemini.Tests/
+└── MyFinanceTracker.InputProcessing.Text.Structured.Tests/
 ```
 
 ## Quick Start
@@ -71,17 +82,21 @@ https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZ
 3. Create a Service Account.
 4. Download the credentials JSON file.
 
-Place the credentials file next to the application binaries:
-
-```text
-google-api-credentials.json
-```
-
 ### 3. Share the spreadsheet
 
 Share your copied spreadsheet with the Service Account email address and grant it **Editor** permissions.
 
-### 4. Configure the application
+### 4. Configure categories
+
+Copy the template:
+
+```bash
+cp deploy/categories.template.yaml categories.yaml
+```
+
+Adjust category names, aliases and spreadsheet column IDs as needed.
+
+### 5. Configure the application
 
 Create `appsettings.Local.json`:
 
@@ -96,10 +111,10 @@ Create `appsettings.Local.json`:
 }
 ```
 
-### 5. Run the application
+### 6. Run the application
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/MyFinanceTracker.git
+git clone https://github.com/Linnod/MyFinanceTracker.git
 cd MyFinanceTracker
 
 dotnet build
@@ -132,11 +147,23 @@ dotnet run --project src/MyFinanceTracker.Host
   },
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY",
-    "Model": "gemini-3.5-flash",
+    "Model": "YOUR_GEMINI_MODEL",
     "Temperature": 0.1
   }
 }
 ```
+
+### Category Configuration Notes
+
+> **Important**
+>
+> Category IDs must match the column IDs used by the Google Sheets template.
+> Transactions are written to spreadsheet columns based on the category `id`.
+
+> **Important**
+>
+> At least one income category must contain the alias `income`.
+> This alias is used as the default income category by the application.
 
 ### Telegram Mode
 
@@ -164,69 +191,6 @@ Make sure that:
   }
 }
 ```
-
-## Categories Configuration
-
-Create a `categories.yaml` file next to the application binaries.
-
-```text
-MyFinanceTracker.Host/
-├── appsettings.json
-├── appsettings.Local.json
-├── categories.yaml
-├── google-api-credentials.json
-└── MyFinanceTracker.Host.exe
-```
-
-The category IDs are designed to work with the provided Google Sheets template:
-
-https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZq9c/copy
-
-### Example categories.yaml
-
-```yaml
-categories:
-  - id: "B"
-    name: "Income"
-    isIncome: true
-    aliases:
-      - income
-      - salary
-      - paycheck
-
-  - id: "C"
-    name: "Food"
-    isIncome: false
-    aliases:
-      - food
-      - grocery
-      - supermarket
-
-  - id: "N"
-    name: "Restaurants"
-    isIncome: false
-    aliases:
-      - restaurant
-      - cafe
-      - fastfood
-
-  - id: "AL"
-    name: "Other"
-    isIncome: false
-    aliases:
-      - other
-      - misc
-```
-
-> **Important**
->
-> Category IDs must match the column IDs used by the Google Sheets template.
-> Transactions are written to spreadsheet columns based on the category `id`.
-
-> **Important**
->
-> At least one income category must contain the alias `income`.
-> This alias is used as the default income category by the application.
 
 ## Usage Examples
 
