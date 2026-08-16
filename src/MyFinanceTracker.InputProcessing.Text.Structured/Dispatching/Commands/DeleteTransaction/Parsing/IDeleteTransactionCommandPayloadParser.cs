@@ -2,5 +2,5 @@ namespace MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands.
 
 internal interface IDeleteTransactionCommandPayloadParser
 {
-    Task<DeleteTransactionCommandParseResult> Parse(string payload);  
+    Task<DeleteTransactionCommandParseResult> Parse(string payload);
 }

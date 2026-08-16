@@ -8,7 +8,7 @@ internal static class LogEvents
 
     public static class Categories
     {
-        private const int SubBase = Base + 0; 
+        private const int SubBase = Base + 0;
 
         public const int Searching = SubBase + 1;
         public const int Found = SubBase + 2;

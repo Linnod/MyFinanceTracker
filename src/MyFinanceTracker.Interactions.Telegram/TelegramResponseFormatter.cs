@@ -34,7 +34,7 @@ internal static class TelegramResponseFormatter
                 case ActionResult.Transaction.Added added:
                     var category = added.Transactions.FirstOrDefault()?.Category?.Name ?? "Unknown";
                     var total = added.Transactions.Sum(t => Math.Abs(t.Amount));
-                    
+
                     sb.AppendLine($"🔹 Created <b>{added.Transactions.Count}</b> transaction(s) in '<b>{WebUtility.HtmlEncode(category)}</b>'");
                     sb.AppendLine($"💰 Total: <code>{total}</code>");
 
@@ -54,8 +54,8 @@ internal static class TelegramResponseFormatter
                     foreach (var c in listed.Categories)
                     {
                         var icon = c.IsIncome ? "💰" : "💸";
-                        var aliases = c.Aliases.Count > 0 
-                            ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)" 
+                        var aliases = c.Aliases.Count > 0
+                            ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
                             : string.Empty;
 
                         sb.AppendLine($"   {icon} <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
@@ -100,8 +100,8 @@ internal static class TelegramResponseFormatter
     }
 
     private static void AppendSuggestionAndExamples(
-        StringBuilder sb, 
-        string? suggestion, 
+        StringBuilder sb,
+        string? suggestion,
         IReadOnlyCollection<string>? examples)
     {
         if (suggestion is not null)

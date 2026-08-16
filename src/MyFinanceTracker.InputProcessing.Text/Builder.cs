@@ -9,7 +9,7 @@ public interface ITextInputProcessingBuilder
     IServiceCollection Services { get; }
 }
 
-internal sealed class TextInputProcessingBuilder(IServiceCollection services) 
+internal sealed class TextInputProcessingBuilder(IServiceCollection services)
     : ITextInputProcessingBuilder
 {
     public IServiceCollection Services { get; } = services;

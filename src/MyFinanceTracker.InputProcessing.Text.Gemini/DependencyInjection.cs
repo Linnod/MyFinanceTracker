@@ -17,7 +17,7 @@ public static class DependencyInjection
     {
         builder.Services
             .ConfigureGeminiOptions(configuration)
-            .AddScoped(sp => 
+            .AddScoped(sp =>
             {
                 var options = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
                 return new Client(apiKey: options.ApiKey);

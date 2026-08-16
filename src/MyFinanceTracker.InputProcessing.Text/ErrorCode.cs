@@ -7,6 +7,6 @@ public static class ErrorCode
         public const string EmptyInput = nameof(EmptyInput);
         public const string InvalidFormat = nameof(InvalidFormat);
         public const string InvalidAmount = nameof(InvalidAmount);
-        public const string InvalidDateFormat = nameof(InvalidDateFormat); 
+        public const string InvalidDateFormat = nameof(InvalidDateFormat);
     }
 }

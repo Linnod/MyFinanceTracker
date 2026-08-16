@@ -21,20 +21,20 @@ internal sealed partial class CreateTransactionsLoggingBehavior(
             var response = await next();
             sw.Stop();
 
-        switch (response)
-        {
-            case CreateTransactionsResponse.Success s:
-                LogSuccess(s, sw.ElapsedMilliseconds);
-                break;
+            switch (response)
+            {
+                case CreateTransactionsResponse.Success s:
+                    LogSuccess(s, sw.ElapsedMilliseconds);
+                    break;
 
-            case CreateTransactionsResponse.ValidationError v:
-                LogValidationError(v, sw.ElapsedMilliseconds);
-                break;
+                case CreateTransactionsResponse.ValidationError v:
+                    LogValidationError(v, sw.ElapsedMilliseconds);
+                    break;
 
-            case CreateTransactionsResponse.Failure:
-                LogFailure(sw.ElapsedMilliseconds);
-                break;
-        }
+                case CreateTransactionsResponse.Failure:
+                    LogFailure(sw.ElapsedMilliseconds);
+                    break;
+            }
 
             return response;
         }

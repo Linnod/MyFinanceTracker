@@ -3,7 +3,7 @@ namespace MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands.
 [CommandMetadata(
     description: "Cleaning a category",
     examples: [
-        "t rem food 03.02.2026", 
+        "t rem food 03.02.2026",
         "t rem taxi 04.02.2026"
     ]
 )]

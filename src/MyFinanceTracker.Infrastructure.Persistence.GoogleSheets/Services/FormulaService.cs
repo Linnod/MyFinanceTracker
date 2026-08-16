@@ -12,7 +12,7 @@ internal class FormulaService(IGoogleSheetsClient client, FormulaBuilder builder
     {
         if (updates.Count == 0)
         {
-             return [];
+            return [];
         }
 
         var ranges = updates

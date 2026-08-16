@@ -135,14 +135,14 @@ public class YamlCategoryLoaderTests : IDisposable
 
         // assert
         result.Should().HaveCount(2);
-        
-        result.Should().ContainSingle(c => 
-            c.Id == "INCOME" && 
-            c.IsIncome && 
+
+        result.Should().ContainSingle(c =>
+            c.Id == "INCOME" &&
+            c.IsIncome &&
             c.Aliases.Contains(FinancialRules.DefaultIncomeCategoryAlias));
 
-        result.Should().ContainSingle(c => 
-            c.Id == "FOOD" && 
+        result.Should().ContainSingle(c =>
+            c.Id == "FOOD" &&
             c.Aliases.Contains("eat"));
     }
 

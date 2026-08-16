@@ -12,7 +12,7 @@ internal readonly record struct InterpretationInput
     public static InterpretationInput Create(string raw)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(raw);
-        
+
         return new InterpretationInput(raw.Trim());
     }
 

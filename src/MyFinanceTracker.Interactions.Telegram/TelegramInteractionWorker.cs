@@ -48,7 +48,7 @@ internal sealed partial class TelegramInteractionWorker(
         var username = message.From?.Username ?? message.From?.FirstName ?? "Unknown";
         var correlationId = Guid.NewGuid();
 
-        using (logger.BeginScope("TelegramUser: {TelegramUser}, UserId: {TelegramUserId}, CorrelationId: {CorrelationId}", 
+        using (logger.BeginScope("TelegramUser: {TelegramUser}, UserId: {TelegramUserId}, CorrelationId: {CorrelationId}",
                    username, userId ?? 0, correlationId))
         {
             LogUpdateReceived(messageText);

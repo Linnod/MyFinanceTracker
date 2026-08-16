@@ -46,10 +46,10 @@ internal sealed class CommandRegistry : ICommandRegistry
 
     public CommandRegistry()
     {
-        Domains = [.. RouteMap.Select(builder => 
+        Domains = [.. RouteMap.Select(builder =>
         {
             var actionsMap = new Dictionary<string, Func<string, ITextCommand>>(StringComparer.OrdinalIgnoreCase);
-            
+
             foreach (var route in builder.Actions)
             {
                 foreach (var actionAlias in route.Aliases)

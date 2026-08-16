@@ -17,7 +17,7 @@ internal sealed class CreateTransactionsValidationBehavior(IValidator<CreateTran
             var errors = result.Errors
                 .Select(e => new ValidationErrorItem(e.ErrorCode))
                 .ToList();
-                
+
             return new CreateTransactionsResponse.ValidationError(errors);
         }
 

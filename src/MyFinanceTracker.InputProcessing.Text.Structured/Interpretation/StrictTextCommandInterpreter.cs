@@ -4,7 +4,7 @@ using MyFinanceTracker.Common.Utilities;
 namespace MyFinanceTracker.InputProcessing.Text.Structured.Interpretation;
 
 internal sealed partial class StrictTextCommandInterpreter(
-    ICommandRegistry commandRegistry, 
+    ICommandRegistry commandRegistry,
     ILogger<StrictTextCommandInterpreter> logger)
     : ITextCommandInterpreter
 {
@@ -42,9 +42,9 @@ internal sealed partial class StrictTextCommandInterpreter(
                 .Select(a => $"{domainCandidate} {a} ...")
                 .ToArray();
             var unrecognizedResult = new InterpretationResult.Unrecognized(
-                actionCandidate, 
-                ErrorCode.Syntax.InvalidFormat, 
-                suggestion, 
+                actionCandidate,
+                ErrorCode.Syntax.InvalidFormat,
+                suggestion,
                 examples
             );
             LogUnrecognized(unrecognizedResult);

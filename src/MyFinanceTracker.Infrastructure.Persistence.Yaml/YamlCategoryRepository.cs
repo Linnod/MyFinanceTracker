@@ -12,12 +12,11 @@ internal sealed partial class YamlCategoryRepository : ICategoryRepository
     private readonly ILogger<YamlCategoryRepository> logger;
 
     public YamlCategoryRepository(
-        ICategoryLoader loader, 
+        ICategoryLoader loader,
         ILogger<YamlCategoryRepository> logger)
     {
         this.logger = logger;
         categories = loader.Load();
-        
         aliasMap = categories
             .SelectMany(cat => cat.Aliases.Select(alias => (Alias: alias, Category: cat)))
             .ToDictionary(x => x.Alias, x => x.Category, StringComparer.OrdinalIgnoreCase);
@@ -34,7 +33,7 @@ internal sealed partial class YamlCategoryRepository : ICategoryRepository
         return Task.FromResult(category);
     }
 
-    public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct) 
+    public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct)
         => Task.FromResult(categories);
 
     private void LogSearchResult(string alias, Category? category)

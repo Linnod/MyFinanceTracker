@@ -11,7 +11,7 @@ using MyFinanceTracker.UseCases.Transaction.Delete;
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 
 internal sealed partial class GeminiToolExecutor(
-    IMediator mediator, 
+    IMediator mediator,
     ILogger<GeminiToolExecutor> logger) : IGeminiToolExecutor
 {
     private const string DefaultRawInputForAddingTransaction = "Adding transaction";

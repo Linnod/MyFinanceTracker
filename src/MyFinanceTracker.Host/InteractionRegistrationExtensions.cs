@@ -9,7 +9,7 @@ namespace MyFinanceTracker.Host;
 public static class InteractionRegistrationExtensions
 {
     public static IServiceCollection AddConfiguredInteractions(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
         var section = configuration.GetSection("Interactions");

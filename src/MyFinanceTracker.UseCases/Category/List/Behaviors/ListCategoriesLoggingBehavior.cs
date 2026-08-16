@@ -20,19 +20,19 @@ internal sealed partial class ListCategoriesLoggingBehavior(
         {
             var response = await next();
             sw.Stop();
-            
+
             if (response is ListCategoriesResponse.Success success)
             {
-               LogSuccess(success.Categories.Count, sw.ElapsedMilliseconds); 
+                LogSuccess(success.Categories.Count, sw.ElapsedMilliseconds);
             }
-            
+
             return response;
         }
         catch (Exception ex)
         {
             sw.Stop();
             LogCriticalError(ex, sw.ElapsedMilliseconds);
-            
+
             return new ListCategoriesResponse.Failure();
         }
     }

@@ -3,7 +3,7 @@ namespace MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands.
 [CommandMetadata(
     description: "Listing categories",
     examples: [
-        "c all", 
+        "c all",
         "cat list"
     ]
 )]

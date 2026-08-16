@@ -23,7 +23,7 @@ internal sealed partial class GoogleSheetsClient(
         var request = sheetsService.Spreadsheets.Values.BatchGet(options.SpreadsheetId);
         request.Ranges = new Repeatable<string>(ranges);
         request.ValueRenderOption = BatchGetRequest.ValueRenderOptionEnum.FORMULA;
-        
+
         var response = await request.ExecuteAsync(ct);
 
         var fetchedCount = response.ValueRanges?.Count ?? 0;

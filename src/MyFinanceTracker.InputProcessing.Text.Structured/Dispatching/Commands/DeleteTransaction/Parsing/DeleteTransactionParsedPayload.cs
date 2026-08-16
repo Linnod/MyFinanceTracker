@@ -5,6 +5,6 @@ internal record DeleteTransactionParsedPayload(
     DateOnly Date
 )
 {
-    public override string ToString() => 
+    public override string ToString() =>
         $"Delete from '{CategoryAlias}' for {Date:dd.MM.yyyy}";
 }

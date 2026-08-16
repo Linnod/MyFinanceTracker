@@ -20,7 +20,7 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         var transactionList = transactions.ToList();
         if (transactionList.Count == 0)
         {
-             return;
+            return;
         }
 
         await semaphore.WaitAsync(ct);

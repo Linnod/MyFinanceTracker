@@ -29,7 +29,7 @@ internal class YamlCategoryLoader(
             var yamlData = deserializer.Deserialize<YamlCategoryRoot>(reader);
 
             var result = ValidateAndMap(yamlData);
-            
+
             return result;
         }
         catch (CategoryLoaderException)
@@ -77,7 +77,7 @@ internal class YamlCategoryLoader(
             throw CategoryLoaderException.DuplicateAlias(duplicateAlias.Key);
         }
 
-        var hasDefaultIncome = data.Categories.Any(c => 
+        var hasDefaultIncome = data.Categories.Any(c =>
             c.Aliases.Contains(FinancialRules.DefaultIncomeCategoryAlias, StringComparer.OrdinalIgnoreCase));
 
         if (!hasDefaultIncome)

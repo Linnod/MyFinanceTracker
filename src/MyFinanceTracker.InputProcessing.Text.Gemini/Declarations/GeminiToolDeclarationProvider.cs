@@ -95,13 +95,13 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                     Parameters = new Schema
                     {
                         Type = Type.Object,
-                        Properties = new Dictionary<string, Schema> 
+                        Properties = new Dictionary<string, Schema>
                         {
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
                                 Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'Просмотр списка категорий')."
-                            }    
+                            }
                         },
                         Required = ["recognizedInput"]
                     }

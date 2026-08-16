@@ -14,7 +14,7 @@ builder.Services
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)
     .AddConfiguredInteractions(builder.Configuration);
-    
+
 builder.Logging
     .AddSimpleConsole(options =>
     {

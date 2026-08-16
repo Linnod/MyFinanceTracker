@@ -20,10 +20,10 @@ internal sealed partial class DeleteTransactionCommandHandler(
 
         var action = parseResult switch
         {
-            DeleteTransactionCommandParseResult.Success success => 
+            DeleteTransactionCommandParseResult.Success success =>
                 await ProcessParseSuccess(success, ct),
 
-            DeleteTransactionCommandParseResult.Failure failure => 
+            DeleteTransactionCommandParseResult.Failure failure =>
                 new CommandExecutionResult.InvalidSyntax(
                     ErrorCode: failure.ErrorCode,
                     Examples: command.GetMetadata().Examples
@@ -45,13 +45,13 @@ internal sealed partial class DeleteTransactionCommandHandler(
 
         return response switch
         {
-            DeleteTransactionsResponse.Success s => 
+            DeleteTransactionsResponse.Success s =>
                 new CommandExecutionResult.Transaction.Deleted(s.CategoryName, s.Date),
 
-            DeleteTransactionsResponse.ValidationError v => 
+            DeleteTransactionsResponse.ValidationError v =>
                 new CommandExecutionResult.InvalidInput(v.Errors),
 
-            DeleteTransactionsResponse.Failure => 
+            DeleteTransactionsResponse.Failure =>
                 new CommandExecutionResult.Failure(),
 
             _ => throw new UnreachableException($"Unknown response type: {response.GetType().Name}")

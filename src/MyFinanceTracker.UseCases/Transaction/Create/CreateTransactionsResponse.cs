@@ -22,8 +22,8 @@ public abstract record CreateTransactionsResponse
         IReadOnlyCollection<ValidationErrorItem> Errors
     ) : CreateTransactionsResponse
     {
-        public override string ToString() => Errors.Count == 0 
-            ? "No validation errors" 
+        public override string ToString() => Errors.Count == 0
+            ? "No validation errors"
             : string.Join("; ", Errors.Select(e => $"{e.ErrorCode}"));
     }
 

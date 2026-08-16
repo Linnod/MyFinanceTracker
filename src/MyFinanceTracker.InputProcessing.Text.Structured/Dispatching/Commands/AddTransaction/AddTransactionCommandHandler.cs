@@ -19,10 +19,10 @@ internal sealed partial class AddTransactionCommandHandler(
         var parseResult = await payloadParser.Parse(command.Payload);
         CommandExecutionResult action = parseResult switch
         {
-            AddTransactionCommandParseResult.Success success => 
+            AddTransactionCommandParseResult.Success success =>
                 await ProcessParseSuccess(success, ct),
 
-            AddTransactionCommandParseResult.Failure failure => 
+            AddTransactionCommandParseResult.Failure failure =>
                 new CommandExecutionResult.InvalidSyntax(
                     ErrorCode: failure.ErrorCode,
                     Examples: command.GetMetadata().Examples
@@ -36,7 +36,7 @@ internal sealed partial class AddTransactionCommandHandler(
     }
 
     private async Task<CommandExecutionResult> ProcessParseSuccess(
-        AddTransactionCommandParseResult.Success success, 
+        AddTransactionCommandParseResult.Success success,
         CancellationToken ct)
     {
         var payload = success.Payload;
@@ -52,15 +52,15 @@ internal sealed partial class AddTransactionCommandHandler(
 
         return response switch
         {
-            CreateTransactionsResponse.Success s => 
+            CreateTransactionsResponse.Success s =>
                 new CommandExecutionResult.Transaction.Added(s.Transactions),
 
-            CreateTransactionsResponse.ValidationError v => 
+            CreateTransactionsResponse.ValidationError v =>
                 new CommandExecutionResult.InvalidInput(
                     Errors: v.Errors
                 ),
 
-            CreateTransactionsResponse.Failure => 
+            CreateTransactionsResponse.Failure =>
                 new CommandExecutionResult.Failure(),
 
             _ => throw new UnreachableException($"Unknown response type: {response.GetType().Name}")

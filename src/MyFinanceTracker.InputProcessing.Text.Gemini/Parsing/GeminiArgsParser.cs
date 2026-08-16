@@ -9,9 +9,9 @@ internal static class GeminiArgsParser
     {
         PropertyNameCaseInsensitive = true,
         NumberHandling = JsonNumberHandling.AllowReadingFromString,
-        Converters = 
-        { 
-            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) 
+        Converters =
+        {
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
         }
     };
 

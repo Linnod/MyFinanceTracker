@@ -51,7 +51,8 @@ internal sealed partial class StructuredTextInputProcessor(
                     ErrorCode: unrecognized.ErrorCode,
                     Suggestion: unrecognized.Suggestion,
                     Examples: unrecognized.Examples
-                ) { RawInput = line },
+                )
+                { RawInput = line },
 
             _ => throw new UnreachableException($"Interpretation result {interpretation.GetType().Name} was not handled.")
         };
@@ -75,7 +76,8 @@ internal sealed partial class StructuredTextInputProcessor(
                     ErrorCode: syntax.ErrorCode,
                     Suggestion: syntax.Suggestion,
                     Examples: syntax.Examples
-                ) { RawInput = rawInput },
+                )
+                { RawInput = rawInput },
 
             CommandExecutionResult.InvalidInput invalidInput =>
                 new ActionResult.InvalidInput(invalidInput.Errors) { RawInput = rawInput },

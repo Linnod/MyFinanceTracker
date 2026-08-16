@@ -6,7 +6,7 @@ internal static class TextCommandExtensions
     {
         return commandType
             .GetCustomAttributes(typeof(CommandMetadataAttribute), false)
-            .FirstOrDefault() as CommandMetadataAttribute 
+            .FirstOrDefault() as CommandMetadataAttribute
             ?? throw new InvalidOperationException($"Command {commandType.Name} is missing [CommandMetadata] attribute.");
     }
 
