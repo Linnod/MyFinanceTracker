@@ -1,6 +1,6 @@
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 
-internal record GoogleSheetUpdate(
+internal record GoogleSheetCellAddress(
     string SheetName,
-    string CellAddress,
-    string Content);
+    int Row,
+    string Column);

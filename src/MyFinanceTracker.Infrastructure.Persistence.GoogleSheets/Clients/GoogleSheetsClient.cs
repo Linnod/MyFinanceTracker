@@ -4,6 +4,7 @@ using Google.Apis.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 
 using static Google.Apis.Sheets.v4.SpreadsheetsResource.ValuesResource;
 
@@ -16,32 +17,50 @@ internal sealed partial class GoogleSheetsClient(
 {
     private readonly GoogleSheetsOptions options = options.Value;
 
-    public async Task<List<string>> GetFormulas(IList<string> ranges, CancellationToken ct)
+    public async Task<IReadOnlyList<GoogleSheetCell>> GetCells(
+        IEnumerable<GoogleSheetCellAddress> cellAddresses,
+        CancellationToken ct)
     {
-        LogFetchingFormulas(ranges.Count, options.SpreadsheetId);
+        var cellAddressesList = cellAddresses.ToList();
+        LogFetchingCells(cellAddressesList.Count, options.SpreadsheetId);
 
         var request = sheetsService.Spreadsheets.Values.BatchGet(options.SpreadsheetId);
-        request.Ranges = new Repeatable<string>(ranges);
+        request.Ranges = new Repeatable<string>(cellAddressesList.Select(ConstructRange));
         request.ValueRenderOption = BatchGetRequest.ValueRenderOptionEnum.FORMULA;
 
         var response = await request.ExecuteAsync(ct);
+        var values = response.ValueRanges ?? [];
 
-        var fetchedCount = response.ValueRanges?.Count ?? 0;
-        LogFormulasFetched(fetchedCount);
+        LogCellsFetched(values.Count);
 
-        return response.ValueRanges?
-            .Select(vr => vr.Values?[0]?[0]?.ToString() ?? string.Empty)
-            .ToList() ?? [];
+        return [.. cellAddressesList.Zip(
+            values,
+            (address, valueRange) => new GoogleSheetCell(
+                address,
+                valueRange.Values?[0]?[0]?.ToString() ?? string.Empty))];
     }
 
-    public async Task SendBatchUpdate(List<ValueRange> updateData, CancellationToken ct)
+    public async Task SendBatchUpdate(
+        IEnumerable<GoogleSheetCell> cells,
+        CancellationToken ct)
     {
-        LogSendingBatchUpdate(updateData.Count, options.SpreadsheetId);
+        var cellsList = cells.ToList();
+
+        LogSendingBatchUpdate(cellsList.Count, options.SpreadsheetId);
+
+        var updateData = cellsList
+            .Select(cell => new ValueRange
+            {
+                Range = ConstructRange(cell.Address),
+                Values = [[cell.Content]]
+            })
+            .ToList();
 
         var batchRequest = new BatchUpdateValuesRequest
         {
             Data = updateData,
-            ValueInputOption = Utilities.ConvertToString(UpdateRequest.ValueInputOptionEnum.USERENTERED)
+            ValueInputOption = Utilities.ConvertToString(
+                UpdateRequest.ValueInputOptionEnum.USERENTERED)
         };
 
         await sheetsService.Spreadsheets.Values
@@ -50,4 +69,7 @@ internal sealed partial class GoogleSheetsClient(
 
         LogBatchUpdateApplied();
     }
+
+    private static string ConstructRange(GoogleSheetCellAddress cellAddress)
+        => $"{cellAddress.SheetName}!{cellAddress.Column}{cellAddress.Row}";
 }

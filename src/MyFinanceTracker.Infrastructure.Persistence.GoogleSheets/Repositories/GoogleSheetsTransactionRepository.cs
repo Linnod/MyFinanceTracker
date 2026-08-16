@@ -3,6 +3,7 @@ using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
@@ -10,7 +11,7 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
 internal sealed partial class GoogleSheetsTransactionRepository(
     GoogleSheetMapper mapper,
     IGoogleSheetsClient client,
-    FormulaService formulaService,
+    FormulaBuilder formulaBuilder,
     ILogger<GoogleSheetsTransactionRepository> logger) : ITransactionRepository
 {
     private static readonly SemaphoreSlim semaphore = new(1, 1);
@@ -29,8 +30,13 @@ internal sealed partial class GoogleSheetsTransactionRepository(
             LogAddingTransactions(transactionList.Count);
 
             var updates = mapper.MapForAddition(transactionList);
-            var updateData = await formulaService.PrepareValueRanges(updates, ct);
-            await client.SendBatchUpdate(updateData, ct);
+            var currentCells = await client.GetCells(updates.Select(c => c.Address), ct);
+            var cells = updates.Zip(
+                currentCells,
+                (update, current) => new GoogleSheetCell(
+                    update.Address,
+                    formulaBuilder.Merge(current.Content, update.Content)));
+            await client.SendBatchUpdate(cells, ct);
         }
         finally
         {
@@ -45,10 +51,8 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         {
             LogDeletingTransactions(category.Name, date);
 
-            var update = mapper.MapForClearance(category.Id, date);
-            var updateData = formulaService.PrepareForOverwrite(update);
-
-            await client.SendBatchUpdate(updateData, ct);
+            var update = mapper.MapForClearance(category, date);
+            await client.SendBatchUpdate([update], ct);
         }
         finally
         {

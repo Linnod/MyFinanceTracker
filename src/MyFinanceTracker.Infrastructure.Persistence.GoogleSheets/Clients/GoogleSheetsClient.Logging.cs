@@ -10,14 +10,14 @@ internal partial class GoogleSheetsClient
     [LoggerMessage(
         EventId = FetchingFormulas,
         Level = LogLevel.Debug,
-        Message = "Fetching formulas for {RangeCount} ranges from spreadsheet '{SpreadsheetId}'")]
-    partial void LogFetchingFormulas(int rangeCount, string spreadsheetId);
+        Message = "Fetching formulas for {CellCount} ranges from spreadsheet '{SpreadsheetId}'")]
+    partial void LogFetchingCells(int cellCount, string spreadsheetId);
 
     [LoggerMessage(
         EventId = FormulasFetched,
         Level = LogLevel.Debug,
-        Message = "Successfully fetched {RangeCount} value ranges")]
-    partial void LogFormulasFetched(int rangeCount);
+        Message = "Successfully fetched {CellCount} value ranges")]
+    partial void LogCellsFetched(int cellCount);
 
     [LoggerMessage(
         EventId = SendingBatchUpdate,

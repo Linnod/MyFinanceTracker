@@ -34,9 +34,10 @@ public class GoogleSheetMapperTests
 
         // assert
         result.Should().HaveCount(1);
-        result[0].CellAddress.Should().Be("A26");
+        result[0].Address.Column.Should().Be("A");
+        result[0].Address.Row.Should().Be(26);
+        result[0].Address.SheetName.Should().Be("2026.01");
         result[0].Content.Should().Be("-100.5-50.25");
-        result[0].SheetName.Should().Be("2026.01");
     }
 
     [Theory]
@@ -79,10 +80,10 @@ public class GoogleSheetMapperTests
     }
 
     [Theory]
-    [InlineData(1, 2, "A3")]
-    [InlineData(31, 0, "A31")]
-    [InlineData(15, 5, "A20")]
-    void Map_ShouldCalculateCellAddressCorrectly(int day, int headerRows, string expectedCell)
+    [InlineData(1, 2, "A", 3)]
+    [InlineData(31, 0, "A", 31)]
+    [InlineData(15, 5, "A", 20)]
+    void Map_ShouldCalculateCellAddressCorrectly(int day, int headerRows, string expectedCellColumn, int expectedCellRow)
     {
         // arrange
         var customOptions = Microsoft.Extensions.Options.Options.Create(new GoogleSheetsOptions
@@ -98,7 +99,8 @@ public class GoogleSheetMapperTests
         var result = sut.MapForAddition([transaction]);
 
         // assert
-        result[0].CellAddress.Should().Be(expectedCell);
+        result[0].Address.Column.Should().Be(expectedCellColumn);
+        result[0].Address.Row.Should().Be(expectedCellRow);
     }
 
     [Fact]
@@ -108,14 +110,15 @@ public class GoogleSheetMapperTests
         var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
         var sut = new GoogleSheetMapper(options);
         var date = new DateOnly(2026, 01, 27);
-        var categoryId = "B";
+        var category = new Category("B", "Food", ["food"]);
 
         // act
-        var result = sut.MapForClearance(categoryId, date);
+        var result = sut.MapForClearance(category, date);
 
         // assert
-        result.SheetName.Should().Be("2026.01");
-        result.CellAddress.Should().Be("B29");
+        result.Address.SheetName.Should().Be("2026.01");
+        result.Address.Column.Should().Be("B");
+        result.Address.Row.Should().Be(29);
         result.Content.Should().Be("0");
     }
 }

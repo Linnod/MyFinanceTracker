@@ -1,9 +1,9 @@
-using Google.Apis.Sheets.v4.Data;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 
-public interface IGoogleSheetsClient
+internal interface IGoogleSheetsClient
 {
-    Task<List<string>> GetFormulas(IList<string> ranges, CancellationToken ct);
-    Task SendBatchUpdate(List<ValueRange> updateData, CancellationToken ct);
+    Task<IReadOnlyList<GoogleSheetCell>> GetCells(IEnumerable<GoogleSheetCellAddress> cellAddresses, CancellationToken ct);
+    Task SendBatchUpdate(IEnumerable<GoogleSheetCell> cells, CancellationToken ct);
 }
