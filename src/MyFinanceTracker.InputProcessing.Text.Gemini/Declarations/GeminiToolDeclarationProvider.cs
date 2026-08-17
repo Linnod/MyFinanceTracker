@@ -90,6 +90,34 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 },
                 new FunctionDeclaration
                 {
+                    Name = ToolNames.GetTransactions,
+                    Description = "Get transactions for a category on a specific date.",
+                    Parameters = new Schema
+                    {
+                        Type = Type.Object,
+                        Properties = new Dictionary<string, Schema>
+                        {
+                            ["categoryAlias"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Category alias to get transactions for."
+                            },
+                            ["date"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Specific date in YYYY-MM-DD format."
+                            },
+                            ["recognizedInput"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'Просмотр трат на еду за 11.08.2026')."
+                            }
+                        },
+                        Required = ["recognizedInput"]
+                    }
+                },
+                new FunctionDeclaration
+                {
                     Name = ToolNames.ListCategories,
                     Description = "List all available categories and their aliases.",
                     Parameters = new Schema
@@ -116,6 +144,8 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
     {
         public const string AddTransaction = "add_transaction";
         public const string DeleteTransactions = "delete_transactions";
+        public const string GetTransactions = "get_transactions";
         public const string ListCategories = "list_categories";
+
     }
 }

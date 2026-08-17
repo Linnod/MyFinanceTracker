@@ -7,6 +7,7 @@ using MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
 using MyFinanceTracker.UseCases.Category.List;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
+using MyFinanceTracker.UseCases.Transaction.Get;
 
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 
@@ -17,6 +18,7 @@ internal sealed partial class GeminiToolExecutor(
     private const string DefaultRawInputForAddingTransaction = "Adding transaction";
     private const string DefaultRawInputForDeletingTransactions = "Deleting transactions";
     private const string DefaultRawInputForListingCategories = "Listing Categories";
+    private const string DefaultRawInputForGettingTransactions = "Getting transactions";
 
     public async Task<ActionResult> ExecuteToolCall(FunctionCall functionCall, CancellationToken ct)
     {
@@ -29,6 +31,7 @@ internal sealed partial class GeminiToolExecutor(
             GeminiToolDeclarationProvider.ToolNames.AddTransaction => await HandleAddTransaction(args, ct),
             GeminiToolDeclarationProvider.ToolNames.DeleteTransactions => await HandleDeleteTransactions(args, ct),
             GeminiToolDeclarationProvider.ToolNames.ListCategories => await HandleListCategories(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.GetTransactions => await HandleGetTransactions(args, ct),
             _ => throw new UnreachableException($"Unsupported function call: '{functionCall.Name}'")
         };
 
@@ -102,6 +105,53 @@ internal sealed partial class GeminiToolExecutor(
             },
 
             _ => new ActionResult.Failure()
+            {
+                RawInput = rawInput
+            }
+        };
+    }
+
+    private async Task<ActionResult> HandleGetTransactions(
+        IDictionary<string, object>? args,
+        CancellationToken ct)
+    {
+        var typedArgs = args.BindArgs<GetTransactionsArgs>();
+        if (typedArgs is null)
+        {
+            return new ActionResult.Failure
+            {
+                RawInput = DefaultRawInputForGettingTransactions
+            };
+        }
+
+        var rawInput = GetRecognizedInput(
+            typedArgs.RecognizedInput,
+            DefaultRawInputForGettingTransactions);
+
+        var request = new GetTransactionsRequest(
+            typedArgs.CategoryAlias,
+            typedArgs.Date);
+
+        var response = await mediator.Send(request, ct);
+
+        return response switch
+        {
+            GetTransactionsResponse.Success s =>
+                new ActionResult.Transaction.Listed(
+                    s.CategoryName,
+                    s.Date,
+                    s.Transactions)
+                {
+                    RawInput = rawInput
+                },
+
+            GetTransactionsResponse.ValidationError v =>
+                new ActionResult.InvalidInput(v.Errors)
+                {
+                    RawInput = rawInput
+                },
+
+            _ => new ActionResult.Failure
             {
                 RawInput = rawInput
             }

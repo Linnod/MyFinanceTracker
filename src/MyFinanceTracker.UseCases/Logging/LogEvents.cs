@@ -34,6 +34,19 @@ public static class LogEvents
 
             public const int SystemError = SubBase + 100;
         }
+
+        public static class Get
+        {
+            private const int SubBase = Base + 2_000;
+
+            public const int Starting = SubBase + 1;
+            public const int Completed = SubBase + 2;
+            public const int ValidationFailed = SubBase + 3;
+
+            public const int CategoryNotFound = SubBase + 4;
+
+            public const int SystemError = SubBase + 100;
+        }
     }
 
     public static class Categories

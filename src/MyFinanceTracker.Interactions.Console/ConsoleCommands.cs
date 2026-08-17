@@ -13,18 +13,48 @@ internal static class ConsoleCommands
             switch (action)
             {
                 case ActionResult.Transaction.Added added:
-                    var total = added.Transactions.Sum(t => Math.Abs(t.Amount));
-                    var category = added.Transactions.FirstOrDefault()?.Category?.Name ?? "Unknown";
+                    var totalCreatedAmount = added.Transactions.Sum(t => Math.Abs(t.Amount));
 
-                    System.Console.WriteLine($"🔹 Created {added.Transactions.Count} transaction(s) in '{category}' (Total: {total})");
+                    System.Console.WriteLine(
+                        $"🔹 Created {added.Transactions.Count} transaction(s) (Total: {totalCreatedAmount})");
+
                     foreach (var t in added.Transactions)
                     {
-                        System.Console.WriteLine($"  • {t.Date:dd.MM.yyyy} | {t.Amount} | {t.Note}");
+                        var note = string.IsNullOrWhiteSpace(t.Note)
+                            ? string.Empty
+                            : $" | {t.Note}";
+
+                        System.Console.WriteLine(
+                            $"  • {t.Date:dd.MM.yyyy} | {t.Category.Name} | {t.Amount}{note}");
                     }
                     break;
 
                 case ActionResult.Transaction.Deleted deleted:
                     System.Console.WriteLine($"🗑️ Deleted transactions for '{deleted.CategoryName}' on {deleted.Date:dd.MM.yyyy}");
+                    break;
+
+                case ActionResult.Transaction.Listed listed:
+                    var totalListedAmount = listed.Transactions.Sum(t => t.Amount);
+
+                    System.Console.WriteLine(
+                        $"📋 Transactions in '{listed.CategoryName}' on {listed.Date:dd.MM.yyyy} (Total: {totalListedAmount:0.00})");
+
+                    if (listed.Transactions.Count == 0)
+                    {
+                        System.Console.WriteLine("  • No transactions.");
+                        break;
+                    }
+
+                    foreach (var t in listed.Transactions)
+                    {
+                        var note = string.IsNullOrWhiteSpace(t.Note)
+                            ? string.Empty
+                            : $" | {t.Note}";
+
+                        System.Console.WriteLine(
+                            $"  • {t.Amount:0.00}{note}");
+                    }
+
                     break;
 
                 case ActionResult.Category.Listed listed:

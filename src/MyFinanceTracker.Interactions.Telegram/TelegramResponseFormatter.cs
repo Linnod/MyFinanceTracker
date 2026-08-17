@@ -27,26 +27,60 @@ internal static class TelegramResponseFormatter
     private static string FormatCompleted(ProcessingResult.Completed completed)
     {
         var sb = new StringBuilder();
+
         foreach (var action in completed.Actions)
         {
             switch (action)
             {
                 case ActionResult.Transaction.Added added:
-                    var category = added.Transactions.FirstOrDefault()?.Category?.Name ?? "Unknown";
-                    var total = added.Transactions.Sum(t => Math.Abs(t.Amount));
+                    var totalCreatedAmount = added.Transactions.Sum(t => Math.Abs(t.Amount));
 
-                    sb.AppendLine($"🔹 Created <b>{added.Transactions.Count}</b> transaction(s) in '<b>{WebUtility.HtmlEncode(category)}</b>'");
-                    sb.AppendLine($"💰 Total: <code>{total}</code>");
+                    sb.AppendLine(
+                        $"🔹 Created <b>{added.Transactions.Count}</b> transaction(s)");
+                    sb.AppendLine($"💰 Total: <code>{totalCreatedAmount}</code>");
 
                     foreach (var t in added.Transactions)
                     {
-                        var note = string.IsNullOrWhiteSpace(t.Note) ? "" : $" ({WebUtility.HtmlEncode(t.Note)})";
-                        sb.AppendLine($"   • <code>{t.Date:dd.MM.yyyy}</code>: <code>{t.Amount}</code>{note}");
+                        var note = string.IsNullOrWhiteSpace(t.Note)
+                            ? string.Empty
+                            : $" ({WebUtility.HtmlEncode(t.Note)})";
+
+                        sb.AppendLine(
+                            $"   • <code>{t.Date:dd.MM.yyyy}</code> | " +
+                            $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
+                            $"<code>{t.Amount}</code>{note}");
                     }
                     break;
 
                 case ActionResult.Transaction.Deleted deleted:
-                    sb.AppendLine($"🗑️ Cleared category '<b>{WebUtility.HtmlEncode(deleted.CategoryName)}</b>' for <code>{deleted.Date:dd.MM.yyyy}</code>");
+                    sb.AppendLine(
+                        $"🗑️ Cleared category '<b>{WebUtility.HtmlEncode(deleted.CategoryName)}</b>' " +
+                        $"for <code>{deleted.Date:dd.MM.yyyy}</code>");
+                    break;
+
+                case ActionResult.Transaction.Listed listed:
+                    var totalListedAmount = listed.Transactions.Sum(t => t.Amount);
+
+                    sb.AppendLine(
+                        $"📋 <b>Transactions in '{WebUtility.HtmlEncode(listed.CategoryName)}'</b> " +
+                        $"for <code>{listed.Date:dd.MM.yyyy}</code>");
+                    sb.AppendLine($"💰 Total: <code>{totalListedAmount:0.00}</code>");
+
+                    if (listed.Transactions.Count == 0)
+                    {
+                        sb.AppendLine("   • No transactions.");
+                        break;
+                    }
+
+                    foreach (var t in listed.Transactions)
+                    {
+                        var note = string.IsNullOrWhiteSpace(t.Note)
+                            ? string.Empty
+                            : $" | {WebUtility.HtmlEncode(t.Note)}";
+
+                        sb.AppendLine($"   • <code>{t.Amount:0.00}</code>{note}");
+                    }
+
                     break;
 
                 case ActionResult.Category.Listed listed:
@@ -58,38 +92,57 @@ internal static class TelegramResponseFormatter
                             ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
                             : string.Empty;
 
-                        sb.AppendLine($"   {icon} <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
+                        sb.AppendLine(
+                            $"   {icon} <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
                     }
                     break;
 
                 case ActionResult.InvalidSyntax syntax:
-                    sb.AppendLine($"⚠️ <b>Syntax Error</b> for '<b>{WebUtility.HtmlEncode(syntax.RawInput)}</b>': <code>{WebUtility.HtmlEncode(syntax.ErrorCode)}</code>");
+                    sb.AppendLine(
+                        $"⚠️ <b>Syntax Error</b> for " +
+                        $"'<b>{WebUtility.HtmlEncode(syntax.RawInput)}</b>': " +
+                        $"<code>{WebUtility.HtmlEncode(syntax.ErrorCode)}</code>");
                     AppendSuggestionAndExamples(sb, syntax.Suggestion, syntax.Examples);
                     break;
 
                 case ActionResult.InvalidInput input:
-                    sb.AppendLine($"⚠️ <b>Validation Error(s)</b> for '<b>{WebUtility.HtmlEncode(input.RawInput)}</b>':");
+                    sb.AppendLine(
+                        $"⚠️ <b>Validation Error(s)</b> for " +
+                        $"'<b>{WebUtility.HtmlEncode(input.RawInput)}</b>':");
+
                     foreach (var err in input.Errors)
                     {
                         sb.AppendLine($"• <code>{WebUtility.HtmlEncode(err.ErrorCode)}</code>");
+
                         if (err.Suggestion is not null)
                         {
-                            sb.AppendLine($"   💡 Suggestion: <code>{WebUtility.HtmlEncode(err.Suggestion)}</code>");
+                            sb.AppendLine(
+                                $"   💡 Suggestion: " +
+                                $"<code>{WebUtility.HtmlEncode(err.Suggestion)}</code>");
                         }
                     }
                     break;
 
                 case ActionResult.DomainError domainError:
-                    sb.AppendLine($"⚠️ <b>Domain Error</b> for '<b>{WebUtility.HtmlEncode(domainError.RawInput)}</b>': <code>{WebUtility.HtmlEncode(domainError.ErrorCode)}</code>");
-                    AppendSuggestionAndExamples(sb, domainError.Suggestion, domainError.Examples);
+                    sb.AppendLine(
+                        $"⚠️ <b>Domain Error</b> for " +
+                        $"'<b>{WebUtility.HtmlEncode(domainError.RawInput)}</b>': " +
+                        $"<code>{WebUtility.HtmlEncode(domainError.ErrorCode)}</code>");
+                    AppendSuggestionAndExamples(
+                        sb,
+                        domainError.Suggestion,
+                        domainError.Examples);
                     break;
 
                 case ActionResult.Failure failure:
-                    sb.AppendLine($"❌ <b>Action Failed</b> for '<b>{WebUtility.HtmlEncode(failure.RawInput)}</b>'");
+                    sb.AppendLine(
+                        $"❌ <b>Action Failed</b> for " +
+                        $"'<b>{WebUtility.HtmlEncode(failure.RawInput)}</b>'");
                     break;
 
                 default:
-                    sb.AppendLine($"• {WebUtility.HtmlEncode(action.ToString())}");
+                    sb.AppendLine(
+                        $"• {WebUtility.HtmlEncode(action.ToString())}");
                     break;
             }
 
