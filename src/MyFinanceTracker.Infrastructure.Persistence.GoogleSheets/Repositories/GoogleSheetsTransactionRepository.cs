@@ -49,7 +49,7 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         await semaphore.WaitAsync(ct);
         try
         {
-            LogDeletingTransactions(category.Name, date);
+            LogDeletingTransactions(category, date);
 
             var update = mapper.MapForClearance(category, date);
             await client.SendBatchUpdate([update], ct);
@@ -65,6 +65,8 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         DateOnly date,
         CancellationToken ct)
     {
+        LogGettingTransactions(category, date);
+
         var cellAddress = mapper.MapForRead(category, date);
         var cell = (await client.GetCells([cellAddress], ct)).SingleOrDefault();
 
