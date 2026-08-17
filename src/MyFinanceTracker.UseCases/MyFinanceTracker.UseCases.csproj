@@ -18,6 +18,10 @@
     <Folder Include="Transaction\Delete\Behaviors\" />
     <Folder Include="Transaction\Delete\Validation\" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MyFinanceTracker.UseCases.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

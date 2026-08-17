@@ -19,5 +19,6 @@
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.InputProcessing.Text.Gemini.Tests/MyFinanceTracker.InputProcessing.Text.Gemini.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.InputProcessing.Text.Structured.Tests/MyFinanceTracker.InputProcessing.Text.Structured.Tests.csproj" />
+    <Project Path="tests/MyFinanceTracker.UseCases.Tests/MyFinanceTracker.UseCases.Tests.csproj" />
   </Folder>
 </Solution>
