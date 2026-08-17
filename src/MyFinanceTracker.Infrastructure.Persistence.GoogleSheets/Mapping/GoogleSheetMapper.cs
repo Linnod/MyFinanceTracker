@@ -31,8 +31,13 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 
     public GoogleSheetCell MapForClearance(Category category, DateOnly date) => MapToGoogleSheetCell(category, date, "0");
 
+    public GoogleSheetCellAddress MapForRead(Category category, DateOnly date) => MapToGoogleSheetCellAddress(category, date);
+
     private GoogleSheetCell MapToGoogleSheetCell(Category category, DateOnly date, string content)
-        => new(new GoogleSheetCellAddress(GetSheetName(date), GetCellRow(date.Day), category.Id), content);
+        => new(MapToGoogleSheetCellAddress(category, date), content);
+
+    private GoogleSheetCellAddress MapToGoogleSheetCellAddress(Category category, DateOnly date) =>
+        new(GetSheetName(date), GetCellRow(date.Day), category.Id);
 
     private static string GetSheetName(DateOnly date) => date.ToString(DateFormat);
 

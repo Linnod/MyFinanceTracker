@@ -9,7 +9,6 @@ using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
-using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 
@@ -22,16 +21,9 @@ public static class DependencyInjection
             .AddSheetsService(configuration)
             .AddSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>()
             .AddSingleton<GoogleSheetMapper>()
-            .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>()
-            .AddFormulaServices();
+            .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>();
 
         return services;
-    }
-
-    private static IServiceCollection AddFormulaServices(this IServiceCollection services)
-    {
-        return services.AddSingleton<FormulaService>()
-            .AddSingleton<FormulaBuilder>();
     }
 
     private static IServiceCollection AddSheetsService(this IServiceCollection services, IConfiguration configuration)

@@ -5,9 +5,9 @@ using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.Services;
 
-public class FormulaBuilderTests
+public class FormulaServiceTests
 {
-    private readonly FormulaBuilder formulaBuilder = new(
+    private readonly FormulaService formulaService = new(
         Options.Create(new GoogleSheetsOptions { DecimalSeparator = "." })
     );
 
@@ -25,7 +25,7 @@ public class FormulaBuilderTests
     {
         // arrange
         // act
-        var result = formulaBuilder.Merge(current, delta);
+        var result = formulaService.Merge(current, delta);
 
         // assert
         result.Should().Be(expected);

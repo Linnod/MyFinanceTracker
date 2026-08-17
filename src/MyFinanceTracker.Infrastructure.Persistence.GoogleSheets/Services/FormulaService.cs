@@ -1,27 +1,72 @@
-using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
-using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
-internal class FormulaService(IGoogleSheetsClient client, FormulaBuilder builder)
+internal partial class FormulaService(IOptions<GoogleSheetsOptions> options)
 {
-    public async Task<List<GoogleSheetCell>> PrepareCellsForUpdate(
-        IReadOnlyList<GoogleSheetCell> updates,
-        CancellationToken ct)
+    [GeneratedRegex(@"[+-]?\d+(?:[.,]\d+)?")]
+    private static partial Regex FormulaRegex();
+
+    private readonly NumberFormatInfo numberFormat = new()
     {
-        if (updates.Count == 0)
+        NumberDecimalSeparator = options.Value.DecimalSeparator
+    };
+
+    public string Merge(string? currentValue, string delta)
+    {
+        var baseValue = (currentValue ?? string.Empty).Trim();
+        var cleanDelta = delta.Trim();
+
+        if (IsZeroOrEmpty(baseValue))
+        {
+            return "=" + cleanDelta.TrimStart('+');
+        }
+
+        if (baseValue.StartsWith('='))
+        {
+            return baseValue + cleanDelta;
+        }
+
+        return "=" + baseValue + cleanDelta;
+    }
+
+    public IReadOnlyList<decimal> Parse(string? formula)
+    {
+        if (string.IsNullOrWhiteSpace(formula))
         {
             return [];
         }
 
-        var currentCells = await client.GetCells(
-            updates.Select(c => c.Address),
-            ct);
+        var value = formula.Trim().TrimStart('=');
+        if (string.IsNullOrEmpty(value) || value == "0")
+        {
+            return [];
+        }
 
-        return [.. updates.Zip(
-            currentCells,
-            (update, current) => new GoogleSheetCell(
-                update.Address,
-                builder.Merge(current.Content, update.Content)))];
+        return [.. FormulaRegex().Matches(value)
+            .Select(match => decimal.Parse(match.Value, NumberStyles.Number, numberFormat))];
+    }
+
+    private bool IsZeroOrEmpty(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        if (value.StartsWith('='))
+        {
+            return false;
+        }
+
+        if (decimal.TryParse(value, NumberStyles.Any, numberFormat, out var number))
+        {
+            return number == 0;
+        }
+
+        return false;
     }
 }

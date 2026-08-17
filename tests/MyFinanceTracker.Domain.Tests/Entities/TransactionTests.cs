@@ -125,4 +125,65 @@ public class TransactionTests
         var exception = Assert.Throws<DomainException>(act);
         Assert.Equal(expectedMessage, exception.Message);
     }
+
+    [Fact]
+    void Constructor_WithNegativeAmount_SetsExpenseTypeAndPositiveAmount()
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var category = CreateTestCategory();
+        var amount = -100.50m;
+        var date = new DateOnly(2026, 5, 10);
+        var note = "Groceries";
+
+        // act
+        var transaction = new Transaction(id, category, amount, date, note);
+
+        // assert
+        Assert.Equal(id, transaction.Id);
+        Assert.Equal(TransactionType.Expense, transaction.Type);
+        Assert.Equal(category, transaction.Category);
+        Assert.Equal(100.50m, Math.Abs(transaction.Amount));
+        Assert.Equal(-100.50m, transaction.Amount);
+        Assert.Equal(date, transaction.Date);
+        Assert.Equal(note, transaction.Note);
+    }
+
+    [Fact]
+    void Constructor_WithPositiveAmount_SetsIncomeTypeAndAmount()
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var category = new Category("salary", "Salary", ["salary"], isIncome: true);
+        var amount = 1500.00m;
+        var date = new DateOnly(2026, 5, 10);
+        var note = "Monthly salary";
+
+        // act
+        var transaction = new Transaction(id, category, amount, date, note);
+
+        // assert
+        Assert.Equal(id, transaction.Id);
+        Assert.Equal(TransactionType.Income, transaction.Type);
+        Assert.Equal(category, transaction.Category);
+        Assert.Equal(1500.00m, transaction.Amount);
+        Assert.Equal(date, transaction.Date);
+        Assert.Equal(note, transaction.Note);
+    }
+
+    [Fact]
+    void Constructor_WithZeroAmount_ThrowsDomainException()
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var category = CreateTestCategory();
+        var date = new DateOnly(2026, 5, 10);
+
+        // act
+        Transaction act() => new(id, category, 0m, date, null);
+
+        // assert
+        var exception = Assert.Throws<DomainException>(act);
+        Assert.Equal("Transaction amount must be greater than zero.", exception.Message);
+    }
 }

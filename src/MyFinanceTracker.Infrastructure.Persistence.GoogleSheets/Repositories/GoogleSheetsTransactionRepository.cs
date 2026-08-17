@@ -11,7 +11,7 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
 internal sealed partial class GoogleSheetsTransactionRepository(
     GoogleSheetMapper mapper,
     IGoogleSheetsClient client,
-    FormulaBuilder formulaBuilder,
+    FormulaService formulaService,
     ILogger<GoogleSheetsTransactionRepository> logger) : ITransactionRepository
 {
     private static readonly SemaphoreSlim semaphore = new(1, 1);
@@ -35,7 +35,7 @@ internal sealed partial class GoogleSheetsTransactionRepository(
                 currentCells,
                 (update, current) => new GoogleSheetCell(
                     update.Address,
-                    formulaBuilder.Merge(current.Content, update.Content)));
+                    formulaService.Merge(current.Content, update.Content)));
             await client.SendBatchUpdate(cells, ct);
         }
         finally
@@ -58,5 +58,23 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         {
             semaphore.Release();
         }
+    }
+
+    public async Task<IReadOnlyList<Transaction>> Get(
+        Category category,
+        DateOnly date,
+        CancellationToken ct)
+    {
+        var cellAddress = mapper.MapForRead(category, date);
+        var cell = (await client.GetCells([cellAddress], ct)).SingleOrDefault();
+
+        return [.. formulaService
+            .Parse(cell?.Content)
+            .Select(amount => new Transaction(
+                Guid.NewGuid(),
+                category,
+                amount,
+                date,
+                null))];
     }
 }
