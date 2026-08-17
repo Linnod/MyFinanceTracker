@@ -48,3 +48,9 @@ categories.yaml
 # 5. Publishing artifacts
 publish/
 out/
+
+# 6 Test results
+**/TestResults/
+
+# 7 Coverage reports
+coveragereport/
