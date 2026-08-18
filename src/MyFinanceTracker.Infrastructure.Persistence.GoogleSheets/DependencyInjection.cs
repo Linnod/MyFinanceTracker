@@ -19,7 +19,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.ConfigureGoogleSheetsOptions(configuration)
-            .AddSheetsService(configuration)
+            .AddSheetsService()
             .AddSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>()
             .AddSingleton<GoogleSheetMapper>()
             .AddSingleton<FormulaService>()
@@ -28,9 +28,9 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddSheetsService(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddSheetsService(this IServiceCollection services)
     {
-        return services.AddSingleton<SheetsService>(sp =>
+        return services.AddSingleton(sp =>
             {
                 var opt = sp.GetRequiredService<IOptions<GoogleSheetsOptions>>().Value;
                 var credential = GoogleCredential.FromFile(opt.CredentialsFilePath)
