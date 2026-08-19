@@ -23,7 +23,8 @@ public class YamlCategoryLoaderTests : IDisposable
     private YamlCategoryLoader CreateSut()
     {
         var options = Options.Create(new YamlPersistenceOptions { FilePath = testFileName });
-        return new YamlCategoryLoader(options);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<YamlCategoryLoader>.Instance;
+        return new YamlCategoryLoader(options, logger);
     }
 
     private void WriteYaml(string content) => File.WriteAllText(testFileName, content);

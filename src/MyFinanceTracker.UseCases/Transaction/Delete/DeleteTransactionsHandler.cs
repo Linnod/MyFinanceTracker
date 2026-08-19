@@ -1,6 +1,7 @@
+using System.Diagnostics;
 using MediatR;
-using MyFinanceTracker.Common.Utilities;
 using MyFinanceTracker.Domain.Repositories;
+using MyFinanceTracker.UseCases.Common;
 
 namespace MyFinanceTracker.UseCases.Transaction.Delete;
 
@@ -10,22 +11,29 @@ internal sealed class DeleteTransactionsHandler(
     : IRequestHandler<DeleteTransactionsRequest, DeleteTransactionsResponse>
 {
     public async Task<DeleteTransactionsResponse> Handle(
-        DeleteTransactionsRequest request,
+    DeleteTransactionsRequest request,
+    CancellationToken ct)
+    {
+        var categories = await categoryRepository.GetAll(ct);
+        var lookup = new CategoryLookup(categories);
+
+        return lookup.Resolve(request.CategoryAlias!) switch
+        {
+            CategoryResolution.NotFound notFound => new DeleteTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion)
+            ]),
+            CategoryResolution.Found found => await DeleteTransactions(found.Category, request.Date!.Value, ct),
+            _ => throw new UnreachableException()
+        };
+    }
+
+    private async Task<DeleteTransactionsResponse> DeleteTransactions(
+        Domain.Entities.Category category,
+        DateOnly date,
         CancellationToken ct)
     {
-        var category = await categoryRepository.GetByAlias(request.CategoryAlias!, ct);
-        if (category is null)
-        {
-            var allAliases = (await categoryRepository.GetAll(ct)).SelectMany(c => c.Aliases);
-            var suggestion = FuzzyMatcher.GetClosest(request.CategoryAlias!, allAliases);
+        await transactionRepository.DeleteRange(category, date, ct);
 
-            return new DeleteTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, suggestion)
-            ]);
-        }
-
-        await transactionRepository.DeleteRange(category, request.Date!.Value, ct);
-
-        return new DeleteTransactionsResponse.Success(category.Name, request.Date.Value);
+        return new DeleteTransactionsResponse.Success(category.Name, date);
     }
 }

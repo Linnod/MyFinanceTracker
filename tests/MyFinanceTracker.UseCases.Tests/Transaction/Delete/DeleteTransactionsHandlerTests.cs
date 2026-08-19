@@ -28,8 +28,8 @@ public class DeleteTransactionsHandlerTests
         var date = new DateOnly(2026, 1, 27);
 
         categoryRepository
-            .GetByAlias("food", Arg.Any<CancellationToken>())
-            .Returns(category);
+            .GetAll(Arg.Any<CancellationToken>())
+            .Returns([category]);
 
         // act
         var result = await sut.Handle(
@@ -47,17 +47,13 @@ public class DeleteTransactionsHandlerTests
         await transactionRepository.Received(1)
             .DeleteRange(category, date, Arg.Any<CancellationToken>());
         await categoryRepository.Received(1)
-            .GetByAlias("food", Arg.Any<CancellationToken>());
+            .GetAll(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     async Task Handle_CategoryDoesNotExist_ReturnsValidationError()
     {
         // arrange
-        categoryRepository
-            .GetByAlias("fod", Arg.Any<CancellationToken>())
-            .Returns((Domain.Entities.Category?)null);
-
         categoryRepository
             .GetAll(Arg.Any<CancellationToken>())
             .Returns(

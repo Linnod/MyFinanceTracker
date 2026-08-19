@@ -38,8 +38,8 @@ public class GetTransactionsHandlerTests
         };
 
         categoryRepository
-            .GetByAlias("food", Arg.Any<CancellationToken>())
-            .Returns(category);
+            .GetAll(Arg.Any<CancellationToken>())
+            .Returns([category]);
 
         transactionRepository
             .Get(category, date, Arg.Any<CancellationToken>())
@@ -60,7 +60,7 @@ public class GetTransactionsHandlerTests
         success.Transactions.Should().BeEquivalentTo(transactions);
 
         await categoryRepository.Received(1)
-            .GetByAlias("food", Arg.Any<CancellationToken>());
+            .GetAll(Arg.Any<CancellationToken>());
 
         await transactionRepository.Received(1)
             .Get(category, date, Arg.Any<CancellationToken>());
@@ -70,10 +70,6 @@ public class GetTransactionsHandlerTests
     async Task Handle_CategoryDoesNotExist_ReturnsValidationError()
     {
         // arrange
-        categoryRepository
-            .GetByAlias("fod", Arg.Any<CancellationToken>())
-            .Returns((Domain.Entities.Category?)null);
-
         categoryRepository
             .GetAll(Arg.Any<CancellationToken>())
             .Returns(

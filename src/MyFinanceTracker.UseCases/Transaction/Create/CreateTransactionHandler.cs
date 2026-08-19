@@ -1,7 +1,8 @@
+using System.Diagnostics;
 using MediatR;
-using MyFinanceTracker.Common.Utilities;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
+using MyFinanceTracker.UseCases.Common;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
@@ -14,14 +15,13 @@ internal sealed class CreateTransactionsHandler(
     public async Task<CreateTransactionsResponse> Handle(CreateTransactionsRequest request, CancellationToken ct)
     {
         var allCategories = await categoryRepository.GetAll(ct);
-        var categoriesByAlias = allCategories
-            .SelectMany(c => c.Aliases.Select(alias => new { Alias = alias, Category = c }))
-            .ToDictionary(x => x.Alias, x => x.Category, StringComparer.OrdinalIgnoreCase);
+        var lookup = new CategoryLookup(allCategories);
+
         var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
         var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
         foreach (var item in request.Items)
         {
-            var (category, error) = ResolveCategory(item, categoriesByAlias);
+            var (category, error) = ResolveCategory(item, lookup);
             if (error != null)
             {
                 return error;
@@ -44,7 +44,7 @@ internal sealed class CreateTransactionsHandler(
 
     private static (Domain.Entities.Category? Category, CreateTransactionsResponse? Error) ResolveCategory(
         CreateTransactionItem item,
-        Dictionary<string, Domain.Entities.Category> categoriesByAlias)
+        CategoryLookup lookup)
     {
         var alias = string.IsNullOrWhiteSpace(item.CategoryAlias) && item.TransactionType == TransactionType.Income
             ? FinancialRules.DefaultIncomeCategoryAlias
@@ -57,15 +57,13 @@ internal sealed class CreateTransactionsHandler(
             ]));
         }
 
-        if (!categoriesByAlias.TryGetValue(alias, out var category))
+        return lookup.Resolve(alias) switch
         {
-            var suggestion = FuzzyMatcher.GetClosest(alias, categoriesByAlias.Keys);
-
-            return (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, suggestion)
-            ]));
-        }
-
-        return (category, null);
+            CategoryResolution.Found found => (found.Category, null),
+            CategoryResolution.NotFound notFound => (null, new CreateTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion)
+            ])),
+            _ => throw new UnreachableException()
+        };
     }
 }

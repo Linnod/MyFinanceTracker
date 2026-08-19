@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
@@ -7,13 +8,16 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 
-internal class YamlCategoryLoader(
-    IOptions<YamlPersistenceOptions> options) : ICategoryLoader
+internal sealed partial class YamlCategoryLoader(
+    IOptions<YamlPersistenceOptions> options,
+    ILogger<YamlCategoryLoader> logger) : ICategoryLoader
 {
     private readonly string resolvedPath = Path.Combine(AppContext.BaseDirectory, options.Value.FilePath);
 
     public IReadOnlyList<Category> Load()
     {
+        LogLoading(resolvedPath);
+
         if (!File.Exists(resolvedPath))
         {
             throw CategoryLoaderException.FileNotFound(resolvedPath);
@@ -30,14 +34,19 @@ internal class YamlCategoryLoader(
 
             var result = ValidateAndMap(yamlData);
 
+            var totalAliases = result.Sum(c => c.Aliases.Count);
+            LogLoaded(result.Count, totalAliases, resolvedPath);
+
             return result;
         }
-        catch (CategoryLoaderException)
+        catch (CategoryLoaderException ex)
         {
+            LogLoadFailed(resolvedPath, ex);
             throw;
         }
         catch (Exception ex)
         {
+            LogLoadFailed(resolvedPath, ex);
             throw CategoryLoaderException.DeserializationFailed(resolvedPath, ex);
         }
     }
