@@ -63,7 +63,7 @@ public class CreateTransactionsHandlerTests
 
         transaction.Category.Should().Be(category);
         transaction.Type.Should().Be(TransactionType.Expense);
-        transaction.Amount.Should().Be(-100m);
+        transaction.Amount.Should().Be(100m);
         transaction.Date.Should().Be(new DateOnly(2026, 1, 27));
         transaction.Note.Should().Be("Lunch");
 
@@ -75,7 +75,7 @@ public class CreateTransactionsHandlerTests
                 Arg.Is<IReadOnlyCollection<Domain.Entities.Transaction>>(items =>
                     items.Count == 1 &&
                     items.Single().Category == category &&
-                    items.Single().Amount == -100m),
+                    items.Single().Amount == 100m),
                 Arg.Any<CancellationToken>());
     }
 

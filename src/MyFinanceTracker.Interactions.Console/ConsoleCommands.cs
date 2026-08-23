@@ -1,3 +1,4 @@
+using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing.Text;
 
 namespace MyFinanceTracker.Interactions.Console;
@@ -13,19 +14,16 @@ internal static class ConsoleCommands
             switch (action)
             {
                 case ActionResult.Transaction.Added added:
-                    var totalCreatedAmount = added.Transactions.Sum(t => Math.Abs(t.Amount));
-
-                    System.Console.WriteLine(
-                        $"🔹 Created {added.Transactions.Count} transaction(s) (Total: {totalCreatedAmount})");
+                    var totalCreated = added.Transactions.Count;
+                    System.Console.WriteLine($"🔹 Created {totalCreated} transaction(s)");
 
                     foreach (var t in added.Transactions)
                     {
-                        var note = string.IsNullOrWhiteSpace(t.Note)
-                            ? string.Empty
-                            : $" | {t.Note}";
+                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
+                        var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
                         System.Console.WriteLine(
-                            $"  • {t.Date:dd.MM.yyyy} | {t.Category.Name} | {t.Amount}{note}");
+                            $"  • {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
                     }
                     break;
 
@@ -34,10 +32,13 @@ internal static class ConsoleCommands
                     break;
 
                 case ActionResult.Transaction.Listed listed:
-                    var totalListedAmount = listed.Transactions.Sum(t => t.Amount);
+                    var totalListedAmount = listed.Transactions.Sum(t =>
+                        t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
+
+                    var balanceSign = totalListedAmount >= 0 ? "+" : "";
 
                     System.Console.WriteLine(
-                        $"📋 Transactions in '{listed.CategoryName}' on {listed.Date:dd.MM.yyyy} (Total: {totalListedAmount:0.00})");
+                        $"📋 Transactions in '{listed.CategoryName}' on {listed.Date:dd.MM.yyyy} (Total: {balanceSign}{totalListedAmount:0.00})");
 
                     if (listed.Transactions.Count == 0)
                     {
@@ -47,14 +48,11 @@ internal static class ConsoleCommands
 
                     foreach (var t in listed.Transactions)
                     {
-                        var note = string.IsNullOrWhiteSpace(t.Note)
-                            ? string.Empty
-                            : $" | {t.Note}";
+                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
+                        var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
-                        System.Console.WriteLine(
-                            $"  • {t.Amount:0.00}{note}");
+                        System.Console.WriteLine($"  • {sign}{t.Amount:0.00}{note}");
                     }
-
                     break;
 
                 case ActionResult.Category.Listed listed:

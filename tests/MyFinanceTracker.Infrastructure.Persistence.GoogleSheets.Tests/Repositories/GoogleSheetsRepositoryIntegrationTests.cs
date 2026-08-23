@@ -162,7 +162,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             [
                 new
                 {
-                    Amount = -10.33m,
+                    Amount = 10.33m,
                     Type = TransactionType.Expense,
                     Category = category,
                     Date = date,
@@ -170,7 +170,7 @@ public class GoogleSheetsRepositoryIntegrationTests
                 },
                 new
                 {
-                    Amount = -27.1m,
+                    Amount = 27.1m,
                     Type = TransactionType.Expense,
                     Category = category,
                     Date = date,

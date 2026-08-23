@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing.Text;
 
 namespace MyFinanceTracker.Interactions.Telegram;
@@ -33,14 +34,14 @@ internal static class TelegramResponseFormatter
             switch (action)
             {
                 case ActionResult.Transaction.Added added:
-                    var totalCreatedAmount = added.Transactions.Sum(t => Math.Abs(t.Amount));
+                    var totalCreatedCount = added.Transactions.Count;
 
                     sb.AppendLine(
-                        $"🔹 Created <b>{added.Transactions.Count}</b> transaction(s)");
-                    sb.AppendLine($"💰 Total: <code>{totalCreatedAmount}</code>");
+                        $"🔹 Created <b>{totalCreatedCount}</b> transaction(s)");
 
                     foreach (var t in added.Transactions)
                     {
+                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
                         var note = string.IsNullOrWhiteSpace(t.Note)
                             ? string.Empty
                             : $" ({WebUtility.HtmlEncode(t.Note)})";
@@ -48,7 +49,7 @@ internal static class TelegramResponseFormatter
                         sb.AppendLine(
                             $"   • <code>{t.Date:dd.MM.yyyy}</code> | " +
                             $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
-                            $"<code>{t.Amount}</code>{note}");
+                            $"<code>{sign}{t.Amount:0.00}</code>{note}");
                     }
                     break;
 
@@ -59,12 +60,14 @@ internal static class TelegramResponseFormatter
                     break;
 
                 case ActionResult.Transaction.Listed listed:
-                    var totalListedAmount = listed.Transactions.Sum(t => t.Amount);
+                    var totalListedAmount = listed.Transactions.Sum(t =>
+                        t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
+                    var balanceSign = totalListedAmount >= 0 ? "+" : string.Empty;
 
                     sb.AppendLine(
                         $"📋 <b>Transactions in '{WebUtility.HtmlEncode(listed.CategoryName)}'</b> " +
                         $"for <code>{listed.Date:dd.MM.yyyy}</code>");
-                    sb.AppendLine($"💰 Total: <code>{totalListedAmount:0.00}</code>");
+                    sb.AppendLine($"💰 Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
 
                     if (listed.Transactions.Count == 0)
                     {
@@ -74,11 +77,12 @@ internal static class TelegramResponseFormatter
 
                     foreach (var t in listed.Transactions)
                     {
+                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
                         var note = string.IsNullOrWhiteSpace(t.Note)
                             ? string.Empty
                             : $" | {WebUtility.HtmlEncode(t.Note)}";
 
-                        sb.AppendLine($"   • <code>{t.Amount:0.00}</code>{note}");
+                        sb.AppendLine($"   • <code>{sign}{t.Amount:0.00}</code>{note}");
                     }
 
                     break;

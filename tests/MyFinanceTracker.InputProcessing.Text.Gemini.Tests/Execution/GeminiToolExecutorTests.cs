@@ -63,7 +63,7 @@ public class GeminiToolExecutorTests
 
         var result = (ActionResult.Transaction.Added)response;
         result.Transactions.Should().HaveCount(1);
-        result.Transactions[0].Amount.Should().Be(-100m);
+        result.Transactions[0].Amount.Should().Be(100m);
 
         await mediator.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r =>

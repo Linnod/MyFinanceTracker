@@ -74,8 +74,9 @@ internal sealed partial class GoogleSheetsTransactionRepository(
             .Parse(cell?.Content)
             .Select(amount => new Transaction(
                 Guid.NewGuid(),
+                amount < 0 ? TransactionType.Expense : TransactionType.Income,
                 category,
-                amount,
+                Math.Abs(amount),
                 date,
                 null))];
     }

@@ -47,7 +47,8 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
     {
         return string.Concat(transactions.Select(t =>
         {
-            return t.Amount.ToString("+0.##;-0.##;0", nfi);
+            var signedAmount = t.Type == TransactionType.Expense ? -t.Amount : t.Amount;
+            return signedAmount.ToString("+0.##;-0.##;0", nfi);
         }));
     }
 }

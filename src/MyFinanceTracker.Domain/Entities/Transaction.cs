@@ -42,24 +42,8 @@ public record Transaction
         Id = id;
         Type = type;
         Category = category;
-        Amount = type == TransactionType.Expense ? -amount : amount;
+        Amount = amount;
         Date = date;
         Note = note;
-    }
-
-    public Transaction(
-        Guid id,
-        Category category,
-        decimal amount,
-        DateOnly date,
-        string? note)
-    : this(
-        id,
-        amount < 0 ? TransactionType.Expense : TransactionType.Income,
-        category,
-        Math.Abs(amount),
-        date,
-        note)
-    {
     }
 }
