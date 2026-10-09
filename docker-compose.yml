@@ -19,7 +19,6 @@ services:
       - Interactions__EnableTelegram=true
       - Gemini__ApiKey=${GEMINI_API_KEY}
       - Gemini__Model=${GEMINI_MODEL}
-      - Gemini__Temperature=${GEMINI_TEMPERATURE}
     volumes:
       - ./deploy/google-api-credentials.json:/app/secrets/google-api-credentials.json:ro
       - ./deploy/categories.yaml:/app/data/categories.yaml:ro

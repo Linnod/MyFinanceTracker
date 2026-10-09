@@ -30,8 +30,7 @@ internal sealed partial class GeminiTextInputProcessor(
                 {
                     Parts = [new Part { Text = await promptBuilder.BuildSystemInstruction(ct) }]
                 },
-                Tools = [.. declarationProvider.GetToolDeclarations()],
-                Temperature = options.Value.Temperature
+                Tools = [.. declarationProvider.GetToolDeclarations()]
             };
 
             var response = await client.Models.GenerateContentAsync(

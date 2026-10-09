@@ -11,6 +11,4 @@ public sealed class GeminiOptions
 
     [Required(AllowEmptyStrings = false)]
     public string Model { get; init; } = string.Empty;
-
-    public float Temperature { get; init; } = 0.1f;
 }

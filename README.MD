@@ -147,8 +147,7 @@ dotnet run --project src/MyFinanceTracker.Host
   },
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY",
-    "Model": "YOUR_GEMINI_MODEL",
-    "Temperature": 0.1
+    "Model": "YOUR_GEMINI_MODEL"
   }
 }
 ```
