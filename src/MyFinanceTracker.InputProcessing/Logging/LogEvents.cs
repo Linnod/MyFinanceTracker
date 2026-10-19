@@ -1,6 +1,6 @@
-using LogRanges = MyFinanceTracker.Common.Logging.LogEventRanges.InputProcessing.Text;
+using LogRanges = MyFinanceTracker.Common.Logging.LogEventRanges.InputProcessing;
 
-namespace MyFinanceTracker.InputProcessing.Text.Logging;
+namespace MyFinanceTracker.InputProcessing.Logging;
 
 internal static class LogEvents
 {
@@ -13,5 +13,6 @@ internal static class LogEvents
         public const int Entry = SubBase + 1;
         public const int Exit = SubBase + 2;
         public const int CriticalError = SubBase + 3;
+        public const int ProcessorNotFound = SubBase + 4;
     }
 }

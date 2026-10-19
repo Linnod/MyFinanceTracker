@@ -2,7 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text.Gemini\MyFinanceTracker.InputProcessing.Text.Gemini.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text.Structured\MyFinanceTracker.InputProcessing.Text.Structured.csproj" />
-    <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text\MyFinanceTracker.InputProcessing.Text.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Interactions.Console\MyFinanceTracker.Interactions.Console.csproj" />

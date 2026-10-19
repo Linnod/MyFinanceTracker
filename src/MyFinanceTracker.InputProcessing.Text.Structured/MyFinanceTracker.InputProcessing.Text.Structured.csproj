@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text\MyFinanceTracker.InputProcessing.Text.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.InputProcessing\MyFinanceTracker.InputProcessing.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj" />
   </ItemGroup>
 

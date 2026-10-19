@@ -1,4 +1,4 @@
-namespace MyFinanceTracker.InputProcessing.Text;
+namespace MyFinanceTracker.InputProcessing;
 
 public static class ErrorCode
 {

@@ -1,6 +1,6 @@
 using MyFinanceTracker.UseCases;
 
-namespace MyFinanceTracker.InputProcessing.Text;
+namespace MyFinanceTracker.InputProcessing;
 
 public abstract record ActionResult
 {

@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text;
 using MyFinanceTracker.Domain.Entities;
-using MyFinanceTracker.InputProcessing.Text;
+using MyFinanceTracker.InputProcessing;
 
 namespace MyFinanceTracker.Interactions.Telegram;
 

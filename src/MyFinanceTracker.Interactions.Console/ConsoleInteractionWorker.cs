@@ -1,12 +1,13 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.InputProcessing.Text;
+using MyFinanceTracker.InputProcessing;
+using MyFinanceTracker.InputProcessing.Inputs;
 
 namespace MyFinanceTracker.Interactions.Console;
 
 internal sealed partial class ConsoleInteractionWorker(
-    ITextInputReceiver textCommandReceiver,
+    IInputReceiver inputReceiver,
     ILogger<ConsoleInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -40,8 +41,8 @@ internal sealed partial class ConsoleInteractionWorker(
         System.Console.WriteLine();
         System.Console.Write("> ");
 
-        var input = await ConsoleCommands.ReadLine(ct);
-        if (string.IsNullOrWhiteSpace(input))
+        var rawLine = await ConsoleCommands.ReadLine(ct);
+        if (string.IsNullOrWhiteSpace(rawLine))
         {
             return;
         }
@@ -49,16 +50,17 @@ internal sealed partial class ConsoleInteractionWorker(
         var correlationId = Guid.NewGuid();
         using (logger.BeginScope("CorrelationId: {CorrelationId}", correlationId))
         {
-            LogCommandReceived(input);
+            LogCommandReceived(rawLine);
 
             try
             {
-                var response = await textCommandReceiver.Receive(new TextInput(input), ct);
+                await using var input = new TextInput(rawLine);
+                var response = await inputReceiver.Receive(input, ct);
                 HandleResponse(response);
             }
             catch (Exception ex)
             {
-                LogCommandFailed(ex, input);
+                LogCommandFailed(ex, rawLine);
                 ConsoleCommands.WriteError("Internal system failure.");
             }
         }

@@ -1,14 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MyFinanceTracker.InputProcessing.Text;
+namespace MyFinanceTracker.InputProcessing;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddTextInputProcessing(
+    public static IServiceCollection AddInputProcessing(
         this IServiceCollection services,
         Func<ITextInputProcessingBuilder, IProcessorConfigured> configure)
     {
-        services.AddSingleton<ITextInputReceiver, TextInputReceiver>();
+        services.AddSingleton<IInputReceiver, InputReceiver>();
 
         var builder = new TextInputProcessingBuilder(services);
         configure(builder);

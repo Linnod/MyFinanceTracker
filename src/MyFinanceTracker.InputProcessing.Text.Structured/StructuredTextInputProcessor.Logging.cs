@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.InputProcessing.Inputs;
 
 namespace MyFinanceTracker.InputProcessing.Text.Structured;
 

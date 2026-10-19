@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.InputProcessing.Inputs;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands;
 using MyFinanceTracker.InputProcessing.Text.Structured.Interpretation;
@@ -9,7 +10,7 @@ namespace MyFinanceTracker.InputProcessing.Text.Structured;
 internal sealed partial class StructuredTextInputProcessor(
     ITextCommandInterpreter interpreter,
     ITextCommandDispatcher dispatcher,
-    ILogger<StructuredTextInputProcessor> logger) : ITextInputProcessor
+    ILogger<StructuredTextInputProcessor> logger) : IInputProcessor<TextInput>
 {
     public async Task<ProcessingResult> Process(TextInput input, CancellationToken ct)
     {

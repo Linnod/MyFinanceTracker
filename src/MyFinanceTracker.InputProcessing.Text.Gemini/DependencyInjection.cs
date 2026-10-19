@@ -2,6 +2,7 @@ using Google.GenAI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.InputProcessing.Inputs;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Configuration;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
@@ -22,7 +23,8 @@ public static class DependencyInjection
                 var options = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
                 return new Client(apiKey: options.ApiKey);
             })
-            .AddScoped<ITextInputProcessor, GeminiTextInputProcessor>()
+            .AddScoped<IInputProcessor<TextInput>, GeminiInputProcessor>()
+            .AddScoped<IInputProcessor<AudioInput>, GeminiInputProcessor>()
             .AddScoped<IGeminiSystemPromptBuilder, GeminiSystemPromptBuilder>()
             .AddSingleton<IGeminiToolDeclarationProvider, GeminiToolDeclarationProvider>()
             .AddScoped<IGeminiToolExecutor, GeminiToolExecutor>();

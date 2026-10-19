@@ -1,5 +1,5 @@
 using MyFinanceTracker.Domain.Entities;
-using MyFinanceTracker.InputProcessing.Text;
+using MyFinanceTracker.InputProcessing;
 
 namespace MyFinanceTracker.Interactions.Console;
 

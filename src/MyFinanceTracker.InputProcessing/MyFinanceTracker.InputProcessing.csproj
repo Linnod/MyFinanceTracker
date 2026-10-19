@@ -1,19 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="Logging\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.Common\MyFinanceTracker.Common.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj" />
   </ItemGroup>
+
 </Project>

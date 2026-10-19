@@ -1,8 +1,9 @@
+using System.Diagnostics;
 using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.InputProcessing.Text;
+using MyFinanceTracker.InputProcessing;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -12,7 +13,7 @@ namespace MyFinanceTracker.Interactions.Telegram;
 
 internal sealed partial class TelegramInteractionWorker(
     ITelegramBotClient botClient,
-    ITextInputReceiver textCommandReceiver,
+    IInputReceiver inputReceiver,
     IOptions<TelegramInteractionOptions> options,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
@@ -39,7 +40,7 @@ internal sealed partial class TelegramInteractionWorker(
 
     private async Task HandleUpdate(ITelegramBotClient bot, Update update, CancellationToken ct)
     {
-        if (update.Message is not { Text: { } messageText } message)
+        if (update.Message is not { } message)
         {
             return;
         }
@@ -51,29 +52,62 @@ internal sealed partial class TelegramInteractionWorker(
         using (logger.BeginScope("TelegramUser: {TelegramUser}, UserId: {TelegramUserId}, CorrelationId: {CorrelationId}",
                    username, userId ?? 0, correlationId))
         {
-            LogUpdateReceived(messageText);
-
             if (userId != options.Value.AllowedUserId)
             {
                 LogUnauthorized(userId);
                 return;
             }
 
-            var response = await textCommandReceiver.Receive(new TextInput(messageText), ct);
-            var formattedText = TelegramResponseFormatter.FormatResponse(response);
+            var responseText = await ProcessMessage(bot, message, ct);
 
             try
             {
                 await bot.SendMessage(
                     chatId: message.Chat.Id,
-                    text: formattedText,
+                    text: responseText,
                     parseMode: ParseMode.Html,
                     cancellationToken: ct);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
-                LogMessageSendFailed(ex, messageText);
+                LogMessageSendFailed(ex, message.Chat.Id, message.Id);
             }
+        }
+    }
+
+    private async Task<string> ProcessMessage(
+        ITelegramBotClient bot,
+        Message message,
+        CancellationToken ct)
+    {
+        var buildResult = await message.BuildInput(bot, ct);
+
+        switch (buildResult)
+        {
+            case TelegramInputBuilderResult.Success success:
+            {
+                await using var input = success.Input;
+
+                LogUpdateReceived(input);
+
+                var response = await inputReceiver.Receive(input, ct);
+                return TelegramResponseFormatter.FormatResponse(response);
+            }
+
+            case TelegramInputBuilderResult.Unsupported:
+                return "Unsupported input. Please send a text or voice message.";
+
+            case TelegramInputBuilderResult.Failed failed:
+                LogInputBuildFailed(failed.Exception);
+                return "Failed to prepare your input. Please try again.";
+
+            default:
+                throw new UnreachableException(
+                    $"Unknown input builder result: {buildResult.GetType()}");
         }
     }
 

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MyFinanceTracker.InputProcessing.Text;
+namespace MyFinanceTracker.InputProcessing;
 
 public interface IProcessorConfigured { }
 

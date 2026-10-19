@@ -1,4 +1,4 @@
-using LogRanges = MyFinanceTracker.Common.Logging.LogEventRanges.InputProcessing.Text;
+using LogRanges = MyFinanceTracker.Common.Logging.LogEventRanges.InputProcessing;
 
 namespace MyFinanceTracker.InputProcessing.Text.Structured.Logging;
 

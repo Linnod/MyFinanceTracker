@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.InputProcessing;
 
 namespace MyFinanceTracker.Interactions.Telegram;
 
@@ -15,8 +16,8 @@ internal sealed partial class TelegramInteractionWorker
     [LoggerMessage(
         EventId = UpdateReceived,
         Level = LogLevel.Information,
-        Message = "Processing message '{MessageText}'")]
-    partial void LogUpdateReceived(string messageText);
+        Message = "Processing message '{Input}'")]
+    partial void LogUpdateReceived(IInput input);
 
     [LoggerMessage(
         EventId = UnauthorizedAccess,
@@ -25,10 +26,16 @@ internal sealed partial class TelegramInteractionWorker
     partial void LogUnauthorized(long? userId);
 
     [LoggerMessage(
+        EventId = InputBuildFailed,
+        Level = LogLevel.Error,
+        Message = "Failed to prepare input from Telegram message")]
+    partial void LogInputBuildFailed(Exception ex);
+
+    [LoggerMessage(
         EventId = MessageSendFailed,
         Level = LogLevel.Error,
-        Message = "Failed to send message for input '{Input}'")]
-    partial void LogMessageSendFailed(Exception ex, string input);
+        Message = "Failed to send response to message {MessageId} in chat {ChatId}")]
+    partial void LogMessageSendFailed(Exception ex, long chatId, int messageId);
 
     [LoggerMessage(
         EventId = PollingError,

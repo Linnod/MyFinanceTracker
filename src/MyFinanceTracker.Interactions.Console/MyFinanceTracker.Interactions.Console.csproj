@@ -4,8 +4,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text\MyFinanceTracker.InputProcessing.Text.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Common\MyFinanceTracker.Common.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.InputProcessing\MyFinanceTracker.InputProcessing.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

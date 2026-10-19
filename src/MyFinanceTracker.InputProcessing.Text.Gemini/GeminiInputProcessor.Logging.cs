@@ -3,13 +3,13 @@ using MyFinanceTracker.InputProcessing.Text.Gemini.Logging;
 
 namespace MyFinanceTracker.InputProcessing.Text.Gemini;
 
-internal sealed partial class GeminiTextInputProcessor
+internal sealed partial class GeminiInputProcessor
 {
     [LoggerMessage(
         EventId = LogEvents.Processor.Entry,
         Level = LogLevel.Debug,
         Message = "Executing request '{Input}'")]
-    private partial void LogExecuteEntry(TextInput input);
+    private partial void LogExecuteEntry(IInput input);
 
     [LoggerMessage(
         EventId = LogEvents.Processor.TextResponse,
