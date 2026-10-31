@@ -22,7 +22,8 @@
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
     <ContainerRepository>myfinancetracker</ContainerRepository>
-    <ContainerImageTags>latest</ContainerImageTags>
+    <ContainerImageTags Condition="'$(CONTAINER_TAG)' != ''">latest;$(CONTAINER_TAG)</ContainerImageTags>
+    <ContainerImageTags Condition="'$(ContainerImageTags)' == ''">latest</ContainerImageTags>
   </PropertyGroup>
 
   <ItemGroup>

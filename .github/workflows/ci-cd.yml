@@ -71,13 +71,13 @@ jobs:
       - name: Publish Container to GHCR
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          CONTAINER_TAG: ${{ github.sha }}
         run: >
           dotnet publish src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj 
           -c Release 
           /t:PublishContainer 
           /p:ContainerRegistry=ghcr.io
-          /p:ContainerRepository=$IMAGE_NAME 
-          /p:ContainerImageTags="latest%3B${{ github.sha }}"
+          /p:ContainerRepository=$IMAGE_NAME
 
       - name: Copy docker-compose files via SCP
         uses: appleboy/scp-action@v0.1.7
