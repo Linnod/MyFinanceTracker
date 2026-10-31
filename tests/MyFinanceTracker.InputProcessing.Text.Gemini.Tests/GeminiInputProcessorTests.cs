@@ -6,7 +6,6 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.InputProcessing.Inputs;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Configuration;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
@@ -23,7 +22,7 @@ public class GeminiInputProcessorTests
     {
         using var fixture = new Fixture();
 
-        await fixture.Processor.Process(new TextInput("coffee 5"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Text("coffee 5"), CancellationToken.None);
 
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var root = request.RootElement;
@@ -50,7 +49,7 @@ public class GeminiInputProcessorTests
             : new BufferedStream(new MemoryStream(bytes));
         stream.Position = 1;
 
-        await fixture.Processor.Process(new AudioInput(stream, "audio/ogg"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Audio(stream, "audio/ogg"), CancellationToken.None);
 
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
@@ -154,7 +153,7 @@ public class GeminiInputProcessorTests
         var exception = new IOException("Read failure");
         using var stream = new FailingStream(exception);
 
-        var result = await fixture.Processor.Process(new AudioInput(stream, "audio/ogg"), CancellationToken.None);
+        var result = await fixture.Processor.Process(new Input.Audio(stream, "audio/ogg"), CancellationToken.None);
 
         result.Should().Be(new ProcessingResult.SystemError(
             "Failed to process your request. Please try again later.", exception));
@@ -172,7 +171,7 @@ public class GeminiInputProcessorTests
         using var stream = new MemoryStream(bytes);
 
         // Act
-        await fixture.Processor.Process(new ImageInput(stream, "image/jpeg"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Image(stream, "image/jpeg"), CancellationToken.None);
 
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
@@ -194,7 +193,7 @@ public class GeminiInputProcessorTests
         using var stream = new MemoryStream(bytes);
 
         // Act
-        await fixture.Processor.Process(new ImageInput(stream, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Image(stream, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
 
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
@@ -216,7 +215,7 @@ public class GeminiInputProcessorTests
         using var stream = new FailingStream(exception);
 
         // Act
-        var result = await fixture.Processor.Process(new ImageInput(stream, "image/jpeg"), CancellationToken.None);
+        var result = await fixture.Processor.Process(new Input.Image(stream, "image/jpeg"), CancellationToken.None);
 
         // Assert
         result.Should().Be(new ProcessingResult.SystemError(
@@ -243,10 +242,10 @@ public class GeminiInputProcessorTests
             });
             PromptBuilder.BuildSystemInstruction(Arg.Any<CancellationToken>()).Returns("System instruction");
             var declarations = Substitute.For<IGeminiToolDeclarationProvider>();
-            declarations.GetToolDeclarations().Returns(new List<Tool>
-            {
+            declarations.GetToolDeclarations().Returns(
+            [
                 new() { FunctionDeclarations = [new FunctionDeclaration { Name = "record_transaction" }] }
-            });
+            ]);
             Processor = new GeminiInputProcessor(PromptBuilder, declarations, Executor,
                 Options.Create(new GeminiOptions { Model = "test-model" }), client,
                 NullLogger<GeminiInputProcessor>.Instance);
@@ -255,10 +254,10 @@ public class GeminiInputProcessorTests
         public async Task<ProcessingResult> Process(bool audio, CancellationToken ct = default)
         {
             if (!audio)
-                return await Processor.Process(new TextInput("coffee 5"), ct);
+                return await Processor.Process(new Input.Text("coffee 5"), ct);
 
             using var stream = new MemoryStream([1, 2, 3]);
-            return await Processor.Process(new AudioInput(stream, "audio/ogg"), ct);
+            return await Processor.Process(new Input.Audio(stream, "audio/ogg"), ct);
         }
 
         public void Dispose() => client.Dispose();

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.InputProcessing.Inputs;
+using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands;
 using MyFinanceTracker.InputProcessing.Text.Structured.Interpretation;
@@ -10,13 +10,13 @@ namespace MyFinanceTracker.InputProcessing.Text.Structured;
 internal sealed partial class StructuredTextInputProcessor(
     ITextCommandInterpreter interpreter,
     ITextCommandDispatcher dispatcher,
-    ILogger<StructuredTextInputProcessor> logger) : IInputProcessor<TextInput>
+    ILogger<StructuredTextInputProcessor> logger) : IInputProcessor<Input.Text>
 {
-    public async Task<ProcessingResult> Process(TextInput input, CancellationToken ct)
+    public async Task<ProcessingResult> Process(Input.Text input, CancellationToken ct)
     {
         LogExecuteEntry(input);
 
-        var lines = input.Text?.Split(['\n', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+        var lines = input.Content?.Split(['\n', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
         if (lines.Length == 0)
         {
             var empty = new ProcessingResult.EmptyInput();

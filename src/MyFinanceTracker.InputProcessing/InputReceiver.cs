@@ -1,6 +1,6 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.InputProcessing.Inputs;
 
 namespace MyFinanceTracker.InputProcessing;
 
@@ -8,18 +8,17 @@ public sealed partial class InputReceiver(
     IServiceScopeFactory scopeFactory,
     ILogger<InputReceiver> logger) : IInputReceiver
 {
-    public Task<ProcessingResult> Receive(IInput input, CancellationToken ct)
+    public Task<ProcessingResult> Receive(Input input, CancellationToken ct)
         => input switch
         {
-            TextInput text => ReceiveTyped(text, ct),
-            AudioInput audio => ReceiveTyped(audio, ct),
-            ImageInput image => ReceiveTyped(image, ct),
-            _ => Task.FromResult<ProcessingResult>(
-                new ProcessingResult.SystemError($"Unsupported input type: {input.GetType().Name}."))
+            Input.Text text => ReceiveTyped(text, ct),
+            Input.Audio audio => ReceiveTyped(audio, ct),
+            Input.Image image => ReceiveTyped(image, ct),
+            _ => throw new UnreachableException($"Unhandled input type: {input.GetType().Name}")
         };
 
     private async Task<ProcessingResult> ReceiveTyped<TInput>(TInput input, CancellationToken ct)
-        where TInput : IInput
+        where TInput : Input
     {
         var inputTypeName = typeof(TInput).Name;
         LogReceiveEntry(input);
@@ -30,7 +29,7 @@ public sealed partial class InputReceiver(
             var processor = scope.ServiceProvider.GetService<IInputProcessor<TInput>>();
             if (processor is null)
             {
-                LogProcessorNotFound(typeof(TInput).Name);
+                LogProcessorNotFound(inputTypeName);
                 return new ProcessingResult.SystemError($"No processor registered for {inputTypeName}.");
             }
 

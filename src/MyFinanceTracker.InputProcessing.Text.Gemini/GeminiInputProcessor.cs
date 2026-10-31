@@ -2,7 +2,7 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.InputProcessing.Inputs;
+using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Configuration;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
@@ -17,32 +17,32 @@ internal sealed partial class GeminiInputProcessor(
     IOptions<GeminiOptions> options,
     Client client,
     ILogger<GeminiInputProcessor> logger)
-    : IInputProcessor<TextInput>, IInputProcessor<AudioInput>, IInputProcessor<ImageInput>
+    : IInputProcessor<Input.Text>, IInputProcessor<Input.Audio>, IInputProcessor<Input.Image>
 {
     private const string ProcessingFailureMessage = "Failed to process your request. Please try again later.";
     private const string ExtractionInstruction = "Extract financial transaction details and execute the corresponding function call.";
 
-    public Task<ProcessingResult> Process(TextInput input, CancellationToken ct)
+    public Task<ProcessingResult> Process(Input.Text input, CancellationToken ct)
     {
         LogExecuteEntry(input);
 
         var content = new Content
         {
             Role = "user",
-            Parts = [new Part { Text = input.Text }]
+            Parts = [new Part { Text = input.Content }]
         };
 
         return ProcessCore(Task.FromResult(content), ct);
     }
 
-    public Task<ProcessingResult> Process(AudioInput input, CancellationToken ct)
+    public Task<ProcessingResult> Process(Input.Audio input, CancellationToken ct)
     {
         LogExecuteEntry(input);
 
         return ProcessCore(CreateAudioContent(input, ct), ct);
     }
 
-    public Task<ProcessingResult> Process(ImageInput input, CancellationToken ct)
+    public Task<ProcessingResult> Process(Input.Image input, CancellationToken ct)
     {
         LogExecuteEntry(input);
 
@@ -88,7 +88,7 @@ internal sealed partial class GeminiInputProcessor(
         }
     }
 
-    private static async Task<Content> CreateImageContent(ImageInput input, CancellationToken ct)
+    private static async Task<Content> CreateImageContent(Input.Image input, CancellationToken ct)
     {
         var imageBytes = await ReadBytesAsync(input.Stream, ct);
         var promptText = string.IsNullOrWhiteSpace(input.Caption)
@@ -105,7 +105,7 @@ internal sealed partial class GeminiInputProcessor(
         };
     }
 
-    private static async Task<Content> CreateAudioContent(AudioInput input, CancellationToken ct)
+    private static async Task<Content> CreateAudioContent(Input.Audio input, CancellationToken ct)
     {
         var audioBytes = await ReadBytesAsync(input.Stream, ct);
         return new Content

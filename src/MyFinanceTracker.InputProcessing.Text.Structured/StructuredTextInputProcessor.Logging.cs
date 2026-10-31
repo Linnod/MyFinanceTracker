@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.InputProcessing.Inputs;
+using MyFinanceTracker.InputProcessing;
 
 namespace MyFinanceTracker.InputProcessing.Text.Structured;
 
@@ -11,7 +11,7 @@ internal sealed partial class StructuredTextInputProcessor
         EventId = Entry,
         Level = LogLevel.Debug,
         Message = "Executing input '{Input}'")]
-    partial void LogExecuteEntry(TextInput input);
+    partial void LogExecuteEntry(Input.Text input);
 
     [LoggerMessage(
         EventId = Exit,

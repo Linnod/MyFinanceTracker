@@ -9,7 +9,7 @@ internal sealed partial class GeminiInputProcessor
         EventId = LogEvents.Processor.Entry,
         Level = LogLevel.Debug,
         Message = "Executing request '{Input}'")]
-    private partial void LogExecuteEntry(IInput input);
+    private partial void LogExecuteEntry(Input input);
 
     [LoggerMessage(
         EventId = LogEvents.Processor.TextResponse,

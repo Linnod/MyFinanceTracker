@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using MyFinanceTracker.InputProcessing.Inputs;
+using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands;
 using MyFinanceTracker.InputProcessing.Text.Structured.Dispatching.Commands.AddTransaction;
@@ -16,7 +16,7 @@ public static class DependencyInjection
     public static IProcessorConfigured UseStructured(this ITextInputProcessingBuilder builder)
     {
         builder.Services
-            .AddScoped<IInputProcessor<TextInput>, StructuredTextInputProcessor>()
+            .AddScoped<IInputProcessor<Input.Text>, StructuredTextInputProcessor>()
             .AddScoped<ITextCommandInterpreter, StrictTextCommandInterpreter>()
             .AddSingleton<ICommandRegistry, CommandRegistry>()
             .AddScoped<ITextCommandDispatcher, TextCommandDispatcher>()

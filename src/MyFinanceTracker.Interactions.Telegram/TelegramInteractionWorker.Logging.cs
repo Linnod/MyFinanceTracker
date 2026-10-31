@@ -17,7 +17,7 @@ internal sealed partial class TelegramInteractionWorker
         EventId = UpdateReceived,
         Level = LogLevel.Information,
         Message = "Processing message '{Input}'")]
-    partial void LogUpdateReceived(IInput input);
+    partial void LogUpdateReceived(Input input);
 
     [LoggerMessage(
         EventId = UnauthorizedAccess,

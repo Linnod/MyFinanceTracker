@@ -1,5 +1,4 @@
 using MyFinanceTracker.InputProcessing;
-using MyFinanceTracker.InputProcessing.Inputs;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -11,19 +10,19 @@ internal static class TelegramInputBuilder
     {
         if (message.Text is { } text)
         {
-            return new TelegramInputBuilderResult.Success(new TextInput(text));
+            return new TelegramInputBuilderResult.Success(new Input.Text(text));
         }
 
         if (message.Voice is { } voice)
         {
             var mimeType = voice.MimeType ?? "audio/ogg";
-            return await DownloadAsInput(botClient, voice.FileId, stream => new AudioInput(stream, mimeType), ct);
+            return await DownloadAsInput(botClient, voice.FileId, stream => new Input.Audio(stream, mimeType), ct);
         }
 
         if (message.Photo is { Length: > 0 } photos)
         {
             var photo = photos[^1];
-            return await DownloadAsInput(botClient, photo.FileId, stream => new ImageInput(stream, "image/jpeg", message.Caption), ct);
+            return await DownloadAsInput(botClient, photo.FileId, stream => new Input.Image(stream, "image/jpeg", message.Caption), ct);
         }
 
         return new TelegramInputBuilderResult.Unsupported();
@@ -32,7 +31,7 @@ internal static class TelegramInputBuilder
     private static async Task<TelegramInputBuilderResult> DownloadAsInput(
         ITelegramBotClient botClient,
         string fileId,
-        Func<Stream, IInput> createInput,
+        Func<Stream, Input> createInput,
         CancellationToken ct)
     {
         var stream = new MemoryStream();

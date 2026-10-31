@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing;
-using MyFinanceTracker.InputProcessing.Inputs;
 
 namespace MyFinanceTracker.Interactions.Console;
 
@@ -54,7 +53,7 @@ internal sealed partial class ConsoleInteractionWorker(
 
             try
             {
-                await using var input = new TextInput(rawLine);
+                await using var input = new Input.Text(rawLine);
                 var response = await inputReceiver.Receive(input, ct);
                 HandleResponse(response);
             }

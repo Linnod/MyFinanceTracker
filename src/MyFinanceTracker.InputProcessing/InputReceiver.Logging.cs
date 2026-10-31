@@ -10,7 +10,7 @@ public sealed partial class InputReceiver
         EventId = Entry,
         Level = LogLevel.Information,
         Message = "Processing input: '{Input}'")]
-    partial void LogReceiveEntry(IInput input);
+    partial void LogReceiveEntry(Input input);
 
     [LoggerMessage(
         EventId = Exit,
@@ -28,5 +28,5 @@ public sealed partial class InputReceiver
         EventId = CriticalError,
         Level = LogLevel.Error,
         Message = "Critical error during input processing. Raw input: '{Input}'")]
-    partial void LogCriticalSystemError(IInput input, Exception ex);
+    partial void LogCriticalSystemError(Input input, Exception ex);
 }
