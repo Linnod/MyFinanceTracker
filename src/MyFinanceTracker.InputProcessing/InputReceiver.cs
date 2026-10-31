@@ -13,6 +13,7 @@ public sealed partial class InputReceiver(
         {
             TextInput text => ReceiveTyped(text, ct),
             AudioInput audio => ReceiveTyped(audio, ct),
+            ImageInput image => ReceiveTyped(image, ct),
             _ => Task.FromResult<ProcessingResult>(
                 new ProcessingResult.SystemError($"Unsupported input type: {input.GetType().Name}."))
         };

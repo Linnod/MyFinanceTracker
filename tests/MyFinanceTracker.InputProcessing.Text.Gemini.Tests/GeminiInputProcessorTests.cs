@@ -163,6 +163,69 @@ public class GeminiInputProcessorTests
         fixture.Handler.RequestBody.Should().BeNull();
     }
 
+    [Fact]
+    public async Task Process_ImageWithoutCaption_SendsBytesAndDefaultPrompt()
+    {
+        // Arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+        using var stream = new MemoryStream(bytes);
+
+        // Act
+        await fixture.Processor.Process(new ImageInput(stream, "image/jpeg"), CancellationToken.None);
+
+        // Assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(2);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("image/jpeg");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details and execute the corresponding function call.");
+    }
+
+    [Fact]
+    public async Task Process_ImageWithCaption_IncludesCaptionInTextPart()
+    {
+        // Arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+        using var stream = new MemoryStream(bytes);
+
+        // Act
+        await fixture.Processor.Process(new ImageInput(stream, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
+
+        // Assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(2);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("image/jpeg");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
+    }
+
+    [Fact]
+    public async Task Process_ImageReadFailure_ReturnsSystemErrorAndLeavesStreamOpen()
+    {
+        // Arrange
+        using var fixture = new Fixture();
+        var exception = new IOException("Read failure");
+        using var stream = new FailingStream(exception);
+
+        // Act
+        var result = await fixture.Processor.Process(new ImageInput(stream, "image/jpeg"), CancellationToken.None);
+
+        // Assert
+        result.Should().Be(new ProcessingResult.SystemError(
+            "Failed to process your request. Please try again later.", exception));
+        stream.IsDisposed.Should().BeFalse();
+        fixture.PromptBuilder.ReceivedCalls().Should().BeEmpty();
+        fixture.Handler.RequestBody.Should().BeNull();
+    }
+
     private sealed class Fixture : IDisposable
     {
         public IGeminiSystemPromptBuilder PromptBuilder { get; } = Substitute.For<IGeminiSystemPromptBuilder>();

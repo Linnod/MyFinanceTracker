@@ -17,9 +17,10 @@ internal sealed partial class GeminiInputProcessor(
     IOptions<GeminiOptions> options,
     Client client,
     ILogger<GeminiInputProcessor> logger)
-    : IInputProcessor<TextInput>, IInputProcessor<AudioInput>
+    : IInputProcessor<TextInput>, IInputProcessor<AudioInput>, IInputProcessor<ImageInput>
 {
     private const string ProcessingFailureMessage = "Failed to process your request. Please try again later.";
+    private const string ExtractionInstruction = "Extract financial transaction details and execute the corresponding function call.";
 
     public Task<ProcessingResult> Process(TextInput input, CancellationToken ct)
     {
@@ -39,6 +40,13 @@ internal sealed partial class GeminiInputProcessor(
         LogExecuteEntry(input);
 
         return ProcessCore(CreateAudioContent(input, ct), ct);
+    }
+
+    public Task<ProcessingResult> Process(ImageInput input, CancellationToken ct)
+    {
+        LogExecuteEntry(input);
+
+        return ProcessCore(CreateImageContent(input, ct), ct);
     }
 
     private async Task<ProcessingResult> ProcessCore(Task<Content> contentTask, CancellationToken ct)
@@ -80,6 +88,23 @@ internal sealed partial class GeminiInputProcessor(
         }
     }
 
+    private static async Task<Content> CreateImageContent(ImageInput input, CancellationToken ct)
+    {
+        var imageBytes = await ReadBytesAsync(input.Stream, ct);
+        var promptText = string.IsNullOrWhiteSpace(input.Caption)
+            ? ExtractionInstruction
+            : $"{ExtractionInstruction} User caption: {input.Caption}";
+
+        return new Content
+        {
+            Parts =
+            [
+                Part.FromBytes(imageBytes, input.ContentType),
+                new Part { Text = promptText }
+            ]
+        };
+    }
+
     private static async Task<Content> CreateAudioContent(AudioInput input, CancellationToken ct)
     {
         var audioBytes = await ReadBytesAsync(input.Stream, ct);
@@ -88,7 +113,7 @@ internal sealed partial class GeminiInputProcessor(
             Parts =
             [
                 Part.FromBytes(audioBytes, input.ContentType),
-                new Part { Text = "Extract financial transaction details and execute the corresponding function call." }
+                new Part { Text = ExtractionInstruction }
             ]
         };
     }

@@ -99,7 +99,7 @@ internal sealed partial class TelegramInteractionWorker(
                 }
 
             case TelegramInputBuilderResult.Unsupported:
-                return "Unsupported input. Please send a text or voice message.";
+                return "Unsupported input. Please send a text, voice, or photo message.";
 
             case TelegramInputBuilderResult.Failed failed:
                 LogInputBuildFailed(failed.Exception);

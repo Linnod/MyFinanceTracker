@@ -44,6 +44,8 @@ internal sealed class GeminiSystemPromptBuilder(
                - "groceries 10 15" -> two expense amounts, amounts: [10, 15]
                - "groceries 10 and 15" -> two expense amounts, amounts: [10, 15]
             9. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Expense 100 EUR in Food' or 'Income 1500 EUR in Salary'). NEVER leave `recognizedInput` empty or null.
+            10. When the input is an image of a receipt, extract ONLY the final total amount (TOTAL / ИТОГО) as a single transaction and infer the category from the merchant/items or user caption (unless the user caption explicitly asks to split specific items). If the image is a banking app screenshot showing multiple distinct transactions, call `add_transaction` for each transaction.
+            11. When the input is an image (receipt or screenshot), use the transaction date visible on the image. If the date on the image is missing, unreadable, or not present, use today's date ({today:yyyy-MM-dd}), unless overridden by the user caption.
             """;
     }
 
