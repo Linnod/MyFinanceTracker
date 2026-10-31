@@ -89,14 +89,14 @@ internal sealed partial class TelegramInteractionWorker(
         switch (buildResult)
         {
             case TelegramInputBuilderResult.Success success:
-            {
-                await using var input = success.Input;
+                {
+                    await using var input = success.Input;
 
-                LogUpdateReceived(input);
+                    LogUpdateReceived(input);
 
-                var response = await inputReceiver.Receive(input, ct);
-                return TelegramResponseFormatter.FormatResponse(response);
-            }
+                    var response = await inputReceiver.Receive(input, ct);
+                    return TelegramResponseFormatter.FormatResponse(response);
+                }
 
             case TelegramInputBuilderResult.Unsupported:
                 return "Unsupported input. Please send a text or voice message.";

@@ -36,6 +36,9 @@ jobs:
           cache: true
           cache-dependency-path: Directory.Packages.props
 
+      - name: Verify Code Formatting
+        run: dotnet format --verify-no-changes
+
       - name: Run Tests
         run: dotnet test --configuration Release --verbosity normal --logger "trx" --results-directory ./TestResults
 
