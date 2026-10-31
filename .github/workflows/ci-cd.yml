@@ -77,7 +77,7 @@ jobs:
           /t:PublishContainer 
           /p:ContainerRegistry=ghcr.io
           /p:ContainerRepository=$IMAGE_NAME 
-          /p:ContainerImageTags=latest
+          /p:ContainerImageTags="latest%3B${{ github.sha }}"
 
       - name: Copy docker-compose files via SCP
         uses: appleboy/scp-action@v0.1.7
@@ -97,6 +97,7 @@ jobs:
           script: |
             set -e
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            export IMAGE_TAG=${{ github.sha }}
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate
             docker image prune -f
