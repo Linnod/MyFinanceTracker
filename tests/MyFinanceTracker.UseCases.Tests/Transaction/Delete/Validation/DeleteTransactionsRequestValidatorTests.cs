@@ -6,11 +6,11 @@ using MyFinanceTracker.UseCases.Transaction.Delete.Validation;
 
 namespace MyFinanceTracker.UseCases.Tests.Transaction.Delete.Validation;
 
-public class GetTransactionsRequestValidatorTests
+public class DeleteTransactionsRequestValidatorTests
 {
     private readonly DeleteTransactionsRequestValidator sut;
 
-    public GetTransactionsRequestValidatorTests()
+    public DeleteTransactionsRequestValidatorTests()
     {
         sut = new DeleteTransactionsRequestValidator();
     }

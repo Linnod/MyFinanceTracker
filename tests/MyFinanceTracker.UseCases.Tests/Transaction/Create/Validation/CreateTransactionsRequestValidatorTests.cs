@@ -6,11 +6,11 @@ using MyFinanceTracker.UseCases.Transaction.Create.Validation;
 
 namespace MyFinanceTracker.UseCases.Tests.Transaction.Create.Validation;
 
-public class CreateTransactionsHandlerTests
+public class CreateTransactionsRequestValidatorTests
 {
     private readonly CreateTransactionsRequestValidator sut;
 
-    public CreateTransactionsHandlerTests()
+    public CreateTransactionsRequestValidatorTests()
     {
         sut = new CreateTransactionsRequestValidator();
     }
