@@ -1,5 +1,6 @@
 # MyFinanceTracker
 
+[![Build](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci-cd.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blue)]()
 
 Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, and banking screenshots) through Telegram and Console interfaces.
@@ -60,6 +61,7 @@ src/
 
 tests/
 ├── MyFinanceTracker.Domain.Tests/
+├── MyFinanceTracker.UseCases.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
 ├── MyFinanceTracker.InputProcessing.Text.Gemini.Tests/
@@ -68,36 +70,43 @@ tests/
 
 ## Quick Start
 
-### 1. Create your Google Sheets tracker
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Linnod/MyFinanceTracker.git
+cd MyFinanceTracker
+```
+
+### 2. Create your Google Sheets tracker
 
 Create your own spreadsheet from the template:
 
 https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZq9c/copy
 
-### 2. Create a Google Service Account
+### 3. Create a Google Service Account
 
 1. Create a Google Cloud project.
 2. Enable the Google Sheets API.
 3. Create a Service Account.
-4. Download the credentials JSON file.
+4. Download the credentials JSON file and save it as `google-api-credentials.json` in the repository root.
 
-### 3. Share the spreadsheet
+### 4. Share the spreadsheet
 
 Share your copied spreadsheet with the Service Account email address and grant it **Editor** permissions.
 
-### 4. Configure categories
+### 5. Configure categories
 
-Copy the template:
+Copy the example template:
 
 ```bash
-cp deploy/categories.template.yaml categories.yaml
+cp deploy/categories.example.yaml categories.yaml
 ```
 
-Adjust category names, aliases and spreadsheet column IDs as needed.
+Adjust category names, aliases, and spreadsheet column IDs as needed.
 
-### 5. Configure the application
+### 6. Configure the application
 
-Create `appsettings.Local.json`:
+Create `appsettings.Development.json` in the repository root:
 
 ```json
 {
@@ -105,17 +114,15 @@ Create `appsettings.Local.json`:
     "SpreadsheetId": "YOUR_SPREADSHEET_ID"
   },
   "Gemini": {
-    "ApiKey": "YOUR_GEMINI_API_KEY"
+    "ApiKey": "YOUR_GEMINI_API_KEY",
+    "Model": "YOUR_GEMINI_MODEL"
   }
 }
 ```
 
-### 6. Run the application
+### 7. Run the application
 
 ```bash
-git clone https://github.com/Linnod/MyFinanceTracker.git
-cd MyFinanceTracker
-
 dotnet build
 dotnet run --project src/MyFinanceTracker.Host
 ```
@@ -153,13 +160,11 @@ dotnet run --project src/MyFinanceTracker.Host
 
 ### Category Configuration Notes
 
-> **Important**
->
+> [!IMPORTANT]
 > Category IDs must match the column IDs used by the Google Sheets template.
 > Transactions are written to spreadsheet columns based on the category `id`.
 
-> **Important**
->
+> [!IMPORTANT]
 > At least one income category must contain the alias `income`.
 > This alias is used as the default income category by the application.
 
@@ -190,11 +195,29 @@ Make sure that:
 }
 ```
 
+## Docker Deployment
+
+You can also run the application as a background service via Docker Compose:
+
+1. Prepare configuration files and secrets:
+   ```bash
+   cp .env.example .env
+   cp deploy/categories.example.yaml deploy/categories.yaml
+   cp google-api-credentials.json deploy/google-api-credentials.json
+   ```
+
+2. Fill in `.env` with your Telegram, Google Sheets, and Gemini credentials.
+
+3. Start the container:
+   ```bash
+   docker compose up -d
+   ```
+
 ## Usage Examples
 
 ### Text Commands (Console & Telegram)
 
-Natural language input in English, Russian, or other languages:
+Natural language input in any language:
 
 ```text
 Spent 15.50 on groceries
@@ -205,10 +228,10 @@ Clear expenses for groceries today
 
 ### Voice Messages (Telegram)
 
-Send voice messages directly to the Telegram bot:
+Send voice messages directly to the Telegram bot in any language:
 
 > *"Spent 12 euros on lunch at Subway"*  
-> *"Купил кофе и круассан за 7.50"*
+> *"Bought coffee and a croissant for 7.50"*
 
 ### Receipts & Screenshots (Telegram)
 
