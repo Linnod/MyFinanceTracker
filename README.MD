@@ -1,19 +1,18 @@
 # MyFinanceTracker
 
-[![.NET 8](https://img.shields.io/badge/.NET-8.0-blue)]()
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-blue)]()
 
-Personal finance tracker that stores transactions in Google Sheets and supports natural language expense tracking through Console and Telegram interfaces.
+Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, and banking screenshots) through Telegram and Console interfaces.
 
 ## Features
 
-- Natural language transaction parsing
-- Google Sheets persistence
-- Telegram Bot support
-- Console interaction mode
-- Gemini-powered natural language processing
-- YAML-based category configuration
-- Clean Architecture + CQRS
-- Structured logging
+- Multimodal transaction input: text commands, voice messages, receipt photos, and banking screenshots
+- Gemini-powered natural language processing, audio transcription, and image analysis
+- Google Sheets persistence with automated category mapping
+- Telegram Bot & Console interaction modes
+- YAML-based category and alias configuration
+- Clean Architecture + CQRS (MediatR)
+- Structured logging with correlation IDs
 
 ## Architecture
 
@@ -52,7 +51,7 @@ src/
 ├── MyFinanceTracker.UseCases/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
-├── MyFinanceTracker.InputProcessing.Text/
+├── MyFinanceTracker.InputProcessing/
 ├── MyFinanceTracker.InputProcessing.Text.Gemini/
 ├── MyFinanceTracker.InputProcessing.Text.Structured/
 ├── MyFinanceTracker.Interactions.Console/
@@ -193,8 +192,28 @@ Make sure that:
 
 ## Usage Examples
 
+### Text Commands (Console & Telegram)
+
+Natural language input in English, Russian, or other languages:
+
 ```text
 Spent 15.50 on groceries
-Spent 8.40 at Starbucks
+Spent 8.40 at Starbucks yesterday
 Received salary 2500
+Clear expenses for groceries today
 ```
+
+### Voice Messages (Telegram)
+
+Send voice messages directly to the Telegram bot:
+
+> *"Spent 12 euros on lunch at Subway"*  
+> *"Купил кофе и круассан за 7.50"*
+
+### Receipts & Screenshots (Telegram)
+
+Send images directly to the bot:
+
+- **Receipts**: Automatically extracts the total amount, infers the category from the merchant/items, and extracts the transaction date.
+- **Banking App Screenshots**: Recognizes transaction details from apps such as Revolut, Monzo, etc.
+- **Optional Captions**: Attach a text caption to clarify or override details (e.g. `Pharmacy yesterday` or `Groceries split with friend`).
