@@ -36,7 +36,14 @@ internal sealed class GeminiSystemPromptBuilder(
             5. If input is completely unrelated or ambiguous, respond concisely in text explaining what is wrong.
             6. If the user mentions multiple expenses or incomes for DIFFERENT categories or items in a single input, issue multiple parallel `add_transaction` tool calls (one for each item/category).
             7. ALWAYS pass `amounts` as a JSON array of positive numbers (absolute values, > 0), even if there is only one amount (e.g. `amounts: [100]` or `amounts: [100.5, 50]`). NEVER pass negative numbers, zero, or a scalar single number.
-            8. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Expense 100 EUR in Food' or 'Income 1500 EUR in Salary'). NEVER leave `recognizedInput` empty or null.
+            8. Treat a comma or a dot between digits in an amount as a decimal separator. Never split such a number into multiple amounts or transactions. Convert decimal commas to dots in JSON output. Treat amounts separated by spaces or "and" as separate amounts.
+               Examples:
+               - "groceries 10,15" -> one expense, amounts: [10.15]
+               - "groceries -10,15" -> one expense, amounts: [10.15]
+               - "groceries 10.15" -> one expense, amounts: [10.15]
+               - "groceries 10 15" -> two expense amounts, amounts: [10, 15]
+               - "groceries 10 and 15" -> two expense amounts, amounts: [10, 15]
+            9. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Expense 100 EUR in Food' or 'Income 1500 EUR in Salary'). NEVER leave `recognizedInput` empty or null.
             """;
     }
 
