@@ -18,7 +18,6 @@ public class CreateTransactionsHandlerTests
     {
         categoryRepository = Substitute.For<ICategoryRepository>();
         transactionRepository = Substitute.For<ITransactionRepository>();
-        timeProvider = Substitute.For<TimeProvider>();
         timeProvider = new FakeTimeProvider(
             new DateTimeOffset(
                 2026, 8, 17,
