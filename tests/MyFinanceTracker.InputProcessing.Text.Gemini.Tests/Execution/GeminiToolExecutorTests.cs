@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
+using MyFinanceTracker.UseCases;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using NSubstitute;
 using Xunit;
@@ -72,6 +73,44 @@ public class GeminiToolExecutorTests
                 r.Items[0].CategoryAlias == "food" &&
                 r.Items[0].Amount == 100m &&
                 r.Items[0].Date == new DateOnly(2026, 8, 8)),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenAddTransactionCallWithoutAmounts_ShouldSendRequestWithEmptyItemsAndReturnInvalidInput()
+    {
+        // Arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.AddTransaction,
+            Args = new Dictionary<string, object>
+            {
+                ["type"] = "expense",
+                ["categoryAlias"] = "food",
+                ["recognizedInput"] = "Expense in food category"
+            }
+        };
+
+        var errors = new[]
+        {
+            new ValidationErrorItem(ValidationErrorCode.Common.Required)
+        };
+
+        mediator.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new CreateTransactionsResponse.ValidationError(errors));
+
+        // Act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // Assert
+        response.Should().BeOfType<ActionResult.InvalidInput>();
+        var result = (ActionResult.InvalidInput)response;
+        result.Errors.Should().BeEquivalentTo(errors);
+        result.RawInput.Should().Be("Expense in food category");
+
+        await mediator.Received(1).Send(
+            Arg.Is<CreateTransactionsRequest>(r => r.Items.Count == 0),
             Arg.Any<CancellationToken>()
         );
     }

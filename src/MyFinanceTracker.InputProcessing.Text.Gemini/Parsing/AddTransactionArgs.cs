@@ -4,9 +4,12 @@ namespace MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
 
 internal sealed record AddTransactionArgs(
     TransactionType Type,
-    IReadOnlyList<decimal> Amounts,
+    IReadOnlyList<decimal>? Amounts,
     string? CategoryAlias,
     DateOnly? Date,
     string? Note,
     string RecognizedInput
-);
+)
+{
+    public IReadOnlyList<decimal> Amounts { get; init; } = Amounts ?? [];
+}

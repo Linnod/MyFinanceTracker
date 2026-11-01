@@ -98,4 +98,32 @@ public class GeminiArgsParserTests
         result.Should().NotBeNull();
         result!.Amounts.Should().Equal(100.5m, 50m);
     }
+
+    [Fact]
+    void BindArgs_WhenAddTransactionArgsHasMissingOrNullAmounts_ShouldDefaultAmountsToEmptyList()
+    {
+        // Arrange
+        using var jsonDoc = JsonDocument.Parse("""
+        {
+            "type": "expense",
+            "amounts": null,
+            "recognizedInput": "Test input"
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["type"] = jsonDoc.RootElement.GetProperty("type"),
+            ["amounts"] = jsonDoc.RootElement.GetProperty("amounts"),
+            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
+        };
+
+        // Act
+        var result = args.BindArgs<AddTransactionArgs>();
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Amounts.Should().NotBeNull();
+        result.Amounts.Should().BeEmpty();
+    }
 }
