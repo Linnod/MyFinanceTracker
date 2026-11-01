@@ -20,7 +20,7 @@ internal sealed partial class ListCategoriesLoggingBehavior
     partial void LogSuccess(int count, long ms);
 
     [LoggerMessage(
-        EventId = SystemError,
+        EventId = CriticalError,
         Level = LogLevel.Error,
         Message = "Failed to retrieve categories after {Ms}ms")]
     partial void LogCriticalError(Exception ex, long ms);

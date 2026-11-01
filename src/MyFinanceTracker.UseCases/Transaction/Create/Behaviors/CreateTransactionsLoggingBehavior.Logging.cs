@@ -39,13 +39,13 @@ internal sealed partial class CreateTransactionsLoggingBehavior
     partial void LogCategoryRequired(TransactionType type, long ms);
 
     [LoggerMessage(
-        EventId = SystemError,
+        EventId = Failure,
         Level = LogLevel.Warning,
         Message = "Transaction processing finished with failure response (Time: {Ms}ms)")]
     partial void LogFailure(long ms);
 
     [LoggerMessage(
-        EventId = SystemError,
+        EventId = CriticalError,
         Level = LogLevel.Error,
         Message = "Critical system failure during processing after {Ms}ms")]
     partial void LogCriticalError(Exception ex, long ms);

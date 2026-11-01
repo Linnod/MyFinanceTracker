@@ -26,13 +26,13 @@ internal sealed partial class GetTransactionsLoggingBehavior
     partial void LogValidationError(GetTransactionsResponse.ValidationError error, long ms);
 
     [LoggerMessage(
-        EventId = SystemError,
+        EventId = Failure,
         Level = LogLevel.Warning,
         Message = "Retrieval finished with failure response (Time: {Ms}ms)")]
     partial void LogFailure(long ms);
 
     [LoggerMessage(
-        EventId = SystemError,
+        EventId = CriticalError,
         Level = LogLevel.Error,
         Message = "Critical failure during retrieval after {Ms}ms")]
     partial void LogCriticalError(Exception ex, long ms);
