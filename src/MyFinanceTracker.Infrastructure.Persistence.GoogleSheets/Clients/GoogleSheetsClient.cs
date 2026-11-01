@@ -37,7 +37,7 @@ internal sealed partial class GoogleSheetsClient(
             values,
             (address, valueRange) => new GoogleSheetCell(
                 address,
-                valueRange.Values?[0]?[0]?.ToString() ?? string.Empty))];
+                valueRange.Values?.FirstOrDefault()?.FirstOrDefault()?.ToString() ?? string.Empty))];
     }
 
     public async Task SendBatchUpdate(
