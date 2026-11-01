@@ -12,7 +12,7 @@ internal sealed partial class YamlCategoryLoader(
     IOptions<YamlPersistenceOptions> options,
     ILogger<YamlCategoryLoader> logger) : ICategoryLoader
 {
-    private readonly string resolvedPath = Path.Combine(AppContext.BaseDirectory, options.Value.FilePath);
+    private readonly string resolvedPath = options.Value.FilePath;
 
     public IReadOnlyList<Category> Load()
     {
