@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.Mapping;
 
@@ -10,115 +12,238 @@ public class GoogleSheetMapperTests
     private readonly GoogleSheetsOptions defaultOptions = new()
     {
         SpreadsheetId = "test-id",
-        HeaderRowsCount = 2,
+        TransactionsSheetName = "Transactions",
         DecimalSeparator = "."
     };
 
+    private readonly Category foodCategory = new("food_id", "Food", ["food"]);
+    private readonly Category salaryCategory = new("salary_id", "Salary", ["salary"], isIncome: true);
+
     [Fact]
-    void Map_ShouldGroupMultipleTransactionsIntoOneUpdate()
+    public void MapToRow_ShouldFormatExpenseCorrectly()
     {
         // arrange
-        var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
-        var sut = new GoogleSheetMapper(options);
-        var date = new DateOnly(2026, 01, 24);
-        var category = new Category("A", "Food", ["food"]);
-
-        var transactions = new List<Transaction>
-        {
-            new(Guid.NewGuid(), TransactionType.Expense, category, 100.50m, date, "Lunch"),
-            new(Guid.NewGuid(), TransactionType.Expense, category, 50.25m, date, "Coffee")
-        };
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var transaction = new Transaction(
+            id,
+            TransactionType.Expense,
+            foodCategory,
+            123.45m,
+            new DateOnly(2026, 11, 2),
+            "Dinner"
+        );
 
         // act
-        var result = sut.MapForAddition(transactions);
+        var result = sut.MapToRow(transaction);
 
         // assert
-        result.Should().HaveCount(1);
-        result[0].Address.Column.Should().Be("A");
-        result[0].Address.Row.Should().Be(26);
-        result[0].Address.SheetName.Should().Be("2026.01");
-        result[0].Content.Should().Be("-100.5-50.25");
+        result.Values.Should().Equal(
+            id.ToString(),
+            "2026-11-02",
+            "Expense",
+            "Food",
+            "-123.45",
+            "Dinner"
+        );
+    }
+
+    [Fact]
+    public void MapToRow_ShouldFormatIncomeAndRespectDecimalSeparator()
+    {
+        // arrange
+        var sut = CreateMapper(",");
+        var id = Guid.NewGuid();
+        var transaction = new Transaction(
+            id,
+            TransactionType.Income,
+            salaryCategory,
+            5000m,
+            new DateOnly(2026, 11, 1),
+            null
+        );
+
+        // act
+        var result = sut.MapToRow(transaction);
+
+        // assert
+        result.Values.Should().Equal(
+            id.ToString(),
+            "2026-11-01",
+            "Income",
+            "Salary",
+            "5000",
+            string.Empty
+        );
+    }
+
+    [Fact]
+    public void MapToDomain_ShouldReturnEmpty_WhenRowHasNoValuesOrOnlyWhitespace()
+    {
+        // arrange
+        var sut = CreateMapper(".");
+        var emptyRow = new GoogleSheetRow(1, new GoogleSheetRowValues([]));
+        var whitespaceRow = new GoogleSheetRow(2, new GoogleSheetRowValues([" ", "\t"]));
+
+        // act
+        var emptyResult = sut.MapToDomain(emptyRow, [foodCategory]);
+        var whitespaceResult = sut.MapToDomain(whitespaceRow, [foodCategory]);
+
+        // assert
+        emptyResult.Should().BeOfType<RowMappingResult.Empty>();
+        whitespaceResult.Should().BeOfType<RowMappingResult.Empty>();
     }
 
     [Theory]
-    [InlineData(TransactionType.Income, 100, "+100")]
-    [InlineData(TransactionType.Expense, 100, "-100")]
-    [InlineData(TransactionType.Expense, 10.55, "-10.55")]
-    void Map_ShouldApplyCorrectSignsAndFormat(TransactionType type, decimal amount, string expectedDelta)
+    [InlineData("2026-11-02")]
+    [InlineData("02.11.2026")]
+    [InlineData("2.11.2026")]
+    [InlineData("02/11/2026")]
+    [InlineData("2026.11.02")]
+    public void MapToDomain_ShouldSupportVariousDateFormats(string dateString)
     {
         // arrange
-        var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
-        var sut = new GoogleSheetMapper(options);
-        var category = new Category("B", "Test", ["test"], isIncome: type == TransactionType.Income);
-        var transaction = new Transaction(Guid.NewGuid(), type, category, amount, new DateOnly(2026, 1, 1), "");
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var row = new GoogleSheetRow(1, new GoogleSheetRowValues([
+            id.ToString(),
+            dateString,
+            "Expense",
+            "Food",
+            "-50.25",
+            "Lunch"
+        ]));
 
         // act
-        var result = sut.MapForAddition([transaction]);
+        var result = sut.MapToDomain(row, [foodCategory]);
 
         // assert
-        result[0].Content.Should().Be(expectedDelta);
+        result.Should().BeOfType<RowMappingResult.Success>();
+        var success = (RowMappingResult.Success)result;
+        success.Transaction.Date.Should().Be(new DateOnly(2026, 11, 2));
+        success.Transaction.Amount.Should().Be(50.25m);
+        success.Transaction.Category.Should().Be(foodCategory);
+        success.Transaction.Note.Should().Be("Lunch");
     }
 
     [Fact]
-    void Map_ShouldRespectDecimalSeparatorFromOptions()
+    public void MapToDomain_ShouldReturnSuccess_WithCaseInsensitiveCategoryMatch()
     {
         // arrange
-        var optionsWithComma = Microsoft.Extensions.Options.Options.Create(new GoogleSheetsOptions
-        {
-            HeaderRowsCount = 0,
-            DecimalSeparator = ","
-        });
-        var sut = new GoogleSheetMapper(optionsWithComma);
-        var category = new Category("C", "Food", ["food"]);
-        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10.5m, new DateOnly(2026, 1, 1), "");
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var row = new GoogleSheetRow(3, new GoogleSheetRowValues([
+            id.ToString(),
+            "2026-11-02",
+            "Income",
+            "salary", // lower case
+            "2500",
+            ""
+        ]));
 
         // act
-        var result = sut.MapForAddition([transaction]);
+        var result = sut.MapToDomain(row, [salaryCategory]);
 
         // assert
-        result[0].Content.Should().Contain("-10,5");
+        result.Should().BeOfType<RowMappingResult.Success>();
+        var success = (RowMappingResult.Success)result;
+        success.Transaction.Category.Name.Should().Be("Salary");
+        success.Transaction.Note.Should().BeNull();
+    }
+
+    [Fact]
+    public void MapToDomain_ShouldReturnFailure_WhenIdIsMissingOrInvalid()
+    {
+        // arrange
+        var sut = CreateMapper(".");
+        var missingIdRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["", "2026-11-02", "Expense", "Food", "-10"]));
+        var invalidIdRow = new GoogleSheetRow(5, new GoogleSheetRowValues(["not-a-guid", "2026-11-02", "Expense", "Food", "-10"]));
+
+        // act
+        var missingResult = sut.MapToDomain(missingIdRow, [foodCategory]);
+        var invalidResult = sut.MapToDomain(invalidIdRow, [foodCategory]);
+
+        // assert
+        missingResult.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.RowNumber.Should().Be(1);
+        invalidResult.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.RowNumber.Should().Be(6);
+    }
+
+    [Fact]
+    public void MapToDomain_ShouldReturnFailure_WhenDateIsInvalid()
+    {
+        // arrange
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "invalid-date", "Expense", "Food", "-10"]));
+
+        // act
+        var result = sut.MapToDomain(row, [foodCategory]);
+
+        // assert
+        result.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.Reason.Should().Contain("Invalid Date");
+    }
+
+    [Fact]
+    public void MapToDomain_ShouldReturnFailure_WhenTypeIsInvalid()
+    {
+        // arrange
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "2026-11-02", "UnknownType", "Food", "-10"]));
+
+        // act
+        var result = sut.MapToDomain(row, [foodCategory]);
+
+        // assert
+        result.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.Reason.Should().Contain("Invalid Transaction Type");
+    }
+
+    [Fact]
+    public void MapToDomain_ShouldReturnFailure_WhenCategoryIsUnknown()
+    {
+        // arrange
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var row = new GoogleSheetRow(4, new GoogleSheetRowValues([id.ToString(), "2026-11-02", "Expense", "NonExistent", "-10"]));
+
+        // act
+        var result = sut.MapToDomain(row, [foodCategory]);
+
+        // assert
+        result.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.Reason.Should().Contain("Unknown Category: 'NonExistent'");
     }
 
     [Theory]
-    [InlineData(1, 2, "A", 3)]
-    [InlineData(31, 0, "A", 31)]
-    [InlineData(15, 5, "A", 20)]
-    void Map_ShouldCalculateCellAddressCorrectly(int day, int headerRows, string expectedCellColumn, int expectedCellRow)
+    [InlineData("not-a-number")]
+    [InlineData("0")]
+    [InlineData("0.00")]
+    public void MapToDomain_ShouldReturnFailure_WhenAmountIsInvalidOrZero(string amountStr)
     {
         // arrange
-        var customOptions = Microsoft.Extensions.Options.Options.Create(new GoogleSheetsOptions
-        {
-            HeaderRowsCount = headerRows,
-            DecimalSeparator = "."
-        });
-        var sut = new GoogleSheetMapper(customOptions);
-        var category = new Category("A", "Food", ["food"]);
-        var transaction = new Transaction(Guid.NewGuid(), TransactionType.Expense, category, 10, new DateOnly(2026, 1, day), "");
+        var sut = CreateMapper(".");
+        var id = Guid.NewGuid();
+        var row = new GoogleSheetRow(1, new GoogleSheetRowValues([id.ToString(), "2026-11-02", "Expense", "Food", amountStr]));
 
         // act
-        var result = sut.MapForAddition([transaction]);
+        var result = sut.MapToDomain(row, [foodCategory]);
 
         // assert
-        result[0].Address.Column.Should().Be(expectedCellColumn);
-        result[0].Address.Row.Should().Be(expectedCellRow);
+        result.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.Reason.Should().Contain("Invalid Amount");
     }
 
-    [Fact]
-    void MapForClearance_ShouldReturnZeroAndCorrectAddress()
+    private GoogleSheetMapper CreateMapper(string decimalSeparator)
     {
-        // arrange
-        var options = Microsoft.Extensions.Options.Options.Create(defaultOptions);
-        var sut = new GoogleSheetMapper(options);
-        var date = new DateOnly(2026, 01, 27);
-        var category = new Category("B", "Food", ["food"]);
-
-        // act
-        var result = sut.MapForClearance(category, date);
-
-        // assert
-        result.Address.SheetName.Should().Be("2026.01");
-        result.Address.Column.Should().Be("B");
-        result.Address.Row.Should().Be(29);
-        result.Content.Should().Be("0");
+        return new GoogleSheetMapper(Options.Create(new GoogleSheetsOptions
+        {
+            SpreadsheetId = "test-id",
+            TransactionsSheetName = "Transactions",
+            DecimalSeparator = decimalSeparator
+        }));
     }
 }

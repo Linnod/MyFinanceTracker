@@ -4,6 +4,7 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 
 internal interface IGoogleSheetsClient
 {
-    Task<IReadOnlyList<GoogleSheetCell>> GetCells(IEnumerable<GoogleSheetCellAddress> cellAddresses, CancellationToken ct);
-    Task SendBatchUpdate(IEnumerable<GoogleSheetCell> cells, CancellationToken ct);
+    Task<IReadOnlyList<GoogleSheetRow>> GetRows(string sheetName, CancellationToken ct);
+    Task AppendRows(string sheetName, IEnumerable<GoogleSheetRowValues> rows, CancellationToken ct);
+    Task DeleteRows(string sheetName, IReadOnlyCollection<GoogleSheetRow> rows, CancellationToken ct);
 }

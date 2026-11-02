@@ -8,26 +8,38 @@ using static LogEvents.Client;
 internal partial class GoogleSheetsClient
 {
     [LoggerMessage(
-        EventId = FetchingFormulas,
+        EventId = FetchingRows,
         Level = LogLevel.Debug,
-        Message = "Fetching formulas for {CellCount} ranges from spreadsheet '{SpreadsheetId}'")]
-    partial void LogFetchingCells(int cellCount, string spreadsheetId);
+        Message = "Fetching rows from sheet '{SheetName}' in spreadsheet '{SpreadsheetId}'")]
+    partial void LogFetchingRows(string sheetName, string spreadsheetId);
 
     [LoggerMessage(
-        EventId = FormulasFetched,
+        EventId = RowsFetched,
         Level = LogLevel.Debug,
-        Message = "Successfully fetched {CellCount} value ranges")]
-    partial void LogCellsFetched(int cellCount);
+        Message = "Successfully fetched {RowCount} rows from sheet '{SheetName}'")]
+    partial void LogRowsFetched(int rowCount, string sheetName);
 
     [LoggerMessage(
-        EventId = SendingBatchUpdate,
+        EventId = AppendingRows,
         Level = LogLevel.Information,
-        Message = "Sending batch update to Google Sheets ({UpdateCount} entries) for spreadsheet '{SpreadsheetId}'")]
-    partial void LogSendingBatchUpdate(int updateCount, string spreadsheetId);
+        Message = "Appending {RowCount} rows to sheet '{SheetName}' in spreadsheet '{SpreadsheetId}'")]
+    partial void LogAppendingRows(int rowCount, string sheetName, string spreadsheetId);
 
     [LoggerMessage(
-        EventId = BatchUpdateApplied,
+        EventId = RowsAppended,
         Level = LogLevel.Debug,
-        Message = "Batch update applied successfully")]
-    partial void LogBatchUpdateApplied();
+        Message = "Successfully appended rows to sheet '{SheetName}'")]
+    partial void LogRowsAppended(string sheetName);
+
+    [LoggerMessage(
+        EventId = DeletingRows,
+        Level = LogLevel.Information,
+        Message = "Deleting {RowCount} rows from sheet '{SheetName}' in spreadsheet '{SpreadsheetId}'")]
+    partial void LogDeletingRows(int rowCount, string sheetName, string spreadsheetId);
+
+    [LoggerMessage(
+        EventId = RowsDeleted,
+        Level = LogLevel.Debug,
+        Message = "Successfully deleted rows from sheet '{SheetName}'")]
+    partial void LogRowsDeleted(string sheetName);
 }

@@ -15,8 +15,8 @@ internal sealed class GoogleSheetsOptions
     [Required(AllowEmptyStrings = false)]
     public string ApplicationName { get; init; } = "MyFinanceTracker";
 
-    [Range(0, 10)]
-    public int HeaderRowsCount { get; init; }
+    [Required(AllowEmptyStrings = false)]
+    public string TransactionsSheetName { get; init; } = "Transactions";
 
     [Required(AllowEmptyStrings = false)]
     public string DecimalSeparator { get; init; } = ",";

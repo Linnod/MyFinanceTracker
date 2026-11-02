@@ -1,19 +1,23 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Exceptions;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
-using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Services;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
 
 internal sealed partial class GoogleSheetsTransactionRepository(
+    IOptions<GoogleSheetsOptions> options,
     GoogleSheetMapper mapper,
     IGoogleSheetsClient client,
-    FormulaService formulaService,
+    ICategoryRepository categoryRepository,
     ILogger<GoogleSheetsTransactionRepository> logger) : ITransactionRepository
 {
+    private readonly GoogleSheetsOptions options = options.Value;
     private static readonly SemaphoreSlim semaphore = new(1, 1);
 
     public async Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct)
@@ -29,14 +33,8 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         {
             LogAddingTransactions(transactionList.Count);
 
-            var updates = mapper.MapForAddition(transactionList);
-            var currentCells = await client.GetCells(updates.Select(c => c.Address), ct);
-            var cells = updates.Zip(
-                currentCells,
-                (update, current) => new GoogleSheetCell(
-                    update.Address,
-                    formulaService.Merge(current.Content, update.Content)));
-            await client.SendBatchUpdate(cells, ct);
+            var rows = mapper.MapToRows(transactionList);
+            await client.AppendRows(options.TransactionsSheetName, rows, ct);
         }
         finally
         {
@@ -51,8 +49,18 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         {
             LogDeletingTransactions(category, date);
 
-            var update = mapper.MapForClearance(category, date);
-            await client.SendBatchUpdate([update], ct);
+            var validRows = await LoadValidRows(ct);
+
+            var rowsToDelete = validRows
+                .Where(s => s.Transaction.Date == date &&
+                            string.Equals(s.Transaction.Category.Name, category.Name, StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.Row)
+                .ToList();
+
+            if (rowsToDelete.Count > 0)
+            {
+                await client.DeleteRows(options.TransactionsSheetName, rowsToDelete, ct);
+            }
         }
         finally
         {
@@ -67,17 +75,35 @@ internal sealed partial class GoogleSheetsTransactionRepository(
     {
         LogGettingTransactions(category, date);
 
-        var cellAddress = mapper.MapForRead(category, date);
-        var cell = (await client.GetCells([cellAddress], ct)).SingleOrDefault();
+        var validRows = await LoadValidRows(ct);
 
-        return [.. formulaService
-            .Parse(cell?.Content)
-            .Select(amount => new Transaction(
-                Guid.NewGuid(),
-                amount < 0 ? TransactionType.Expense : TransactionType.Income,
-                category,
-                Math.Abs(amount),
-                date,
-                null))];
+        return [.. validRows
+            .Select(s => s.Transaction)
+            .Where(t => t.Date == date && string.Equals(t.Category.Name, category.Name, StringComparison.OrdinalIgnoreCase))];
+    }
+
+    private async Task<IReadOnlyList<RowMappingResult.Success>> LoadValidRows(CancellationToken ct)
+    {
+        var categories = await categoryRepository.GetAll(ct);
+        var allRows = await client.GetRows(options.TransactionsSheetName, ct);
+        var dataRows = SkipHeader(allRows);
+
+        var results = mapper.MapToDomain(dataRows, categories);
+
+        var failures = results.OfType<RowMappingResult.Failure>().ToList();
+        ThrowIfFailures(failures);
+
+        return [.. results.OfType<RowMappingResult.Success>()];
+    }
+
+    private static IEnumerable<GoogleSheetRow> SkipHeader(IEnumerable<GoogleSheetRow> rows)
+        => rows.Skip(1);
+
+    private void ThrowIfFailures(List<RowMappingResult.Failure> failures)
+    {
+        if (failures.Count > 0)
+        {
+            throw new GoogleSheetsPersistenceException(options.TransactionsSheetName, failures);
+        }
     }
 }

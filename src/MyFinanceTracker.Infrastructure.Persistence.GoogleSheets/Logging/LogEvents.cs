@@ -10,10 +10,12 @@ internal static class LogEvents
     {
         private const int SubBase = Base + 0;
 
-        public const int FetchingFormulas = SubBase + 1;
-        public const int FormulasFetched = SubBase + 2;
-        public const int SendingBatchUpdate = SubBase + 3;
-        public const int BatchUpdateApplied = SubBase + 4;
+        public const int FetchingRows = SubBase + 1;
+        public const int RowsFetched = SubBase + 2;
+        public const int AppendingRows = SubBase + 3;
+        public const int RowsAppended = SubBase + 4;
+        public const int DeletingRows = SubBase + 5;
+        public const int RowsDeleted = SubBase + 6;
     }
 
     public static class Repository

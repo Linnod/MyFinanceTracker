@@ -1,6 +1,5 @@
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
-using Google.Apis.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
@@ -17,59 +16,103 @@ internal sealed partial class GoogleSheetsClient(
 {
     private readonly GoogleSheetsOptions options = options.Value;
 
-    public async Task<IReadOnlyList<GoogleSheetCell>> GetCells(
-        IEnumerable<GoogleSheetCellAddress> cellAddresses,
-        CancellationToken ct)
+    public async Task<IReadOnlyList<GoogleSheetRow>> GetRows(string sheetName, CancellationToken ct)
     {
-        var cellAddressesList = cellAddresses.ToList();
-        LogFetchingCells(cellAddressesList.Count, options.SpreadsheetId);
+        LogFetchingRows(sheetName, options.SpreadsheetId);
 
-        var request = sheetsService.Spreadsheets.Values.BatchGet(options.SpreadsheetId);
-        request.Ranges = new Repeatable<string>(cellAddressesList.Select(ConstructRange));
-        request.ValueRenderOption = BatchGetRequest.ValueRenderOptionEnum.FORMULA;
+        var request = sheetsService.Spreadsheets.Values.Get(options.SpreadsheetId, sheetName);
+        request.ValueRenderOption = GetRequest.ValueRenderOptionEnum.FORMATTEDVALUE;
 
         var response = await request.ExecuteAsync(ct);
-        var values = response.ValueRanges ?? [];
+        var rows = response.Values ?? [];
 
-        LogCellsFetched(values.Count);
+        LogRowsFetched(rows.Count, sheetName);
 
-        return [.. cellAddressesList.Zip(
-            values,
-            (address, valueRange) => new GoogleSheetCell(
-                address,
-                valueRange.Values?.FirstOrDefault()?.FirstOrDefault()?.ToString() ?? string.Empty))];
+        return [.. rows.Select((row, index) => new GoogleSheetRow(
+            index,
+            new GoogleSheetRowValues([.. row.Select(cell => cell?.ToString() ?? string.Empty)])))];
     }
 
-    public async Task SendBatchUpdate(
-        IEnumerable<GoogleSheetCell> cells,
-        CancellationToken ct)
+    public async Task AppendRows(string sheetName, IEnumerable<GoogleSheetRowValues> rows, CancellationToken ct)
     {
-        var cellsList = cells.ToList();
+        var rowsList = rows.ToList();
+        if (rowsList.Count == 0)
+        {
+            return;
+        }
 
-        LogSendingBatchUpdate(cellsList.Count, options.SpreadsheetId);
+        LogAppendingRows(rowsList.Count, sheetName, options.SpreadsheetId);
 
-        var updateData = cellsList
-            .Select(cell => new ValueRange
+        var valueRange = new ValueRange
+        {
+            Values = [.. rowsList.Select(r => (IList<object>)[.. r.Values])]
+        };
+
+        var appendRequest = sheetsService.Spreadsheets.Values.Append(valueRange, options.SpreadsheetId, sheetName);
+        appendRequest.ValueInputOption = AppendRequest.ValueInputOptionEnum.USERENTERED;
+        appendRequest.InsertDataOption = AppendRequest.InsertDataOptionEnum.INSERTROWS;
+
+        await appendRequest.ExecuteAsync(ct);
+
+        LogRowsAppended(sheetName);
+    }
+
+    public async Task DeleteRows(string sheetName, IReadOnlyCollection<GoogleSheetRow> rows, CancellationToken ct)
+    {
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        LogDeletingRows(rows.Count, sheetName, options.SpreadsheetId);
+
+        var sheetId = await GetSheetId(sheetName, ct);
+
+        var requests = rows
+            .Select(r => r.Index)
+            .OrderByDescending(i => i)
+            .Select(i => new Request
             {
-                Range = ConstructRange(cell.Address),
-                Values = [[cell.Content]]
+                DeleteDimension = new DeleteDimensionRequest
+                {
+                    Range = new DimensionRange
+                    {
+                        SheetId = sheetId,
+                        Dimension = "ROWS",
+                        StartIndex = i,
+                        EndIndex = i + 1
+                    }
+                }
             })
             .ToList();
 
-        var batchRequest = new BatchUpdateValuesRequest
+        var batchUpdateRequest = new BatchUpdateSpreadsheetRequest
         {
-            Data = updateData,
-            ValueInputOption = Utilities.ConvertToString(
-                UpdateRequest.ValueInputOptionEnum.USERENTERED)
+            Requests = requests
         };
 
-        await sheetsService.Spreadsheets.Values
-            .BatchUpdate(batchRequest, options.SpreadsheetId)
+        await sheetsService.Spreadsheets
+            .BatchUpdate(batchUpdateRequest, options.SpreadsheetId)
             .ExecuteAsync(ct);
 
-        LogBatchUpdateApplied();
+        LogRowsDeleted(sheetName);
     }
 
-    private static string ConstructRange(GoogleSheetCellAddress cellAddress)
-        => $"{cellAddress.SheetName}!{cellAddress.Column}{cellAddress.Row}";
+    private async Task<int> GetSheetId(string sheetName, CancellationToken ct)
+    {
+        var spreadsheet = await sheetsService.Spreadsheets
+            .Get(options.SpreadsheetId)
+            .ExecuteAsync(ct);
+
+        var sheet = spreadsheet.Sheets?.FirstOrDefault(s =>
+            string.Equals(s.Properties.Title, sheetName, StringComparison.OrdinalIgnoreCase));
+
+        if (sheet?.Properties?.SheetId == null)
+        {
+            throw new InvalidOperationException(
+                $"Sheet '{sheetName}' not found in spreadsheet '{options.SpreadsheetId}'.");
+        }
+
+        return sheet.Properties.SheetId.Value;
+    }
 }
