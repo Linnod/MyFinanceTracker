@@ -50,7 +50,7 @@ internal sealed partial class GoogleSheetsClient(
 
         var appendRequest = sheetsService.Spreadsheets.Values.Append(valueRange, options.SpreadsheetId, sheetName);
         appendRequest.ValueInputOption = AppendRequest.ValueInputOptionEnum.USERENTERED;
-        appendRequest.InsertDataOption = AppendRequest.InsertDataOptionEnum.INSERTROWS;
+        appendRequest.InsertDataOption = AppendRequest.InsertDataOptionEnum.OVERWRITE;
 
         await appendRequest.ExecuteAsync(ct);
 
