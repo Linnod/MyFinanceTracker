@@ -3,11 +3,23 @@ using DomainCategory = MyFinanceTracker.Domain.Entities.Category;
 
 namespace MyFinanceTracker.UseCases.Common;
 
-internal sealed class CategoryLookup(IEnumerable<DomainCategory> categories)
+internal sealed class CategoryLookup
 {
-    private readonly Dictionary<string, DomainCategory> map = categories
-            .SelectMany(c => c.Aliases.Select(alias => (Alias: alias, Category: c)))
-            .ToDictionary(x => x.Alias, x => x.Category, StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DomainCategory> map = new(StringComparer.OrdinalIgnoreCase);
+
+    public CategoryLookup(IEnumerable<DomainCategory> categories)
+    {
+        foreach (var category in categories)
+        {
+            map.TryAdd(category.Id, category);
+            map.TryAdd(category.Name, category);
+
+            foreach (var alias in category.Aliases)
+            {
+                map.TryAdd(alias, category);
+            }
+        }
+    }
 
     public CategoryResolution Resolve(string alias)
     {
