@@ -55,8 +55,8 @@ public class GeminiSystemPromptBuilderTests
         // Assert
         result.Should().Contain("`note`");
         result.Should().Contain("clarification, description, store name, service name, or occasion");
-        result.Should().Contain("ALWAYS use the matched generic category for `categoryAlias`");
-        result.Should().Contain("ALWAYS put the store name, merchant, brand, or clarification into `note`");
+        result.Should().Contain("ALWAYS use the primary category for `categoryAlias`");
+        result.Should().Contain("ALWAYS place the activity, occasion, store name, or clarification into `note`");
         result.Should().Contain("receipt image or banking app screenshot");
         result.Should().Contain("NEVER duplicate the category name into `note`");
     }

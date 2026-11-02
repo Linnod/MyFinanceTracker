@@ -34,7 +34,7 @@ internal sealed class GeminiSystemPromptBuilder(
             3. If the user wants to get or view transactions for a category on a date, call `get_transactions`.
             4. If the user asks for a list of categories, call `list_categories`.
             5. If input is completely unrelated or ambiguous, respond concisely in text explaining what is wrong.
-            6. If the user mentions multiple expenses or incomes for DIFFERENT categories or items in a single input, issue multiple parallel `add_transaction` tool calls (one for each item/category).
+            6. Issue multiple parallel `add_transaction` tool calls ONLY when the user lists multiple distinct expenses or incomes, where EACH item has its own separate, explicit amount(s) (e.g. "coffee 5 and taxi 15", "groceries 50, books 20"). NEVER duplicate, copy, or reuse the same set of amounts across multiple categories. If there is only one set of amounts in the input, it is strictly a SINGLE transaction.
             7. ALWAYS pass `amounts` as a JSON array of positive numbers (absolute values, > 0), even if there is only one amount (e.g. `amounts: [100]` or `amounts: [100.5, 50]`). NEVER pass negative numbers, zero, or a scalar single number.
             8. Treat a comma or a dot between digits in an amount as a decimal separator. Never split such a number into multiple amounts or transactions. Convert decimal commas to dots in JSON output. Treat amounts separated by spaces or "and" as separate amounts.
                Examples:
@@ -47,14 +47,11 @@ internal sealed class GeminiSystemPromptBuilder(
             10. When the input is an image of a receipt, extract ONLY the final total amount (TOTAL) as a single transaction and infer the category from the merchant/items or user caption (unless the user caption explicitly asks to split specific items). If the image is a banking app screenshot showing multiple distinct transactions, call `add_transaction` for each transaction.
             11. When the input is an image (receipt or screenshot), use the transaction date visible on the image. If the date on the image is missing, unreadable, or not present, use today's date ({today:yyyy-MM-dd}), unless overridden by the user caption.
             12. Populate the optional `note` field in `add_transaction` as follows:
+                - If the message contains a primary category (e.g. venue, service, or expense type like "cafe", "restaurant", "taxi", "groceries") along with an activity, occasion, store name, brand, or detail (e.g. "board games", "business lunch", "birthday", "Mercadona", "Starbucks"):
+                  * ALWAYS use the primary category for `categoryAlias` (e.g. "cafe").
+                  * ALWAYS place the activity, occasion, store name, or clarification into `note` (e.g. "board games").
+                  * NEVER create a second transaction for the activity or occasion.
                 - If the text or voice message contains a clarification, description, store name, service name, or occasion in addition to the category and amount (e.g. "300 kids Alice's bday", "22 subscriptions Netflix", "15 cafe burgers"), pass this clarification into `note` (e.g. "Alice's bday", "Netflix", "burgers").
-                - If the input contains both a generic category name (e.g. "groceries", "cafe", "taxi") and a store name, merchant, brand, or clarification (e.g. "Mercadona", "Starbucks", "airport"):
-                  * ALWAYS use the matched generic category for `categoryAlias`.
-                  * ALWAYS put the store name, merchant, brand, or clarification into `note`.
-                  * NEVER pass the store name or merchant as `categoryAlias` when a known category is present.
-                  Examples:
-                  - "groceries 100 Mercadona" -> categoryAlias: "groceries", amounts: [100], note: "Mercadona"
-                  - "cafe 15 Starbucks" -> categoryAlias: "cafe", amounts: [15], note: "Starbucks"
                 - When the input is a receipt image or banking app screenshot, record the store or merchant name in `note` (plus user caption clarification if present).
                 - If the user provides only the amount and category without additional details (e.g. "50 groceries"), leave `note` empty (`null`). NEVER duplicate the category name into `note`.
             """;
