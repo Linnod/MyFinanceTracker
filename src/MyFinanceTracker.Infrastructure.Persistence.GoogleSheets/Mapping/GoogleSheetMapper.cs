@@ -8,6 +8,8 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 
 internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 {
+    private const NumberStyles AmountNumberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
+
     private const string WriteDateFormat = "yyyy-MM-dd";
 
     private static readonly string[] SupportedDateFormats =
@@ -158,7 +160,7 @@ internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
     }
 
     private bool TryParseAmount(string amountString, out decimal amount)
-        => decimal.TryParse(amountString, NumberStyles.Number, numberFormatInfo, out amount);
+        => decimal.TryParse(amountString, AmountNumberStyles, numberFormatInfo, out amount);
 
     private static int ToSheetRowNumber(int rowIndex) => rowIndex + 1;
 }

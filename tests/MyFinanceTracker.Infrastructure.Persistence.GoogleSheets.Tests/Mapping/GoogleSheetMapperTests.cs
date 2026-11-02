@@ -222,6 +222,7 @@ public class GoogleSheetMapperTests
     [InlineData("not-a-number")]
     [InlineData("0")]
     [InlineData("0.00")]
+    [InlineData("-1100,25")]
     public void MapToDomain_ShouldReturnFailure_WhenAmountIsInvalidOrZero(string amountStr)
     {
         // arrange
@@ -234,6 +235,39 @@ public class GoogleSheetMapperTests
 
         // assert
         result.Should().BeOfType<RowMappingResult.Failure>()
+            .Which.Reason.Should().Contain("Invalid Amount");
+    }
+
+    [Fact]
+    public void MapToDomain_ShouldRespectCommaDecimalSeparator()
+    {
+        // arrange
+        var sut = CreateMapper(",");
+        var id = Guid.NewGuid();
+        var validRow = new GoogleSheetRow(1, new GoogleSheetRowValues([
+            id.ToString(),
+            "2026-11-02",
+            "Expense",
+            "Food",
+            "-1100,25"
+        ]));
+        var invalidRow = new GoogleSheetRow(2, new GoogleSheetRowValues([
+            id.ToString(),
+            "2026-11-02",
+            "Expense",
+            "Food",
+            "-1100.25"
+        ]));
+
+        // act
+        var validResult = sut.MapToDomain(validRow, [foodCategory]);
+        var invalidResult = sut.MapToDomain(invalidRow, [foodCategory]);
+
+        // assert
+        validResult.Should().BeOfType<RowMappingResult.Success>()
+            .Which.Transaction.Amount.Should().Be(1100.25m);
+
+        invalidResult.Should().BeOfType<RowMappingResult.Failure>()
             .Which.Reason.Should().Contain("Invalid Amount");
     }
 
