@@ -15,6 +15,11 @@ internal class CategoryLoaderException : Exception
         return new CategoryLoaderException($"Duplicate Category ID found in YAML configuration: {id}");
     }
 
+    public static CategoryLoaderException DuplicateName(string name)
+    {
+        return new CategoryLoaderException($"Duplicate Category Name found in YAML configuration: {name}");
+    }
+
     public static CategoryLoaderException DuplicateAlias(string alias)
     {
         return new CategoryLoaderException($"Duplicate alias found in YAML configuration: {alias}");

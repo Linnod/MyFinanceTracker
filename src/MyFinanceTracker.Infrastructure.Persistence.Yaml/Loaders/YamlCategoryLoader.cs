@@ -73,6 +73,15 @@ internal sealed partial class YamlCategoryLoader(
             throw CategoryLoaderException.DuplicateId(duplicateId.Key);
         }
 
+        var duplicateName = data.Categories
+            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(g => g.Count() > 1);
+
+        if (duplicateName != null)
+        {
+            throw CategoryLoaderException.DuplicateName(duplicateName.Key);
+        }
+
         var allAliases = data.Categories
             .SelectMany(c => c.Aliases)
             .ToList();

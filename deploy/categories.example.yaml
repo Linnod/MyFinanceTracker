@@ -1,23 +1,22 @@
 # Copy this file to categories.yaml and adjust it to your needs.
-# Category IDs must match spreadsheet column identifiers.
 
 categories:
-  - id: "A"
+  - id: "income"
     name: "Income"
     isIncome: true
     aliases: ["income", "salary", "paycheck"]
 
-  - id: "B"
+  - id: "food"
     name: "Food"
     isIncome: false
     aliases: ["food", "grocery", "supermarket"]
 
-  - id: "C"
+  - id: "transport"
     name: "Transport"
     isIncome: false
     aliases: ["transport", "bus", "taxi"]
 
-  - id: "D"
+  - id: "other"
     name: "Other"
     isIncome: false
     aliases: ["other", "misc"]

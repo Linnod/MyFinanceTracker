@@ -88,6 +88,33 @@ public class YamlCategoryLoaderTests : IDisposable
     }
 
     [Fact]
+    void Load_ShouldThrowDuplicateName_WhenNamesAreNotUnique()
+    {
+        // arrange:
+        WriteYaml($"""
+            categories:
+              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+                name: Income
+                isIncome: true
+                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
+              - id: food_1
+                name: Products
+                aliases: [first]
+              - id: food_2
+                name: products
+                aliases: [second]
+            """);
+        var sut = CreateSut();
+
+        // act
+        var act = () => sut.Load();
+
+        // assert
+        act.Should().Throw<CategoryLoaderException>()
+            .WithMessage("*Duplicate Category Name*Products*");
+    }
+
+    [Fact]
     void Load_ShouldThrowDuplicateAlias_WhenAliasesAreNotUnique()
     {
         // arrange:
