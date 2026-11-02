@@ -54,7 +54,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this specific action in user's language (e.g. 'Расход 100 € в категорию еда')."
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this specific action in user's language (e.g. 'Expense 100 EUR in Food')."
                             }
                         },
                         Required = ["type", "amounts", "recognizedInput"]
@@ -82,7 +82,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this deletion action in user's language (e.g. 'Удаление транзакций из категории Еда за 11.08.2026')."
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this deletion action in user's language (e.g. 'Delete transactions in Food for 2026-08-11')."
                             }
                         },
                         Required = ["categoryAlias", "date", "recognizedInput"]
@@ -110,7 +110,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'Просмотр трат на еду за 11.08.2026')."
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'View expenses in Food for 2026-08-11')."
                             }
                         },
                         Required = ["recognizedInput"]
@@ -128,7 +128,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'Просмотр списка категорий')."
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'View category list')."
                             }
                         },
                         Required = ["recognizedInput"]

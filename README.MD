@@ -80,6 +80,8 @@ Create your own spreadsheet from the template:
 
 https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZq9c/copy
 
+The spreadsheet uses a flat `Transactions` table schema with columns: `Id`, `Date`, `Type`, `Category`, `Amount`, `Note`.
+
 ### 3. Create a Google Service Account
 
 1. Create a Google Cloud project.
@@ -99,7 +101,7 @@ Copy the example template:
 cp deploy/categories.example.yaml categories.yaml
 ```
 
-Adjust category names, aliases, and spreadsheet column IDs as needed.
+Adjust category IDs, names, and aliases as needed.
 
 ### 6. Configure the application
 
@@ -133,7 +135,7 @@ dotnet run --project src/MyFinanceTracker.Host
   "GoogleSheets": {
     "SpreadsheetId": "YOUR_SPREADSHEET_ID",
     "CredentialsFilePath": "google-api-credentials.json",
-    "HeaderRowsCount": 3,
+    "TransactionsSheetName": "Transactions",
     "ApplicationName": "MyFinanceTracker",
     "DecimalSeparator": ","
   },
@@ -158,8 +160,7 @@ dotnet run --project src/MyFinanceTracker.Host
 ### Category Configuration Notes
 
 > [!IMPORTANT]
-> Category IDs must match the column IDs used by the Google Sheets template.
-> Transactions are written to spreadsheet columns based on the category `id`.
+> Category `id` is a unique identifier (slug), and `name` is used as the category name recorded on the `Transactions` sheet.
 
 > [!IMPORTANT]
 > At least one income category must contain the alias `income`.

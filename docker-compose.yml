@@ -10,7 +10,7 @@ services:
       - Telegram__AllowedUserId=${TG_USER_ID}
       - GoogleSheets__SpreadsheetId=${GOOGLE_SHEET_ID}
       - GoogleSheets__CredentialsFilePath=/app/secrets/google-api-credentials.json
-      - GoogleSheets__HeaderRowsCount=3
+      - GoogleSheets__TransactionsSheetName=Transactions
       - GoogleSheets__DecimalSeparator=,
       - YamlPersistence__FilePath=/app/data/categories.yaml
       - Interactions__EnableConsole=false

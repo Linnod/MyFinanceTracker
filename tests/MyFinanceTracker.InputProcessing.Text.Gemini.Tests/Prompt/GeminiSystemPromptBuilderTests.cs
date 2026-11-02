@@ -41,4 +41,21 @@ public class GeminiSystemPromptBuilderTests
         result.Should().Contain("[EXPENSE]");
         result.Should().Contain("food, supermarket");
     }
+
+    [Fact]
+    async Task BuildSystemInstruction_ShouldIncludeNoteRules()
+    {
+        // Arrange
+        mediator.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ListCategoriesResponse.Success([]));
+
+        // Act
+        var result = await builder.BuildSystemInstruction(CancellationToken.None);
+
+        // Assert
+        result.Should().Contain("`note`");
+        result.Should().Contain("clarification, description, store name, service name, or occasion");
+        result.Should().Contain("receipt image or banking app screenshot");
+        result.Should().Contain("NEVER duplicate the category name into `note`");
+    }
 }
