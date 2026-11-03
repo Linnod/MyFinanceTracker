@@ -20,7 +20,7 @@ internal sealed class DeleteTransactionsHandler(
         return lookup.Resolve(request.CategoryAlias!) switch
         {
             CategoryResolution.NotFound notFound => new DeleteTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, request.CategoryAlias)
             ]),
             CategoryResolution.Found found => await DeleteTransactions(found.Category, request.Date!.Value, ct),
             _ => throw new UnreachableException()

@@ -109,7 +109,7 @@ internal static class TelegramResponseFormatter
 
                     foreach (var err in input.Errors)
                     {
-                        sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err.ErrorCode))}");
+                        sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err))}");
 
                         if (err.Suggestion is not null)
                         {
@@ -146,14 +146,16 @@ internal static class TelegramResponseFormatter
 
         return sb.ToString();
     }
-    private static string FormatValidationError(string errorCode) => errorCode switch
+    private static string FormatValidationError(ValidationErrorItem err) => err.ErrorCode switch
     {
         ValidationErrorCode.Transaction.CategoryRequired => "Category is required.",
-        ValidationErrorCode.Transaction.CategoryNotFound => "Category was not found.",
+        ValidationErrorCode.Transaction.CategoryNotFound => err.AttemptedValue is not null
+            ? $"Category '{err.AttemptedValue}' was not found."
+            : "Category was not found.",
         ValidationErrorCode.Transaction.DateRequired => "Date is required.",
         ValidationErrorCode.Transaction.DateOutOfRange => "Date is out of the allowed range.",
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
-        _ => errorCode
+        _ => err.ErrorCode
     };
 }

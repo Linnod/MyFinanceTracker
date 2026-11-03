@@ -20,7 +20,7 @@ internal sealed class GetTransactionsHandler(
         return lookup.Resolve(request.CategoryAlias!) switch
         {
             CategoryResolution.NotFound notFound => new GetTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, request.CategoryAlias)
             ]),
             CategoryResolution.Found found => await GetTransactions(found.Category, request.Date!.Value, ct),
             _ => throw new UnreachableException()

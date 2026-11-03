@@ -61,7 +61,7 @@ internal sealed class CreateTransactionsHandler(
         {
             CategoryResolution.Found found => (found.Category, null),
             CategoryResolution.NotFound notFound => (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, alias)
             ])),
             _ => throw new UnreachableException()
         };

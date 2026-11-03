@@ -48,6 +48,13 @@ internal sealed class GeminiSystemPromptBuilder(
             11. When the input is an image (receipt or screenshot), use the transaction date visible on the image. If the date on the image is missing, unreadable, or not present, use today's date ({today:yyyy-MM-dd}), unless overridden by the user caption.
             12. Populate the optional `note` field in `add_transaction` as follows:
                 - If the text or voice message contains a clarification, description, store name, service name, or occasion in addition to the category and amount (e.g. "300 kids Alice's bday", "22 subscriptions Netflix", "15 cafe burgers"), pass this clarification into `note` (e.g. "Alice's bday", "Netflix", "burgers").
+                - If the input contains both a generic category name (e.g. "groceries", "cafe", "taxi") and a store name, merchant, brand, or clarification (e.g. "Mercadona", "Starbucks", "airport"):
+                  * ALWAYS use the matched generic category for `categoryAlias`.
+                  * ALWAYS put the store name, merchant, brand, or clarification into `note`.
+                  * NEVER pass the store name or merchant as `categoryAlias` when a known category is present.
+                  Examples:
+                  - "groceries 100 Mercadona" -> categoryAlias: "groceries", amounts: [100], note: "Mercadona"
+                  - "cafe 15 Starbucks" -> categoryAlias: "cafe", amounts: [15], note: "Starbucks"
                 - When the input is a receipt image or banking app screenshot, record the store or merchant name in `note` (plus user caption clarification if present).
                 - If the user provides only the amount and category without additional details (e.g. "50 groceries"), leave `note` empty (`null`). NEVER duplicate the category name into `note`.
             """;

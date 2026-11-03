@@ -15,7 +15,7 @@ internal sealed class DeleteTransactionValidationBehavior(IValidator<DeleteTrans
         if (!result.IsValid)
         {
             var errors = result.Errors
-                .Select(e => new ValidationErrorItem(e.ErrorCode))
+                .Select(e => new ValidationErrorItem(e.ErrorCode, AttemptedValue: e.AttemptedValue?.ToString()))
                 .ToList();
 
             return new DeleteTransactionsResponse.ValidationError(errors);
