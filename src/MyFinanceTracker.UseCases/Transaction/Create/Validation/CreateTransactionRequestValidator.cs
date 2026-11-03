@@ -9,19 +9,19 @@ internal sealed class CreateTransactionsRequestValidator : AbstractValidator<Cre
     {
         RuleFor(x => x.Items)
             .NotEmpty()
-            .WithErrorCode(ValidationErrorCode.Common.Required);
+            .WithErrorCode(ValidationErrorCode.Transaction.AmountRequired);
 
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.Amount)
                 .GreaterThan(0)
-                .WithErrorCode(ValidationErrorCode.Common.MustBePositive);
+                .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive);
 
             item.When(i => i.Date.HasValue, () =>
             {
                 item.RuleFor(i => i.Date!.Value.Year)
                     .InclusiveBetween(FinancialRules.MinAllowedYear, FinancialRules.MaxAllowedYear)
-                    .WithErrorCode(ValidationErrorCode.Common.DateOutOfRange);
+                    .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
             });
         });
     }

@@ -45,7 +45,7 @@ public class DeleteTransactionsRequestValidatorTests
 
         // assert
         result.ShouldHaveValidationErrorFor(x => x.CategoryAlias)
-            .WithErrorCode(ValidationErrorCode.Common.Required);
+            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class DeleteTransactionsRequestValidatorTests
 
         // assert
         result.ShouldHaveValidationErrorFor(x => x.Date)
-            .WithErrorCode(ValidationErrorCode.Common.Required);
+            .WithErrorCode(ValidationErrorCode.Transaction.DateRequired);
     }
 
     [Theory]
@@ -84,6 +84,6 @@ public class DeleteTransactionsRequestValidatorTests
         // assert
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == nameof(DeleteTransactionsRequest.Date) + ".Value.Year" &&
-            e.ErrorCode == ValidationErrorCode.Common.DateOutOfRange);
+            e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
     }
 }

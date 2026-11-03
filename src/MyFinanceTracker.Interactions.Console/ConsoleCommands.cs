@@ -1,5 +1,6 @@
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
+using MyFinanceTracker.UseCases;
 
 namespace MyFinanceTracker.Interactions.Console;
 
@@ -69,7 +70,7 @@ internal static class ConsoleCommands
                     System.Console.ForegroundColor = ConsoleColor.Yellow;
                     foreach (var err in input.Errors)
                     {
-                        System.Console.WriteLine($"  • {err.ErrorCode}");
+                        System.Console.WriteLine($"  • {FormatValidationError(err.ErrorCode)}");
                         if (err.Suggestion is not null)
                         {
                             System.Console.WriteLine($"    💡 Suggestion: {err.Suggestion}");
@@ -126,4 +127,14 @@ internal static class ConsoleCommands
         System.Console.WriteLine(message);
         System.Console.ResetColor();
     }
+    private static string FormatValidationError(string errorCode) => errorCode switch
+    {
+        ValidationErrorCode.Transaction.CategoryRequired => "Category is required.",
+        ValidationErrorCode.Transaction.CategoryNotFound => "Category was not found.",
+        ValidationErrorCode.Transaction.DateRequired => "Date is required.",
+        ValidationErrorCode.Transaction.DateOutOfRange => "Date is out of the allowed range.",
+        ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
+        ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
+        _ => errorCode
+    };
 }

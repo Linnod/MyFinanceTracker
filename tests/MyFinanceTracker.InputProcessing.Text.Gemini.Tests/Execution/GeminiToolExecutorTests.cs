@@ -94,7 +94,7 @@ public class GeminiToolExecutorTests
 
         var errors = new[]
         {
-            new ValidationErrorItem(ValidationErrorCode.Common.Required)
+            new ValidationErrorItem(ValidationErrorCode.Transaction.AmountRequired)
         };
 
         mediator.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())

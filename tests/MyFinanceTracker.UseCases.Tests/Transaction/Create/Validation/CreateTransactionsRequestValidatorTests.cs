@@ -47,7 +47,7 @@ public class CreateTransactionsRequestValidatorTests
 
         // assert
         result.ShouldHaveValidationErrorFor(x => x.Items)
-            .WithErrorCode(ValidationErrorCode.Common.Required);
+            .WithErrorCode(ValidationErrorCode.Transaction.AmountRequired);
     }
 
     [Theory]
@@ -71,7 +71,7 @@ public class CreateTransactionsRequestValidatorTests
 
         // assert
         result.ShouldHaveValidationErrorFor("Items[0].Amount")
-            .WithErrorCode(ValidationErrorCode.Common.MustBePositive);
+            .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive);
     }
 
     [Theory]
@@ -100,6 +100,6 @@ public class CreateTransactionsRequestValidatorTests
         // assert
         result.Errors.Should().ContainSingle(e =>
             e.PropertyName == "Items[0].Date.Value.Year" &&
-            e.ErrorCode == ValidationErrorCode.Common.DateOutOfRange);
+            e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
     }
 }

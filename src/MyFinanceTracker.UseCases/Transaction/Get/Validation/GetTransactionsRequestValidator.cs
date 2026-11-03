@@ -9,18 +9,18 @@ internal sealed class GetTransactionsRequestValidator : AbstractValidator<GetTra
     {
         RuleFor(x => x.CategoryAlias)
             .NotEmpty()
-            .WithErrorCode(ValidationErrorCode.Common.Required);
+            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
 
         RuleFor(x => x.Date)
             .NotNull()
-            .WithErrorCode(ValidationErrorCode.Common.Required)
+            .WithErrorCode(ValidationErrorCode.Transaction.DateRequired)
             .DependentRules(() =>
             {
                 RuleFor(x => x.Date!.Value.Year)
                     .InclusiveBetween(
                         FinancialRules.MinAllowedYear,
                         FinancialRules.MaxAllowedYear)
-                    .WithErrorCode(ValidationErrorCode.Common.DateOutOfRange);
+                    .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
             });
     }
 }

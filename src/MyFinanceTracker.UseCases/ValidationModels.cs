@@ -6,16 +6,13 @@ public sealed record ValidationErrorItem(
 
 public static class ValidationErrorCode
 {
-    public static class Common
-    {
-        public const string Required = nameof(Required);
-        public const string MustBePositive = nameof(MustBePositive);
-        public const string DateOutOfRange = nameof(DateOutOfRange);
-    }
-
     public static class Transaction
     {
-        public const string CategoryNotFound = nameof(CategoryNotFound);
         public const string CategoryRequired = nameof(CategoryRequired);
+        public const string CategoryNotFound = nameof(CategoryNotFound);
+        public const string DateRequired = nameof(DateRequired);
+        public const string DateOutOfRange = nameof(DateOutOfRange);
+        public const string AmountRequired = nameof(AmountRequired);
+        public const string AmountMustBePositive = nameof(AmountMustBePositive);
     }
 }
