@@ -51,8 +51,8 @@ internal sealed class GetTransactionsHandler(
         }
 
         var filter = new TransactionFilter(
-            request.FromDate!.Value,
-            request.ToDate!.Value,
+            request.FromDate,
+            request.ToDate,
             resolvedCategories,
             request.Type);
 
@@ -63,8 +63,8 @@ internal sealed class GetTransactionsHandler(
             : [];
 
         return new GetTransactionsResponse.Success(
-            request.FromDate.Value,
-            request.ToDate.Value,
+            request.FromDate,
+            request.ToDate,
             categoryNames,
             request.Type,
             transactions);

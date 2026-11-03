@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
+using MyFinanceTracker.UseCases;
 using MyFinanceTracker.UseCases.Category.List;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
@@ -128,9 +129,28 @@ internal sealed partial class GeminiToolExecutor(
             typedArgs.RecognizedInput,
             DefaultRawInputForGettingTransactions);
 
+        if (typedArgs.FromDate is null || typedArgs.ToDate is null)
+        {
+            var errors = new List<ValidationErrorItem>();
+            if (typedArgs.FromDate is null)
+            {
+                errors.Add(new ValidationErrorItem(ValidationErrorCode.Transaction.FromDateRequired));
+            }
+
+            if (typedArgs.ToDate is null)
+            {
+                errors.Add(new ValidationErrorItem(ValidationErrorCode.Transaction.ToDateRequired));
+            }
+
+            return new ActionResult.InvalidInput(errors)
+            {
+                RawInput = rawInput
+            };
+        }
+
         var request = new GetTransactionsRequest(
-            typedArgs.FromDate,
-            typedArgs.ToDate,
+            typedArgs.FromDate.Value,
+            typedArgs.ToDate.Value,
             typedArgs.CategoryAliases,
             typedArgs.Type);
 

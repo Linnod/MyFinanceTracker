@@ -180,6 +180,31 @@ public class GeminiToolExecutorTests
     }
 
     [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionsCallHasMissingDates_ShouldReturnInvalidInput()
+    {
+        // Arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
+            Args = new Dictionary<string, object>
+            {
+                ["recognizedInput"] = "Show transactions"
+            }
+        };
+
+        // Act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // Assert
+        response.Should().BeOfType<ActionResult.InvalidInput>();
+        var invalid = (ActionResult.InvalidInput)response;
+        invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.FromDateRequired);
+        invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.ToDateRequired);
+        invalid.RawInput.Should().Be("Show transactions");
+        await mediator.DidNotReceive().Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     async Task ExecuteToolCall_WhenDeleteTransactionsCall_ShouldSendDeleteTransactionsRequest()
     {
         // Arrange

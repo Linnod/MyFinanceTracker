@@ -4,25 +4,19 @@ using MyFinanceTracker.Domain.Entities;
 namespace MyFinanceTracker.UseCases.Transaction.Get;
 
 public record GetTransactionsRequest(
-    DateOnly? FromDate = null,
-    DateOnly? ToDate = null,
+    DateOnly FromDate,
+    DateOnly ToDate,
     IReadOnlyList<string>? CategoryAliases = null,
     TransactionType? Type = null
 ) : IRequest<GetTransactionsResponse>
 {
     public override string ToString()
     {
-        var parts = new List<string>();
-
-        if (FromDate.HasValue)
+        var parts = new List<string>
         {
-            parts.Add($"From: {FromDate.Value:dd.MM.yyyy}");
-        }
-
-        if (ToDate.HasValue)
-        {
-            parts.Add($"To: {ToDate.Value:dd.MM.yyyy}");
-        }
+            $"From: {FromDate:dd.MM.yyyy}",
+            $"To: {ToDate:dd.MM.yyyy}"
+        };
 
         if (CategoryAliases is { Count: > 0 })
         {
@@ -34,8 +28,6 @@ public record GetTransactionsRequest(
             parts.Add($"Type: {Type.Value}");
         }
 
-        return parts.Count > 0
-            ? string.Join(" | ", parts)
-            : "Empty";
+        return string.Join(" | ", parts);
     }
 }

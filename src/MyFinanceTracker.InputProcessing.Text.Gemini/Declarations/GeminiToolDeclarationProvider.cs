@@ -121,7 +121,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'View expenses in Food for 2026-08-11')."
                             }
                         },
-                        Required = ["recognizedInput"]
+                        Required = ["fromDate", "toDate", "recognizedInput"]
                     }
                 },
                 new FunctionDeclaration

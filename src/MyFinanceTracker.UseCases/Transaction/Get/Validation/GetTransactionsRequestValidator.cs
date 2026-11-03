@@ -7,36 +7,21 @@ internal sealed class GetTransactionsRequestValidator : AbstractValidator<GetTra
 {
     public GetTransactionsRequestValidator()
     {
-        RuleFor(x => x.FromDate)
-            .NotNull()
-            .WithErrorCode(ValidationErrorCode.Transaction.FromDateRequired)
-            .DependentRules(() =>
-            {
-                RuleFor(x => x.FromDate!.Value.Year)
-                    .InclusiveBetween(
-                        FinancialRules.MinAllowedYear,
-                        FinancialRules.MaxAllowedYear)
-                    .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
-            });
+        RuleFor(x => x.FromDate.Year)
+            .InclusiveBetween(
+                FinancialRules.MinAllowedYear,
+                FinancialRules.MaxAllowedYear)
+            .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
+
+        RuleFor(x => x.ToDate.Year)
+            .InclusiveBetween(
+                FinancialRules.MinAllowedYear,
+                FinancialRules.MaxAllowedYear)
+            .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
 
         RuleFor(x => x.ToDate)
-            .NotNull()
-            .WithErrorCode(ValidationErrorCode.Transaction.ToDateRequired)
-            .DependentRules(() =>
-            {
-                RuleFor(x => x.ToDate!.Value.Year)
-                    .InclusiveBetween(
-                        FinancialRules.MinAllowedYear,
-                        FinancialRules.MaxAllowedYear)
-                    .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
-            });
-
-        When(x => x.FromDate.HasValue && x.ToDate.HasValue, () =>
-        {
-            RuleFor(x => x.ToDate!.Value)
-                .GreaterThanOrEqualTo(x => x.FromDate!.Value)
-                .WithErrorCode(ValidationErrorCode.Transaction.InvalidDateRange);
-        });
+            .GreaterThanOrEqualTo(x => x.FromDate)
+            .WithErrorCode(ValidationErrorCode.Transaction.InvalidDateRange);
 
         When(x => x.CategoryAliases is { Count: > 0 }, () =>
         {

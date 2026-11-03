@@ -49,38 +49,6 @@ public class GetTransactionsRequestValidatorTests
         result.ShouldNotHaveAnyValidationErrors();
     }
 
-    [Fact]
-    public void Validate_FromDateIsNull_ReturnsFromDateRequiredError()
-    {
-        // arrange
-        var request = new GetTransactionsRequest(
-            FromDate: null,
-            ToDate: new DateOnly(2026, 1, 27));
-
-        // act
-        var result = sut.TestValidate(request);
-
-        // assert
-        result.ShouldHaveValidationErrorFor(x => x.FromDate)
-            .WithErrorCode(ValidationErrorCode.Transaction.FromDateRequired);
-    }
-
-    [Fact]
-    public void Validate_ToDateIsNull_ReturnsToDateRequiredError()
-    {
-        // arrange
-        var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(2026, 1, 27),
-            ToDate: null);
-
-        // act
-        var result = sut.TestValidate(request);
-
-        // assert
-        result.ShouldHaveValidationErrorFor(x => x.ToDate)
-            .WithErrorCode(ValidationErrorCode.Transaction.ToDateRequired);
-    }
-
     [Theory]
     [InlineData(-1)]
     [InlineData(1)]
@@ -99,9 +67,8 @@ public class GetTransactionsRequestValidatorTests
         var result = sut.TestValidate(request);
 
         // assert
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == nameof(GetTransactionsRequest.FromDate) + ".Value.Year" &&
-            e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
+        result.ShouldHaveValidationErrorFor(x => x.FromDate.Year)
+            .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
     }
 
     [Theory]
@@ -122,9 +89,8 @@ public class GetTransactionsRequestValidatorTests
         var result = sut.TestValidate(request);
 
         // assert
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == nameof(GetTransactionsRequest.ToDate) + ".Value.Year" &&
-            e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
+        result.ShouldHaveValidationErrorFor(x => x.ToDate.Year)
+            .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
     }
 
     [Fact]
@@ -139,7 +105,7 @@ public class GetTransactionsRequestValidatorTests
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor(x => x.ToDate!.Value)
+        result.ShouldHaveValidationErrorFor(x => x.ToDate)
             .WithErrorCode(ValidationErrorCode.Transaction.InvalidDateRange);
     }
 
