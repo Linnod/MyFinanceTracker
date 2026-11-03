@@ -101,14 +101,6 @@ internal static class TelegramResponseFormatter
                     }
                     break;
 
-                case ActionResult.InvalidSyntax syntax:
-                    sb.AppendLine(
-                        $"⚠️ <b>Syntax Error</b> for " +
-                        $"'<b>{WebUtility.HtmlEncode(syntax.RawInput)}</b>': " +
-                        $"<code>{WebUtility.HtmlEncode(syntax.ErrorCode)}</code>");
-                    AppendSuggestionAndExamples(sb, syntax.Suggestion, syntax.Examples);
-                    break;
-
                 case ActionResult.InvalidInput input:
                     sb.AppendLine(
                         $"⚠️ <b>Validation Error(s)</b> for " +
@@ -125,17 +117,6 @@ internal static class TelegramResponseFormatter
                                 $"<code>{WebUtility.HtmlEncode(err.Suggestion)}</code>");
                         }
                     }
-                    break;
-
-                case ActionResult.DomainError domainError:
-                    sb.AppendLine(
-                        $"⚠️ <b>Domain Error</b> for " +
-                        $"'<b>{WebUtility.HtmlEncode(domainError.RawInput)}</b>': " +
-                        $"<code>{WebUtility.HtmlEncode(domainError.ErrorCode)}</code>");
-                    AppendSuggestionAndExamples(
-                        sb,
-                        domainError.Suggestion,
-                        domainError.Examples);
                     break;
 
                 case ActionResult.Failure failure:
@@ -156,47 +137,11 @@ internal static class TelegramResponseFormatter
         return sb.ToString().TrimEnd();
     }
 
-    private static void AppendSuggestionAndExamples(
-        StringBuilder sb,
-        string? suggestion,
-        IReadOnlyCollection<string>? examples)
-    {
-        if (suggestion is not null)
-        {
-            sb.AppendLine($"💡 Did you mean: <code>{WebUtility.HtmlEncode(suggestion)}</code>?");
-        }
-
-        if (examples is { Count: > 0 })
-        {
-            sb.AppendLine("<b>Examples:</b>");
-            foreach (var example in examples)
-            {
-                sb.AppendLine($"• <code>{WebUtility.HtmlEncode(example)}</code>");
-            }
-        }
-    }
-
     private static string BuildInvalidInputMessage(ProcessingResult.InvalidInput invalid)
     {
         var sb = new StringBuilder();
         sb.AppendLine("⚠️ <b>Input Error</b>");
-
         sb.AppendLine(WebUtility.HtmlEncode(invalid.Details));
-        sb.AppendLine();
-
-        if (invalid.Suggestion is not null)
-        {
-            sb.AppendLine($"💡 Did you mean: <code>{WebUtility.HtmlEncode(invalid.Suggestion)}</code>?");
-        }
-
-        if (invalid.Examples is { Count: > 0 })
-        {
-            sb.AppendLine("<b>Try like this:</b>");
-            foreach (var example in invalid.Examples)
-            {
-                sb.AppendLine($"• <code>{WebUtility.HtmlEncode(example)}</code>");
-            }
-        }
 
         return sb.ToString();
     }

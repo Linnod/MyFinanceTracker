@@ -64,11 +64,6 @@ internal static class ConsoleCommands
                     }
                     break;
 
-                case ActionResult.InvalidSyntax syntax:
-                    WriteWarning($"⚠️ Syntax Error for '{syntax.RawInput}': {syntax.ErrorCode}");
-                    WriteSuggestionAndExamples(syntax.Suggestion, syntax.Examples);
-                    break;
-
                 case ActionResult.InvalidInput input:
                     WriteWarning($"⚠️ Validation Error(s) for '{input.RawInput}':");
                     System.Console.ForegroundColor = ConsoleColor.Yellow;
@@ -81,11 +76,6 @@ internal static class ConsoleCommands
                         }
                     }
                     System.Console.ResetColor();
-                    break;
-
-                case ActionResult.DomainError domainError:
-                    WriteWarning($"⚠️ Domain Error for '{domainError.RawInput}': {domainError.ErrorCode}");
-                    WriteSuggestionAndExamples(domainError.Suggestion, domainError.Examples);
                     break;
 
                 case ActionResult.Failure failure:
@@ -134,27 +124,6 @@ internal static class ConsoleCommands
     {
         System.Console.ForegroundColor = ConsoleColor.Yellow;
         System.Console.WriteLine(message);
-        System.Console.ResetColor();
-    }
-
-    private static void WriteSuggestionAndExamples(string? suggestion, IReadOnlyCollection<string>? examples)
-    {
-        System.Console.ForegroundColor = ConsoleColor.Yellow;
-
-        if (suggestion is not null)
-        {
-            System.Console.WriteLine($"💡 Did you mean: '{suggestion}'?");
-        }
-
-        if (examples is { Count: > 0 })
-        {
-            System.Console.WriteLine("💡 Examples:");
-            foreach (var example in examples)
-            {
-                System.Console.WriteLine($"  > {example}");
-            }
-        }
-
         System.Console.ResetColor();
     }
 }

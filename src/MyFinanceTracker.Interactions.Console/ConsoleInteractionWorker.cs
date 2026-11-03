@@ -75,20 +75,6 @@ internal sealed partial class ConsoleInteractionWorker(
 
             case ProcessingResult.InvalidInput invalid:
                 ConsoleCommands.WriteError($"Input error: {invalid.Details}");
-
-                if (invalid.Suggestion is not null)
-                {
-                    ConsoleCommands.WriteInfo($"💡 Did you mean: '{invalid.Suggestion}'?");
-                }
-
-                if (invalid.Examples is { Count: > 0 })
-                {
-                    ConsoleCommands.WriteInfo("💡 Examples:");
-                    foreach (var example in invalid.Examples)
-                    {
-                        ConsoleCommands.WriteInfo($"  > {example}");
-                    }
-                }
                 break;
 
             case ProcessingResult.SystemError systemError:
@@ -103,7 +89,6 @@ internal sealed partial class ConsoleInteractionWorker(
     private static void PrintWelcomeMessage()
     {
         ConsoleCommands.WriteInfo(">>> Finance Tracker 2026 is active.");
-        ConsoleCommands.WriteInfo(">>> Usage: t add <type> <category?> <amounts> <date?>");
-        ConsoleCommands.WriteInfo(">>> Example: t add expense food 100 200");
+        ConsoleCommands.WriteInfo(">>> Example: Spent 15.50 on groceries yesterday");
     }
 }

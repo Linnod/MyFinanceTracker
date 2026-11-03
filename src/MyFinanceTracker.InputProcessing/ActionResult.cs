@@ -23,19 +23,6 @@ public abstract record ActionResult
         public sealed record Listed(IReadOnlyList<Domain.Entities.Category> Categories) : ActionResult;
     }
 
-
-    public sealed record InvalidSyntax(
-        string ErrorCode,
-        string? Suggestion = null,
-        IReadOnlyCollection<string>? Examples = null
-    ) : ActionResult;
-
-    public sealed record DomainError(
-        string ErrorCode,
-        string? Suggestion = null,
-        IReadOnlyCollection<string>? Examples = null
-    ) : ActionResult;
-
     public sealed record InvalidInput(
         IReadOnlyCollection<ValidationErrorItem> Errors
     ) : ActionResult;

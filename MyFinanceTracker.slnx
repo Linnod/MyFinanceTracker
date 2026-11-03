@@ -7,7 +7,6 @@
     <Project Path="src/MyFinanceTracker.InputProcessing.Text.Gemini/MyFinanceTracker.InputProcessing.Text.Gemini.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.Yaml/MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
-    <Project Path="src/MyFinanceTracker.InputProcessing.Text.Structured/MyFinanceTracker.InputProcessing.Text.Structured.csproj" />
     <Project Path="src/MyFinanceTracker.InputProcessing/MyFinanceTracker.InputProcessing.csproj" />
     <Project Path="src/MyFinanceTracker.Interactions.Console/MyFinanceTracker.Interactions.Console.csproj" />
     <Project Path="src/MyFinanceTracker.Interactions.Telegram/MyFinanceTracker.Interactions.Telegram.csproj" />
@@ -18,7 +17,6 @@
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.InputProcessing.Text.Gemini.Tests/MyFinanceTracker.InputProcessing.Text.Gemini.Tests.csproj" />
-    <Project Path="tests/MyFinanceTracker.InputProcessing.Text.Structured.Tests/MyFinanceTracker.InputProcessing.Text.Structured.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.UseCases.Tests/MyFinanceTracker.UseCases.Tests.csproj" />
   </Folder>
 </Solution>

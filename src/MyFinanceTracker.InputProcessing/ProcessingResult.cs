@@ -16,11 +16,7 @@ public abstract record ProcessingResult
         public override string ToString() => "EmptyInput";
     }
 
-    public sealed record InvalidInput(
-        string Details,
-        string? Suggestion = null,
-        IReadOnlyCollection<string>? Examples = null
-    ) : ProcessingResult
+    public sealed record InvalidInput(string Details) : ProcessingResult
     {
         public override string ToString() => $"InvalidInput: {Details}";
     }

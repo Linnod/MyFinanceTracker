@@ -36,7 +36,6 @@ flowchart LR
     Interactions --> Parser
 
     Parser --> Gemini
-    Parser --> UseCases
 
     Gemini --> UseCases
 
@@ -54,7 +53,6 @@ src/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
 ├── MyFinanceTracker.InputProcessing/
 ├── MyFinanceTracker.InputProcessing.Text.Gemini/
-├── MyFinanceTracker.InputProcessing.Text.Structured/
 ├── MyFinanceTracker.Interactions.Console/
 ├── MyFinanceTracker.Interactions.Telegram/
 └── MyFinanceTracker.Host/
@@ -64,8 +62,7 @@ tests/
 ├── MyFinanceTracker.UseCases.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
-├── MyFinanceTracker.InputProcessing.Text.Gemini.Tests/
-└── MyFinanceTracker.InputProcessing.Text.Structured.Tests/
+└── MyFinanceTracker.InputProcessing.Text.Gemini.Tests/
 ```
 
 ## Quick Start
