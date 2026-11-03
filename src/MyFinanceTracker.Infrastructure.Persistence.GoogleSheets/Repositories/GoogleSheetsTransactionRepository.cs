@@ -42,18 +42,30 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         }
     }
 
-    public async Task DeleteRange(Category category, DateOnly date, CancellationToken ct)
+    public async Task<DeleteTransactionsResult> DeleteRange(IReadOnlyCollection<Guid> ids, CancellationToken ct)
     {
+        LogDeletingTransactions(ids.Count);
+
+        if (ids.Count == 0)
+        {
+            return new DeleteTransactionsResult.Success(0);
+        }
+
         await semaphore.WaitAsync(ct);
         try
         {
-            LogDeletingTransactions(category, date);
-
             var validRows = await LoadValidRows(ct);
+            var existingIds = validRows.Select(s => s.Transaction.Id).ToHashSet();
+
+            var idsSet = ids.ToHashSet();
+            var missingIds = idsSet.Where(id => !existingIds.Contains(id)).ToList();
+            if (missingIds.Count > 0)
+            {
+                return new DeleteTransactionsResult.NotFound(missingIds);
+            }
 
             var rowsToDelete = validRows
-                .Where(s => s.Transaction.Date == date &&
-                            string.Equals(s.Transaction.Category.Name, category.Name, StringComparison.OrdinalIgnoreCase))
+                .Where(s => idsSet.Contains(s.Transaction.Id))
                 .Select(s => s.Row)
                 .ToList();
 
@@ -61,6 +73,8 @@ internal sealed partial class GoogleSheetsTransactionRepository(
             {
                 await client.DeleteRows(options.TransactionsSheetName, rowsToDelete, ct);
             }
+
+            return new DeleteTransactionsResult.Success(idsSet.Count);
         }
         finally
         {

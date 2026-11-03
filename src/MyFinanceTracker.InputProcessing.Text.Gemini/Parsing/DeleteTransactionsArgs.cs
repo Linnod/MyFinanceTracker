@@ -1,7 +1,9 @@
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
 
 internal sealed record DeleteTransactionsArgs(
-    string CategoryAlias,
-    DateOnly Date,
+    IReadOnlyList<Guid>? Ids,
     string RecognizedInput
-);
+)
+{
+    public IReadOnlyList<Guid> Ids { get; init; } = Ids ?? [];
+}

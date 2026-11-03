@@ -26,12 +26,6 @@ internal sealed partial class DeleteTransactionsLoggingBehavior
     partial void LogValidationError(DeleteTransactionsResponse.ValidationError error, long ms);
 
     [LoggerMessage(
-        EventId = CategoryNotFound,
-        Level = LogLevel.Information,
-        Message = "Deletion failed. Category '{RequestedAlias}' not found (Time: {Ms}ms)")]
-    partial void LogCategoryNotFound(string requestedAlias, long ms);
-
-    [LoggerMessage(
         EventId = Failure,
         Level = LogLevel.Warning,
         Message = "Deletion finished with failure response (Time: {Ms}ms)")]

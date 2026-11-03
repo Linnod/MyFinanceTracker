@@ -56,9 +56,7 @@ internal static class TelegramResponseFormatter
                     break;
 
                 case ActionResult.Transaction.Deleted deleted:
-                    sb.AppendLine(
-                        $"🗑️ Cleared category '<b>{WebUtility.HtmlEncode(deleted.CategoryName)}</b>' " +
-                        $"for <code>{deleted.Date:dd.MM.yyyy}</code>");
+                    sb.AppendLine($"🗑️ Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
                     break;
 
                 case ActionResult.Transaction.Listed listed:
@@ -163,7 +161,13 @@ internal static class TelegramResponseFormatter
         ValidationErrorCode.Transaction.CategoryNotFound => err.AttemptedValue is not null
             ? $"Category '{err.AttemptedValue}' was not found."
             : "Category was not found.",
-        ValidationErrorCode.Transaction.DateRequired => "Date is required.",
+        ValidationErrorCode.Transaction.IdRequired => "At least one transaction ID is required.",
+        ValidationErrorCode.Transaction.InvalidId => err.AttemptedValue is not null
+            ? $"Transaction ID '{err.AttemptedValue}' is invalid."
+            : "Transaction ID is invalid.",
+        ValidationErrorCode.Transaction.TransactionNotFound => err.AttemptedValue is not null
+            ? $"Transaction '{err.AttemptedValue}' was not found."
+            : "Transaction was not found.",
         ValidationErrorCode.Transaction.FromDateRequired => "Start date is required.",
         ValidationErrorCode.Transaction.ToDateRequired => "End date is required.",
         ValidationErrorCode.Transaction.DateOutOfRange => err.AttemptedValue is not null

@@ -230,17 +230,19 @@ public class GoogleSheetsRepositoryIntegrationTests
         categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
             .Returns([foodCategory, entertainmentCategory]);
 
-        var targetDate = new DateOnly(2026, 11, 2);
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var otherId = Guid.NewGuid();
 
         var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Date", "Type", "Category", "Amount", "Note"]));
         var matchingRow1 = new GoogleSheetRow(1, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-20", "Breakfast"
+            id1.ToString(), "2026-11-02", "Expense", "Food", "-20", "Breakfast"
         ]));
         var matchingRow2 = new GoogleSheetRow(2, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-30", "Dinner"
+            id2.ToString(), "2026-11-02", "Expense", "Food", "-30", "Dinner"
         ]));
         var otherCategoryRow = new GoogleSheetRow(3, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Entertainment", "-50", "Movies"
+            otherId.ToString(), "2026-11-02", "Expense", "Entertainment", "-50", "Movies"
         ]));
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
@@ -254,9 +256,12 @@ public class GoogleSheetsRepositoryIntegrationTests
             loggerMock);
 
         // act
-        await sut.DeleteRange(foodCategory, targetDate, CancellationToken.None);
+        var result = await sut.DeleteRange([id1, id2], CancellationToken.None);
 
         // assert
+        result.Should().BeOfType<DeleteTransactionsResult.Success>()
+            .Which.DeletedCount.Should().Be(2);
+
         await clientMock.Received(1).DeleteRows(
             "Transactions",
             Arg.Is<IReadOnlyCollection<GoogleSheetRow>>(rows =>
@@ -267,7 +272,7 @@ public class GoogleSheetsRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task DeleteRange_ShouldNotCallDeleteRows_WhenNoRowsMatch()
+    public async Task DeleteRange_ShouldNotCallDeleteRows_WhenAnyIdDoesNotMatch()
     {
         // arrange
         var options = Options.Create(defaultOptions);
@@ -279,9 +284,12 @@ public class GoogleSheetsRepositoryIntegrationTests
         categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
             .Returns([foodCategory]);
 
+        var existingId = Guid.NewGuid();
+        var missingId = Guid.NewGuid();
+
         var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Date", "Type", "Category", "Amount", "Note"]));
         var otherDateRow = new GoogleSheetRow(1, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-01", "Expense", "Food", "-20"
+            existingId.ToString(), "2026-11-01", "Expense", "Food", "-20"
         ]));
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
@@ -295,9 +303,43 @@ public class GoogleSheetsRepositoryIntegrationTests
             loggerMock);
 
         // act
-        await sut.DeleteRange(foodCategory, new DateOnly(2026, 11, 2), CancellationToken.None);
+        var result = await sut.DeleteRange([existingId, missingId], CancellationToken.None);
 
         // assert
+        var notFound = result.Should().BeOfType<DeleteTransactionsResult.NotFound>().Subject;
+        notFound.MissingIds.Should().ContainSingle().Which.Should().Be(missingId);
+
+        await clientMock.DidNotReceive().DeleteRows(
+            Arg.Any<string>(),
+            Arg.Any<IReadOnlyCollection<GoogleSheetRow>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteRange_ShouldDoNothing_WhenIdsIsEmpty()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        // act
+        var result = await sut.DeleteRange([], CancellationToken.None);
+
+        // assert
+        result.Should().BeOfType<DeleteTransactionsResult.Success>()
+            .Which.DeletedCount.Should().Be(0);
+
+        await clientMock.DidNotReceive().GetRows(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await clientMock.DidNotReceive().DeleteRows(
             Arg.Any<string>(),
             Arg.Any<IReadOnlyCollection<GoogleSheetRow>>(),

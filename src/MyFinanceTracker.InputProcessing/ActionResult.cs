@@ -11,7 +11,7 @@ public abstract record ActionResult
     public static class Transaction
     {
         public sealed record Added(IReadOnlyList<Domain.Entities.Transaction> Transactions) : ActionResult;
-        public sealed record Deleted(string CategoryName, DateOnly Date) : ActionResult;
+        public sealed record Deleted(int DeletedCount) : ActionResult;
         public sealed record Listed(
             DateOnly FromDate,
             DateOnly ToDate,

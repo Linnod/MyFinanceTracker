@@ -89,12 +89,12 @@ internal sealed partial class GeminiToolExecutor(
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForDeletingTransactions);
 
-        var request = new DeleteTransactionsRequest(typedArgs.CategoryAlias, typedArgs.Date);
+        var request = new DeleteTransactionsRequest(typedArgs.Ids);
         var response = await mediator.Send(request, ct);
 
         return response switch
         {
-            DeleteTransactionsResponse.Success s => new ActionResult.Transaction.Deleted(s.CategoryName, s.Date)
+            DeleteTransactionsResponse.Success s => new ActionResult.Transaction.Deleted(s.DeletedCount)
             {
                 RawInput = rawInput
             },

@@ -7,6 +7,7 @@ using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.UseCases.Transaction.Create;
+using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
 using NSubstitute;
 using Xunit;
@@ -174,6 +175,43 @@ public class GeminiToolExecutorTests
                 r.CategoryAliases != null &&
                 r.CategoryAliases.SequenceEqual(new[] { "food", "entertainment" }) &&
                 r.Type == TransactionType.Expense),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenDeleteTransactionsCall_ShouldSendDeleteTransactionsRequest()
+    {
+        // Arrange
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.DeleteTransactions,
+            Args = new Dictionary<string, object>
+            {
+                ["ids"] = new[] { id1.ToString(), id2.ToString() },
+                ["recognizedInput"] = "Delete 2 transactions"
+            }
+        };
+
+        mediator.Send(Arg.Any<DeleteTransactionsRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new DeleteTransactionsResponse.Success(2));
+
+        // Act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // Assert
+        response.Should().BeOfType<ActionResult.Transaction.Deleted>();
+        var deleted = (ActionResult.Transaction.Deleted)response;
+        deleted.DeletedCount.Should().Be(2);
+        deleted.RawInput.Should().Be("Delete 2 transactions");
+
+        await mediator.Received(1).Send(
+            Arg.Is<DeleteTransactionsRequest>(r =>
+                r.Ids != null &&
+                r.Ids.SequenceEqual(new[] { id1, id2 })),
             Arg.Any<CancellationToken>()
         );
     }

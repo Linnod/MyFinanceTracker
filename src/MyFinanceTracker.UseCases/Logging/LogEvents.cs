@@ -31,8 +31,6 @@ public static class LogEvents
             public const int Completed = SubBase + 2;
             public const int ValidationFailed = SubBase + 3;
 
-            public const int CategoryNotFound = SubBase + 4;
-
             public const int Failure = SubBase + 100;
             public const int CriticalError = SubBase + 101;
         }

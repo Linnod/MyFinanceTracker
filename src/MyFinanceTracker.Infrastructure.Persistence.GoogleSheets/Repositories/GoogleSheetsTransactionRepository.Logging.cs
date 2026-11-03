@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Logging;
 
@@ -18,8 +17,8 @@ internal partial class GoogleSheetsTransactionRepository
     [LoggerMessage(
         EventId = DeletingTransactions,
         Level = LogLevel.Debug,
-        Message = "Preparing to delete transactions for category {Category} on {Date}")]
-    partial void LogDeletingTransactions(Category category, DateOnly date);
+        Message = "Preparing to delete {Count} transactions from Google Sheets")]
+    partial void LogDeletingTransactions(int count);
 
     [LoggerMessage(
         EventId = GettingTransactions,

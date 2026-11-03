@@ -1,39 +1,31 @@
 using System.Diagnostics;
 using MediatR;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.UseCases.Common;
 
 namespace MyFinanceTracker.UseCases.Transaction.Delete;
 
 internal sealed class DeleteTransactionsHandler(
-    ICategoryRepository categoryRepository,
     ITransactionRepository transactionRepository)
     : IRequestHandler<DeleteTransactionsRequest, DeleteTransactionsResponse>
 {
     public async Task<DeleteTransactionsResponse> Handle(
-    DeleteTransactionsRequest request,
-    CancellationToken ct)
-    {
-        var categories = await categoryRepository.GetAll(ct);
-        var lookup = new CategoryLookup(categories);
-
-        return lookup.Resolve(request.CategoryAlias!) switch
-        {
-            CategoryResolution.NotFound notFound => new DeleteTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, request.CategoryAlias)
-            ]),
-            CategoryResolution.Found found => await DeleteTransactions(found.Category, request.Date!.Value, ct),
-            _ => throw new UnreachableException()
-        };
-    }
-
-    private async Task<DeleteTransactionsResponse> DeleteTransactions(
-        Domain.Entities.Category category,
-        DateOnly date,
+        DeleteTransactionsRequest request,
         CancellationToken ct)
     {
-        await transactionRepository.DeleteRange(category, date, ct);
+        var distinctIds = request.Ids.Distinct().ToList();
+        var result = await transactionRepository.DeleteRange(distinctIds, ct);
 
-        return new DeleteTransactionsResponse.Success(category.Name, date);
+        return result switch
+        {
+            DeleteTransactionsResult.Success s => new DeleteTransactionsResponse.Success(s.DeletedCount),
+
+            DeleteTransactionsResult.NotFound nf => new DeleteTransactionsResponse.ValidationError(
+                [.. nf.MissingIds
+                    .Select(id => new ValidationErrorItem(
+                        ValidationErrorCode.Transaction.TransactionNotFound,
+                        AttemptedValue: id.ToString()))]),
+
+            _ => throw new UnreachableException()
+        };
     }
 }

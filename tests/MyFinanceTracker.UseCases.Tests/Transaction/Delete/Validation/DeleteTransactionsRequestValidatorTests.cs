@@ -1,8 +1,8 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
-using MyFinanceTracker.Domain.Entities;
+using MyFinanceTracker.UseCases;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Delete.Validation;
+using Xunit;
 
 namespace MyFinanceTracker.UseCases.Tests.Transaction.Delete.Validation;
 
@@ -19,9 +19,7 @@ public class DeleteTransactionsRequestValidatorTests
     public void Validate_RequestIsValid_ReturnsNoErrors()
     {
         // arrange
-        var request = new DeleteTransactionsRequest(
-            "food",
-            new DateOnly(2026, 1, 27));
+        var request = new DeleteTransactionsRequest([Guid.NewGuid(), Guid.NewGuid()]);
 
         // act
         var result = sut.TestValidate(request);
@@ -30,60 +28,45 @@ public class DeleteTransactionsRequestValidatorTests
         result.ShouldNotHaveAnyValidationErrors();
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData(" ")]
-    void Validate_CategoryAliasIsEmpty_ReturnsRequiredError(string alias)
+    [Fact]
+    public void Validate_WhenIdsIsNull_ReturnsIdRequiredError()
     {
         // arrange
-        var request = new DeleteTransactionsRequest(
-            alias,
-            new DateOnly(2026, 1, 27));
+        var request = new DeleteTransactionsRequest(Ids: null!);
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor(x => x.CategoryAlias)
-            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
+        result.ShouldHaveValidationErrorFor(x => x.Ids)
+            .WithErrorCode(ValidationErrorCode.Transaction.IdRequired);
     }
 
     [Fact]
-    void Validate_DateIsNull_ReturnsRequiredError()
+    public void Validate_WhenIdsIsEmpty_ReturnsIdRequiredError()
     {
         // arrange
-        var request = new DeleteTransactionsRequest(
-            "food",
-            null);
+        var request = new DeleteTransactionsRequest(Ids: []);
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor(x => x.Date)
-            .WithErrorCode(ValidationErrorCode.Transaction.DateRequired);
+        result.ShouldHaveValidationErrorFor(x => x.Ids)
+            .WithErrorCode(ValidationErrorCode.Transaction.IdRequired);
     }
 
-    [Theory]
-    [InlineData(-1)]
-    [InlineData(1)]
-    public void Validate_DateOutOfRange_ReturnsError(int offset)
+    [Fact]
+    public void Validate_WhenIdsContainsGuidEmpty_ReturnsInvalidIdError()
     {
         // arrange
-        var year = offset < 0
-            ? FinancialRules.MinAllowedYear - 1
-            : FinancialRules.MaxAllowedYear + 1;
-
-        var request = new DeleteTransactionsRequest(
-            "food",
-            new DateOnly(year, 1, 1));
+        var request = new DeleteTransactionsRequest([Guid.NewGuid(), Guid.Empty]);
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == nameof(DeleteTransactionsRequest.Date) + ".Value.Year" &&
-            e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
+        result.ShouldHaveValidationErrorFor(x => x.Ids)
+            .WithErrorCode(ValidationErrorCode.Transaction.InvalidId);
     }
 }

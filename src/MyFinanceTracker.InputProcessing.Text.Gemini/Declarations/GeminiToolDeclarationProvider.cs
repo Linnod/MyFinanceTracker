@@ -63,29 +63,25 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 new FunctionDeclaration
                 {
                     Name = ToolNames.DeleteTransactions,
-                    Description = "Delete or clear transactions for a category on a specific date.",
+                    Description = "Delete one or more financial transactions by their unique IDs (UUID/GUID).",
                     Parameters = new Schema
                     {
                         Type = Type.Object,
                         Properties = new Dictionary<string, Schema>
                         {
-                            ["categoryAlias"] = new Schema
+                            ["ids"] = new Schema
                             {
-                                Type = Type.String,
-                                Description = "Category alias to clear."
-                            },
-                            ["date"] = new Schema
-                            {
-                                Type = Type.String,
-                                Description = "Specific date in YYYY-MM-DD format."
+                                Type = Type.Array,
+                                Description = "List of transaction IDs (UUID/GUID) to delete.",
+                                Items = new Schema { Type = Type.String }
                             },
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this deletion action in user's language (e.g. 'Delete transactions in Food for 2026-08-11')."
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this deletion action in user's language (e.g. 'Delete transactions [UUID]')."
                             }
                         },
-                        Required = ["categoryAlias", "date", "recognizedInput"]
+                        Required = ["ids", "recognizedInput"]
                     }
                 },
                 new FunctionDeclaration

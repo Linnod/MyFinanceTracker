@@ -5,11 +5,10 @@ public abstract record DeleteTransactionsResponse
     private DeleteTransactionsResponse() { }
 
     public sealed record Success(
-        string CategoryName,
-        DateOnly Date
+        int DeletedCount
     ) : DeleteTransactionsResponse
     {
-        public override string ToString() => $"Cleared '{CategoryName}' on {Date:dd.MM.yyyy}";
+        public override string ToString() => $"Deleted {DeletedCount} transaction(s)";
     }
 
     public sealed record ValidationError(
