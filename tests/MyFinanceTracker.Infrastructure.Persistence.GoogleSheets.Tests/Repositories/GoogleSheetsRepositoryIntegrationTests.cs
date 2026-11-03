@@ -24,6 +24,7 @@ public class GoogleSheetsRepositoryIntegrationTests
 
     private readonly Category foodCategory = new("food_id", "Food", ["food"]);
     private readonly Category entertainmentCategory = new("ent_id", "Entertainment", ["entertainment"]);
+    private readonly Category transportCategory = new("trans_id", "Transport", ["transport"]);
 
     [Fact]
     public async Task AddRange_ShouldAppendRowsViaClient()
@@ -104,21 +105,15 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns([foodCategory, entertainmentCategory]);
 
         var targetDate = new DateOnly(2026, 11, 2);
-        var otherDate = new DateOnly(2026, 11, 1);
-
-        var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Date", "Type", "Category", "Amount", "Note"]));
-        var matchingRow = new GoogleSheetRow(1, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-25.5", "Lunch"
-        ]));
-        var wrongCategoryRow = new GoogleSheetRow(2, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Entertainment", "-100", "Cinema"
-        ]));
-        var wrongDateRow = new GoogleSheetRow(3, new GoogleSheetRowValues([
-            Guid.NewGuid().ToString(), "2026-11-01", "Expense", "Food", "-15", "Coffee"
-        ]));
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
-            .Returns([headerRow, matchingRow, wrongCategoryRow, wrongDateRow]);
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-25.5", "Lunch"])),
+                new(2, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Entertainment", "-100", "Cinema"])),
+                new(3, new([Guid.NewGuid().ToString(), "2026-11-01", "Expense", "Food", "-15", "Coffee"]))
+            ]);
 
         var sut = new GoogleSheetsTransactionRepository(
             options,
@@ -128,7 +123,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             loggerMock);
 
         // act
-        var result = await sut.Get(foodCategory, targetDate, CancellationToken.None);
+        var result = await sut.Get(new TransactionFilter(targetDate, targetDate, [foodCategory]), CancellationToken.None);
 
         // assert
         result.Should().HaveCount(1);
@@ -136,6 +131,53 @@ public class GoogleSheetsRepositoryIntegrationTests
         result[0].Category.Should().Be(foodCategory);
         result[0].Date.Should().Be(targetDate);
         result[0].Note.Should().Be("Lunch");
+    }
+
+    [Fact]
+    public async Task Get_ShouldFilterByDateRangeMultipleCategoriesAndTransactionType()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory, entertainmentCategory, transportCategory]);
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-20", "Lunch"])),
+                new(2, new([Guid.NewGuid().ToString(), "2026-11-03", "Expense", "Entertainment", "-50", "Cinema"])),
+                new(3, new([Guid.NewGuid().ToString(), "2026-11-03", "Income", "Food", "1000", "Refund"])),
+                new(4, new([Guid.NewGuid().ToString(), "2026-11-01", "Expense", "Food", "-10", "Old Coffee"])),
+                new(5, new([Guid.NewGuid().ToString(), "2026-11-05", "Expense", "Entertainment", "-30", "Future Movie"])),
+                new(6, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Transport", "-15", "Taxi"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        var filter = new TransactionFilter(
+            FromDate: new DateOnly(2026, 11, 2),
+            ToDate: new DateOnly(2026, 11, 4),
+            Categories: [foodCategory, entertainmentCategory],
+            Type: TransactionType.Expense);
+
+        // act
+        var result = await sut.Get(filter, CancellationToken.None);
+
+        // assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(t => t.Note == "Lunch" && t.Category == foodCategory && t.Amount == 20m);
+        result.Should().Contain(t => t.Note == "Cinema" && t.Category == entertainmentCategory && t.Amount == 50m);
     }
 
     [Fact]
@@ -167,7 +209,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             loggerMock);
 
         // act
-        var act = () => sut.Get(foodCategory, new DateOnly(2026, 11, 2), CancellationToken.None);
+        var act = () => sut.Get(new TransactionFilter(new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 2), [foodCategory]), CancellationToken.None);
 
         // assert
         var ex = await act.Should().ThrowAsync<GoogleSheetsPersistenceException>();

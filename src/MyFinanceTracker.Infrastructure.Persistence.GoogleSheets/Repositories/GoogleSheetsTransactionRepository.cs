@@ -69,17 +69,36 @@ internal sealed partial class GoogleSheetsTransactionRepository(
     }
 
     public async Task<IReadOnlyList<Transaction>> Get(
-        Category category,
-        DateOnly date,
+        TransactionFilter filter,
         CancellationToken ct)
     {
-        LogGettingTransactions(category, date);
+        LogGettingTransactions(filter);
 
         var validRows = await LoadValidRows(ct);
+        var query = validRows.Select(s => s.Transaction);
 
-        return [.. validRows
-            .Select(s => s.Transaction)
-            .Where(t => t.Date == date && string.Equals(t.Category.Name, category.Name, StringComparison.OrdinalIgnoreCase))];
+        if (filter.FromDate.HasValue)
+        {
+            query = query.Where(t => t.Date >= filter.FromDate.Value);
+        }
+
+        if (filter.ToDate.HasValue)
+        {
+            query = query.Where(t => t.Date <= filter.ToDate.Value);
+        }
+
+        if (filter.Categories is { Count: > 0 })
+        {
+            var categoryNames = filter.Categories.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            query = query.Where(t => categoryNames.Contains(t.Category.Name));
+        }
+
+        if (filter.Type.HasValue)
+        {
+            query = query.Where(t => t.Type == filter.Type.Value);
+        }
+
+        return [.. query];
     }
 
     private async Task<IReadOnlyList<RowMappingResult.Success>> LoadValidRows(CancellationToken ct)

@@ -129,8 +129,10 @@ internal sealed partial class GeminiToolExecutor(
             DefaultRawInputForGettingTransactions);
 
         var request = new GetTransactionsRequest(
-            typedArgs.CategoryAlias,
-            typedArgs.Date);
+            typedArgs.FromDate,
+            typedArgs.ToDate,
+            typedArgs.CategoryAliases,
+            typedArgs.Type);
 
         var response = await mediator.Send(request, ct);
 
@@ -138,8 +140,10 @@ internal sealed partial class GeminiToolExecutor(
         {
             GetTransactionsResponse.Success s =>
                 new ActionResult.Transaction.Listed(
-                    s.CategoryName,
-                    s.Date,
+                    s.FromDate,
+                    s.ToDate,
+                    s.CategoryNames,
+                    s.Type,
                     s.Transactions)
                 {
                     RawInput = rawInput

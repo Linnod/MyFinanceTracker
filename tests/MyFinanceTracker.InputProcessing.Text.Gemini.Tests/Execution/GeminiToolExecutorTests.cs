@@ -7,6 +7,7 @@ using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.UseCases.Transaction.Create;
+using MyFinanceTracker.UseCases.Transaction.Get;
 using NSubstitute;
 using Xunit;
 
@@ -111,6 +112,68 @@ public class GeminiToolExecutorTests
 
         await mediator.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r => r.Items.Count == 0),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionsCall_ShouldSendGetTransactionsRequest()
+    {
+        // Arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
+            Args = new Dictionary<string, object>
+            {
+                ["fromDate"] = "2026-08-01",
+                ["toDate"] = "2026-08-10",
+                ["categoryAliases"] = new[] { "food", "entertainment" },
+                ["type"] = "expense",
+                ["recognizedInput"] = "View expenses in food and entertainment"
+            }
+        };
+
+        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"], isIncome: false);
+        var transactions = new List<Transaction>
+        {
+            new(
+                id: Guid.NewGuid(),
+                type: TransactionType.Expense,
+                category: category,
+                amount: 50m,
+                date: new DateOnly(2026, 8, 5),
+                note: "Lunch"
+            )
+        };
+
+        mediator.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new GetTransactionsResponse.Success(
+                new DateOnly(2026, 8, 1),
+                new DateOnly(2026, 8, 10),
+                ["Food", "Entertainment"],
+                TransactionType.Expense,
+                transactions));
+
+        // Act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // Assert
+        response.Should().BeOfType<ActionResult.Transaction.Listed>();
+        var listed = (ActionResult.Transaction.Listed)response;
+        listed.FromDate.Should().Be(new DateOnly(2026, 8, 1));
+        listed.ToDate.Should().Be(new DateOnly(2026, 8, 10));
+        listed.CategoryNames.Should().Equal("Food", "Entertainment");
+        listed.Type.Should().Be(TransactionType.Expense);
+        listed.Transactions.Should().BeEquivalentTo(transactions);
+        listed.RawInput.Should().Be("View expenses in food and entertainment");
+
+        await mediator.Received(1).Send(
+            Arg.Is<GetTransactionsRequest>(r =>
+                r.FromDate == new DateOnly(2026, 8, 1) &&
+                r.ToDate == new DateOnly(2026, 8, 10) &&
+                r.CategoryAliases != null &&
+                r.CategoryAliases.SequenceEqual(new[] { "food", "entertainment" }) &&
+                r.Type == TransactionType.Expense),
             Arg.Any<CancellationToken>()
         );
     }

@@ -1,7 +1,11 @@
+using MyFinanceTracker.Domain.Entities;
+
 namespace MyFinanceTracker.InputProcessing.Text.Gemini.Parsing;
 
 internal sealed record GetTransactionsArgs(
-    string CategoryAlias,
-    DateOnly Date,
+    DateOnly? FromDate,
+    DateOnly? ToDate,
+    IReadOnlyList<string>? CategoryAliases,
+    TransactionType? Type,
     string RecognizedInput
 );

@@ -24,7 +24,7 @@ internal static class ConsoleCommands
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
                         System.Console.WriteLine(
-                            $"  • {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
+                            $"  • {t.Id} | {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
                     }
                     break;
 
@@ -36,10 +36,18 @@ internal static class ConsoleCommands
                     var totalListedAmount = listed.Transactions.Sum(t =>
                         t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
 
-                    var balanceSign = totalListedAmount >= 0 ? "+" : "";
+                    var balanceSign = totalListedAmount > 0 ? "+" : "";
+
+                    var datePart = listed.FromDate == listed.ToDate
+                        ? $"for {listed.FromDate:dd.MM.yyyy}"
+                        : $"from {listed.FromDate:dd.MM.yyyy} to {listed.ToDate:dd.MM.yyyy}";
+
+                    var categoriesPart = listed.CategoryNames.Count > 0
+                        ? $" in '{string.Join(", ", listed.CategoryNames)}'"
+                        : "";
 
                     System.Console.WriteLine(
-                        $"📋 Transactions in '{listed.CategoryName}' on {listed.Date:dd.MM.yyyy} (Total: {balanceSign}{totalListedAmount:0.00})");
+                        $"📋 Transactions{categoriesPart} {datePart} (Total: {balanceSign}{totalListedAmount:0.00})");
 
                     if (listed.Transactions.Count == 0)
                     {
@@ -52,7 +60,8 @@ internal static class ConsoleCommands
                         var sign = t.Type == TransactionType.Expense ? "-" : "+";
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
-                        System.Console.WriteLine($"  • {sign}{t.Amount:0.00}{note}");
+                        System.Console.WriteLine(
+                            $"  • {t.Id} | {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
                     }
                     break;
 
@@ -134,7 +143,12 @@ internal static class ConsoleCommands
             ? $"Category '{err.AttemptedValue}' was not found."
             : "Category was not found.",
         ValidationErrorCode.Transaction.DateRequired => "Date is required.",
-        ValidationErrorCode.Transaction.DateOutOfRange => "Date is out of the allowed range.",
+        ValidationErrorCode.Transaction.FromDateRequired => "Start date is required.",
+        ValidationErrorCode.Transaction.ToDateRequired => "End date is required.",
+        ValidationErrorCode.Transaction.DateOutOfRange => err.AttemptedValue is not null
+            ? $"Year '{err.AttemptedValue}' is out of the allowed range ({FinancialRules.MinAllowedYear}–{FinancialRules.MaxAllowedYear})."
+            : $"Date year is out of the allowed range ({FinancialRules.MinAllowedYear}–{FinancialRules.MaxAllowedYear}).",
+        ValidationErrorCode.Transaction.InvalidDateRange => "Start date must be on or before end date.",
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
         _ => err.ErrorCode

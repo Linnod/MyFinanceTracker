@@ -16,12 +16,14 @@ public class GetTransactionsRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_RequestIsValid_ReturnsNoErrors()
+    public void Validate_ValidRequestWithCategories_ReturnsNoErrors()
     {
         // arrange
         var request = new GetTransactionsRequest(
-            "food",
-            new DateOnly(2026, 1, 27));
+            FromDate: new DateOnly(2026, 1, 1),
+            ToDate: new DateOnly(2026, 1, 27),
+            CategoryAliases: ["food", "taxi"],
+            Type: TransactionType.Expense);
 
         // act
         var result = sut.TestValidate(request);
@@ -30,44 +32,59 @@ public class GetTransactionsRequestValidatorTests
         result.ShouldNotHaveAnyValidationErrors();
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData(" ")]
-    void Validate_CategoryAliasIsEmpty_ReturnsRequiredError(string alias)
+    [Fact]
+    public void Validate_ValidRequestWithoutCategories_ReturnsNoErrors()
     {
         // arrange
         var request = new GetTransactionsRequest(
-            alias,
-            new DateOnly(2026, 1, 27));
+            FromDate: new DateOnly(2026, 1, 1),
+            ToDate: new DateOnly(2026, 1, 27),
+            CategoryAliases: null,
+            Type: null);
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor(x => x.CategoryAlias)
-            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
-    void Validate_DateIsNull_ReturnsRequiredError()
+    public void Validate_FromDateIsNull_ReturnsFromDateRequiredError()
     {
         // arrange
         var request = new GetTransactionsRequest(
-            "food",
-            null);
+            FromDate: null,
+            ToDate: new DateOnly(2026, 1, 27));
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor(x => x.Date)
-            .WithErrorCode(ValidationErrorCode.Transaction.DateRequired);
+        result.ShouldHaveValidationErrorFor(x => x.FromDate)
+            .WithErrorCode(ValidationErrorCode.Transaction.FromDateRequired);
+    }
+
+    [Fact]
+    public void Validate_ToDateIsNull_ReturnsToDateRequiredError()
+    {
+        // arrange
+        var request = new GetTransactionsRequest(
+            FromDate: new DateOnly(2026, 1, 27),
+            ToDate: null);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldHaveValidationErrorFor(x => x.ToDate)
+            .WithErrorCode(ValidationErrorCode.Transaction.ToDateRequired);
     }
 
     [Theory]
     [InlineData(-1)]
     [InlineData(1)]
-    public void Validate_DateOutOfRange_ReturnsError(int offset)
+    public void Validate_FromDateOutOfRange_ReturnsDateOutOfRange(int offset)
     {
         // arrange
         var year = offset < 0
@@ -75,15 +92,73 @@ public class GetTransactionsRequestValidatorTests
             : FinancialRules.MaxAllowedYear + 1;
 
         var request = new GetTransactionsRequest(
-            "food",
-            new DateOnly(year, 1, 1));
+            FromDate: new DateOnly(year, 1, 1),
+            ToDate: new DateOnly(2026, 1, 27));
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == nameof(GetTransactionsRequest.Date) + ".Value.Year" &&
+            e.PropertyName == nameof(GetTransactionsRequest.FromDate) + ".Value.Year" &&
             e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public void Validate_ToDateOutOfRange_ReturnsDateOutOfRange(int offset)
+    {
+        // arrange
+        var year = offset < 0
+            ? FinancialRules.MinAllowedYear - 1
+            : FinancialRules.MaxAllowedYear + 1;
+
+        var request = new GetTransactionsRequest(
+            FromDate: new DateOnly(2026, 1, 1),
+            ToDate: new DateOnly(year, 1, 1));
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == nameof(GetTransactionsRequest.ToDate) + ".Value.Year" &&
+            e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
+    }
+
+    [Fact]
+    public void Validate_FromDateGreaterThanToDate_ReturnsInvalidDateRange()
+    {
+        // arrange
+        var request = new GetTransactionsRequest(
+            FromDate: new DateOnly(2026, 2, 1),
+            ToDate: new DateOnly(2026, 1, 1));
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldHaveValidationErrorFor(x => x.ToDate!.Value)
+            .WithErrorCode(ValidationErrorCode.Transaction.InvalidDateRange);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void Validate_EmptyCategoryAlias_ReturnsCategoryRequired(string alias)
+    {
+        // arrange
+        var request = new GetTransactionsRequest(
+            FromDate: new DateOnly(2026, 1, 1),
+            ToDate: new DateOnly(2026, 1, 27),
+            CategoryAliases: [alias]);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldHaveValidationErrorFor(x => x.CategoryAliases)
+            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
     }
 }

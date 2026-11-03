@@ -91,21 +91,33 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 new FunctionDeclaration
                 {
                     Name = ToolNames.GetTransactions,
-                    Description = "Get transactions for a category on a specific date.",
+                    Description = "Get transactions for a date range, optionally filtered by categories and transaction type.",
                     Parameters = new Schema
                     {
                         Type = Type.Object,
                         Properties = new Dictionary<string, Schema>
                         {
-                            ["categoryAlias"] = new Schema
+                            ["fromDate"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Category alias to get transactions for."
+                                Description = "Start date in YYYY-MM-DD format (inclusive). If querying a single day, set equal to toDate."
                             },
-                            ["date"] = new Schema
+                            ["toDate"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Specific date in YYYY-MM-DD format."
+                                Description = "End date in YYYY-MM-DD format (inclusive). If querying a single day, set equal to fromDate."
+                            },
+                            ["categoryAliases"] = new Schema
+                            {
+                                Type = Type.Array,
+                                Description = "Optional list of category aliases to filter by. Omit to include all categories.",
+                                Items = new Schema { Type = Type.String }
+                            },
+                            ["type"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = $"Optional transaction type filter ({TransactionTypesDescription}). Omit to include all types.",
+                                Enum = TransactionTypes
                             },
                             ["recognizedInput"] = new Schema
                             {

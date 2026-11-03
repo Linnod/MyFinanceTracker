@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Domain.Entities;
+using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Logging;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
@@ -21,8 +22,8 @@ internal partial class GoogleSheetsTransactionRepository
     partial void LogDeletingTransactions(Category category, DateOnly date);
 
     [LoggerMessage(
-    EventId = GettingTransactions,
-    Level = LogLevel.Debug,
-    Message = "Preparing to get transactions for category {Category} on {Date}")]
-    partial void LogGettingTransactions(Category category, DateOnly date);
+        EventId = GettingTransactions,
+        Level = LogLevel.Debug,
+        Message = "Preparing to get transactions with filter {Filter}")]
+    partial void LogGettingTransactions(TransactionFilter filter);
 }

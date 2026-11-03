@@ -7,20 +7,42 @@ internal sealed class GetTransactionsRequestValidator : AbstractValidator<GetTra
 {
     public GetTransactionsRequestValidator()
     {
-        RuleFor(x => x.CategoryAlias)
-            .NotEmpty()
-            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
-
-        RuleFor(x => x.Date)
+        RuleFor(x => x.FromDate)
             .NotNull()
-            .WithErrorCode(ValidationErrorCode.Transaction.DateRequired)
+            .WithErrorCode(ValidationErrorCode.Transaction.FromDateRequired)
             .DependentRules(() =>
             {
-                RuleFor(x => x.Date!.Value.Year)
+                RuleFor(x => x.FromDate!.Value.Year)
                     .InclusiveBetween(
                         FinancialRules.MinAllowedYear,
                         FinancialRules.MaxAllowedYear)
                     .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
             });
+
+        RuleFor(x => x.ToDate)
+            .NotNull()
+            .WithErrorCode(ValidationErrorCode.Transaction.ToDateRequired)
+            .DependentRules(() =>
+            {
+                RuleFor(x => x.ToDate!.Value.Year)
+                    .InclusiveBetween(
+                        FinancialRules.MinAllowedYear,
+                        FinancialRules.MaxAllowedYear)
+                    .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
+            });
+
+        When(x => x.FromDate.HasValue && x.ToDate.HasValue, () =>
+        {
+            RuleFor(x => x.ToDate!.Value)
+                .GreaterThanOrEqualTo(x => x.FromDate!.Value)
+                .WithErrorCode(ValidationErrorCode.Transaction.InvalidDateRange);
+        });
+
+        When(x => x.CategoryAliases is { Count: > 0 }, () =>
+        {
+            RuleForEach(x => x.CategoryAliases)
+                .NotEmpty()
+                .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
+        });
     }
 }

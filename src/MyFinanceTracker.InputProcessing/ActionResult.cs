@@ -13,8 +13,10 @@ public abstract record ActionResult
         public sealed record Added(IReadOnlyList<Domain.Entities.Transaction> Transactions) : ActionResult;
         public sealed record Deleted(string CategoryName, DateOnly Date) : ActionResult;
         public sealed record Listed(
-            string CategoryName,
-            DateOnly Date,
+            DateOnly FromDate,
+            DateOnly ToDate,
+            IReadOnlyList<string> CategoryNames,
+            Domain.Entities.TransactionType? Type,
             IReadOnlyList<Domain.Entities.Transaction> Transactions) : ActionResult;
     }
 

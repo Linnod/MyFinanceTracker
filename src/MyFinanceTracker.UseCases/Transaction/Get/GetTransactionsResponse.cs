@@ -5,13 +5,15 @@ public abstract record GetTransactionsResponse
     private GetTransactionsResponse() { }
 
     public sealed record Success(
-        string CategoryName,
-        DateOnly Date,
+        DateOnly FromDate,
+        DateOnly ToDate,
+        IReadOnlyList<string> CategoryNames,
+        Domain.Entities.TransactionType? Type,
         IReadOnlyList<Domain.Entities.Transaction> Transactions
     ) : GetTransactionsResponse
     {
         public override string ToString() =>
-            $"Got {Transactions.Count} transaction(s) for '{CategoryName}' on {Date:dd.MM.yyyy}";
+            $"Got {Transactions.Count} transaction(s) from {FromDate:dd.MM.yyyy} to {ToDate:dd.MM.yyyy}";
     }
 
     public sealed record ValidationError(

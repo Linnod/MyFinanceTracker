@@ -48,7 +48,8 @@ internal static class TelegramResponseFormatter
                             : $" ({WebUtility.HtmlEncode(t.Note)})";
 
                         sb.AppendLine(
-                            $"   • <code>{t.Date:dd.MM.yyyy}</code> | " +
+                            $"   • <code>{t.Id}</code> | " +
+                            $"<code>{t.Date:dd.MM.yyyy}</code> | " +
                             $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
                             $"<code>{sign}{t.Amount:0.00}</code>{note}");
                     }
@@ -63,11 +64,17 @@ internal static class TelegramResponseFormatter
                 case ActionResult.Transaction.Listed listed:
                     var totalListedAmount = listed.Transactions.Sum(t =>
                         t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
-                    var balanceSign = totalListedAmount >= 0 ? "+" : string.Empty;
+                    var balanceSign = totalListedAmount > 0 ? "+" : string.Empty;
 
-                    sb.AppendLine(
-                        $"📋 <b>Transactions in '{WebUtility.HtmlEncode(listed.CategoryName)}'</b> " +
-                        $"for <code>{listed.Date:dd.MM.yyyy}</code>");
+                    var datePart = listed.FromDate == listed.ToDate
+                        ? $"for <code>{listed.FromDate:dd.MM.yyyy}</code>"
+                        : $"from <code>{listed.FromDate:dd.MM.yyyy}</code> to <code>{listed.ToDate:dd.MM.yyyy}</code>";
+
+                    var header = listed.CategoryNames.Count > 0
+                        ? $"📋 <b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
+                        : $"📋 <b>Transactions</b> {datePart}";
+
+                    sb.AppendLine(header);
                     sb.AppendLine($"💰 Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
 
                     if (listed.Transactions.Count == 0)
@@ -81,9 +88,13 @@ internal static class TelegramResponseFormatter
                         var sign = t.Type == TransactionType.Expense ? "-" : "+";
                         var note = string.IsNullOrWhiteSpace(t.Note)
                             ? string.Empty
-                            : $" | {WebUtility.HtmlEncode(t.Note)}";
+                            : $" ({WebUtility.HtmlEncode(t.Note)})";
 
-                        sb.AppendLine($"   • <code>{sign}{t.Amount:0.00}</code>{note}");
+                        sb.AppendLine(
+                            $"   • <code>{t.Id}</code> | " +
+                            $"<code>{t.Date:dd.MM.yyyy}</code> | " +
+                            $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
+                            $"<code>{sign}{t.Amount:0.00}</code>{note}");
                     }
 
                     break;
@@ -153,7 +164,12 @@ internal static class TelegramResponseFormatter
             ? $"Category '{err.AttemptedValue}' was not found."
             : "Category was not found.",
         ValidationErrorCode.Transaction.DateRequired => "Date is required.",
-        ValidationErrorCode.Transaction.DateOutOfRange => "Date is out of the allowed range.",
+        ValidationErrorCode.Transaction.FromDateRequired => "Start date is required.",
+        ValidationErrorCode.Transaction.ToDateRequired => "End date is required.",
+        ValidationErrorCode.Transaction.DateOutOfRange => err.AttemptedValue is not null
+            ? $"Year '{err.AttemptedValue}' is out of the allowed range ({FinancialRules.MinAllowedYear}–{FinancialRules.MaxAllowedYear})."
+            : $"Date year is out of the allowed range ({FinancialRules.MinAllowedYear}–{FinancialRules.MaxAllowedYear}).",
+        ValidationErrorCode.Transaction.InvalidDateRange => "Start date must be on or before end date.",
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
         _ => err.ErrorCode

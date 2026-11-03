@@ -31,7 +31,7 @@ internal sealed class GeminiSystemPromptBuilder(
             RULES:
             1. If the user wants to record spending or income, call `add_transaction`. Match category aliases intelligently to available categories above. If a spending or income item does not match any available category, pass the user's exact phrase as `categoryAlias` (e.g. `categoryAlias: "someweirdcategory"`).
             2. If the user wants to delete or clear transactions for a category on a date, call `delete_transactions`.
-            3. If the user wants to get or view transactions for a category on a date, call `get_transactions`.
+            3. If the user wants to get or view transactions, call get_transactions. For a single date, set both fromDate and toDate to that date. For a period (e.g. "last week", "this month", "October"), calculate fromDate and toDate based on today's date. NEVER invent or guess dates if the user did not specify any date or time period — leave fromDate and toDate omitted/null.
             4. If the user asks for a list of categories, call `list_categories`.
             5. If input is completely unrelated or ambiguous, respond concisely in text explaining what is wrong.
             6. Issue multiple parallel `add_transaction` tool calls ONLY when the user lists multiple distinct expenses or incomes, where EACH item has its own separate, explicit amount(s) (e.g. "coffee 5 and taxi 15", "groceries 50, books 20"). NEVER duplicate, copy, or reuse the same set of amounts across multiple categories. If there is only one set of amounts in the input, it is strictly a SINGLE transaction.
