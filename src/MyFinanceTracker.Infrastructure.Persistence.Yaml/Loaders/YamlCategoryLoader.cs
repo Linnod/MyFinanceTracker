@@ -51,11 +51,11 @@ internal sealed partial class YamlCategoryLoader(
         }
     }
 
-    private static IReadOnlyList<Category> ValidateAndMap(YamlCategoryRoot? data)
+    private IReadOnlyList<Category> ValidateAndMap(YamlCategoryRoot? data)
     {
         if (data?.Categories == null || data.Categories.Count == 0)
         {
-            return [];
+            throw CategoryLoaderException.NoCategoriesFound(resolvedPath);
         }
 
         var invalidCategory = data.Categories

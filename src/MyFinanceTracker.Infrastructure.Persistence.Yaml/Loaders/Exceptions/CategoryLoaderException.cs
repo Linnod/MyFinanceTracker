@@ -10,6 +10,11 @@ internal class CategoryLoaderException : Exception
         return new CategoryLoaderException($"Category file not found at: {path}");
     }
 
+    public static CategoryLoaderException NoCategoriesFound(string path)
+    {
+        return new CategoryLoaderException($"Category file at '{path}' is empty or contains no categories.");
+    }
+
     public static CategoryLoaderException DuplicateId(string id)
     {
         return new CategoryLoaderException($"Duplicate Category ID found in YAML configuration: {id}");

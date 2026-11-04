@@ -59,11 +59,6 @@ internal sealed class GeminiSystemPromptBuilder(
 
     private static string FormatCategories(IReadOnlyCollection<Category> categories)
     {
-        if (categories.Count == 0)
-        {
-            return "  - No categories found.";
-        }
-
         var lines = categories.Select(c =>
             $"  - Name: '{c.Name}', Id: '{c.Id}', Aliases: [{string.Join(", ", c.Aliases)}]");
 

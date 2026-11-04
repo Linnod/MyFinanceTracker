@@ -1,9 +1,13 @@
 # Copy this file to categories.yaml and adjust it to your needs.
 
 categories:
-  - id: "income"
-    name: "Income"
-    aliases: ["income", "salary", "paycheck"]
+  - id: "salary"
+    name: "Salary"
+    aliases: ["salary", "paycheck", "wage"]
+
+  - id: "interest"
+    name: "Interest"
+    aliases: ["interest", "dividends", "deposit"]
 
   - id: "food"
     name: "Food"

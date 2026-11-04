@@ -39,6 +39,25 @@ public class YamlCategoryLoaderTests : IDisposable
             .WithMessage("*Category file not found*");
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("categories: []")]
+    [InlineData("categories:")]
+    void Load_ShouldThrowNoCategoriesFound_WhenFileIsEmptyOrHasNoCategories(string yaml)
+    {
+        // arrange
+        WriteYaml(yaml);
+        var sut = CreateSut();
+
+        // act
+        var act = () => sut.Load();
+
+        // assert
+        act.Should().Throw<CategoryLoaderException>()
+            .WithMessage("*is empty or contains no categories*");
+    }
+
     [Fact]
     void Load_ShouldThrowDuplicateId_WhenIdsAreNotUnique()
     {
