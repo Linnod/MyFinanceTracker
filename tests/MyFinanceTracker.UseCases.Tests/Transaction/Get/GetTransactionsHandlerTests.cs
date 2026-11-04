@@ -39,8 +39,8 @@ public class GetTransactionsHandlerTests
         };
 
         categoryRepository
-            .GetAll(Arg.Any<CancellationToken>())
-            .Returns([category]);
+            .Resolve("food", Arg.Any<CancellationToken>())
+            .Returns(category);
 
         transactionRepository
             .Get(
@@ -74,7 +74,7 @@ public class GetTransactionsHandlerTests
         success.Type.Should().Be(TransactionType.Expense);
         success.Transactions.Should().BeEquivalentTo(transactions);
 
-        await categoryRepository.Received(1).GetAll(Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -87,8 +87,16 @@ public class GetTransactionsHandlerTests
         var toDate = new DateOnly(2026, 1, 27);
 
         categoryRepository
-            .GetAll(Arg.Any<CancellationToken>())
-            .Returns([food, ent]);
+            .Resolve("food", Arg.Any<CancellationToken>())
+            .Returns(food);
+
+        categoryRepository
+            .Resolve("groceries", Arg.Any<CancellationToken>())
+            .Returns(food);
+
+        categoryRepository
+            .Resolve("ent", Arg.Any<CancellationToken>())
+            .Returns(ent);
 
         var transactions = new[]
         {
@@ -121,6 +129,10 @@ public class GetTransactionsHandlerTests
 
         success.CategoryNames.Should().BeEquivalentTo(["Food", "Entertainment"]);
         success.Transactions.Should().BeEquivalentTo(transactions);
+
+        await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).Resolve("groceries", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).Resolve("ent", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -170,6 +182,7 @@ public class GetTransactionsHandlerTests
         success.Type.Should().BeNull();
         success.Transactions.Should().BeEquivalentTo(transactions);
 
+        await categoryRepository.DidNotReceive().Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await categoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
     }
 
@@ -178,11 +191,8 @@ public class GetTransactionsHandlerTests
     {
         // arrange
         categoryRepository
-            .GetAll(Arg.Any<CancellationToken>())
-            .Returns(
-            [
-                new Domain.Entities.Category("A", "Food", ["food"])
-            ]);
+            .Resolve("fod", Arg.Any<CancellationToken>())
+            .Returns((Domain.Entities.Category?)null);
 
         // act
         var result = await sut.Handle(
@@ -202,7 +212,7 @@ public class GetTransactionsHandlerTests
         error.Errors.Single().ErrorCode
             .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
 
-        await categoryRepository.Received(1).GetAll(Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).Resolve("fod", Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .Get(Arg.Any<TransactionFilter>(), Arg.Any<CancellationToken>());

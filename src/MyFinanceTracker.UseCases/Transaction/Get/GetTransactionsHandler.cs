@@ -1,6 +1,5 @@
 using MediatR;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.UseCases.Common;
 
 namespace MyFinanceTracker.UseCases.Transaction.Get;
 
@@ -17,15 +16,12 @@ internal sealed class GetTransactionsHandler(
 
         if (request.CategoryAliases is { Count: > 0 })
         {
-            var categories = await categoryRepository.GetAll(ct);
-            var lookup = new CategoryLookup(categories);
-
             var errors = new List<ValidationErrorItem>();
             var foundCategories = new List<Domain.Entities.Category>();
 
             foreach (var alias in request.CategoryAliases)
             {
-                var category = lookup.Resolve(alias);
+                var category = await categoryRepository.Resolve(alias, ct);
                 if (category is null)
                 {
                     errors.Add(new ValidationErrorItem(

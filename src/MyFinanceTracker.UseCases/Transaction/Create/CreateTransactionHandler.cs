@@ -1,6 +1,5 @@
 using MediatR;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.UseCases.Common;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
@@ -11,13 +10,10 @@ internal sealed class CreateTransactionsHandler(
 {
     public async Task<CreateTransactionsResponse> Handle(CreateTransactionsRequest request, CancellationToken ct)
     {
-        var allCategories = await categoryRepository.GetAll(ct);
-        var lookup = new CategoryLookup(allCategories);
-
         var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
         foreach (var item in request.Items)
         {
-            var (category, error) = ResolveCategory(item, lookup);
+            var (category, error) = await ResolveCategory(item, ct);
             if (error != null)
             {
                 return error;
@@ -38,9 +34,9 @@ internal sealed class CreateTransactionsHandler(
         return new CreateTransactionsResponse.Success(transactions);
     }
 
-    private static (Domain.Entities.Category? Category, CreateTransactionsResponse? Error) ResolveCategory(
+    private async Task<(Domain.Entities.Category? Category, CreateTransactionsResponse? Error)> ResolveCategory(
         CreateTransactionItem item,
-        CategoryLookup lookup)
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(item.CategoryAlias))
         {
@@ -49,7 +45,7 @@ internal sealed class CreateTransactionsHandler(
             ]));
         }
 
-        var category = lookup.Resolve(item.CategoryAlias);
+        var category = await categoryRepository.Resolve(item.CategoryAlias, ct);
         if (category is null)
         {
             return (null, new CreateTransactionsResponse.ValidationError([

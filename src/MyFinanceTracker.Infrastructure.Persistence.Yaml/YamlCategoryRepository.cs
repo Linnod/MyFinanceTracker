@@ -10,4 +10,14 @@ internal sealed class YamlCategoryRepository(ICategoryLoader loader) : ICategory
 
     public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct)
         => Task.FromResult(categories);
+
+    public Task<Category?> Resolve(string query, CancellationToken ct)
+    {
+        var category = categories.FirstOrDefault(c =>
+            c.Id.Equals(query, StringComparison.OrdinalIgnoreCase) ||
+            c.Name.Equals(query, StringComparison.OrdinalIgnoreCase) ||
+            c.Aliases.Any(a => a.Equals(query, StringComparison.OrdinalIgnoreCase)));
+
+        return Task.FromResult(category);
+    }
 }
