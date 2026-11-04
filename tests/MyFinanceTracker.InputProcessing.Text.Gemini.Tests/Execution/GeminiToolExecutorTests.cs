@@ -200,7 +200,6 @@ public class GeminiToolExecutorTests
                 new DateOnly(2026, 8, 1),
                 new DateOnly(2026, 8, 10),
                 ["Food", "Entertainment"],
-                TransactionType.Expense,
                 transactions));
 
         // Act
@@ -212,7 +211,6 @@ public class GeminiToolExecutorTests
         listed.FromDate.Should().Be(new DateOnly(2026, 8, 1));
         listed.ToDate.Should().Be(new DateOnly(2026, 8, 10));
         listed.CategoryNames.Should().Equal("Food", "Entertainment");
-        listed.Type.Should().Be(TransactionType.Expense);
         listed.Transactions.Should().BeEquivalentTo(transactions);
         listed.RawInput.Should().Be("View expenses in food and entertainment");
 

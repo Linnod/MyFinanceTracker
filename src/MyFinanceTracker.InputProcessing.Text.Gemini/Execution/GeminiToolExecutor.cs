@@ -166,7 +166,6 @@ internal sealed partial class GeminiToolExecutor(
                     s.FromDate,
                     s.ToDate,
                     s.CategoryNames,
-                    s.Type,
                     s.Transactions)
                 {
                     RawInput = rawInput

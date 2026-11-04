@@ -16,7 +16,6 @@ public abstract record ActionResult
             DateOnly FromDate,
             DateOnly ToDate,
             IReadOnlyList<string> CategoryNames,
-            Domain.Entities.TransactionType? Type,
             IReadOnlyList<Domain.Entities.Transaction> Transactions) : ActionResult;
     }
 

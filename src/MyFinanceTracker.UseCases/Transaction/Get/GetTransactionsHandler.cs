@@ -58,7 +58,6 @@ internal sealed class GetTransactionsHandler(
             request.FromDate,
             request.ToDate,
             categoryNames,
-            request.Type,
             transactions);
     }
 }

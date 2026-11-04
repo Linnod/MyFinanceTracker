@@ -8,7 +8,6 @@ public abstract record GetTransactionsResponse
         DateOnly FromDate,
         DateOnly ToDate,
         IReadOnlyList<string> CategoryNames,
-        Domain.Entities.TransactionType? Type,
         IReadOnlyList<Domain.Entities.Transaction> Transactions
     ) : GetTransactionsResponse
     {

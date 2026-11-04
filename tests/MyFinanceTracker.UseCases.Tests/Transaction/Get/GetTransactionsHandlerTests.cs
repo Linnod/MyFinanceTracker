@@ -71,7 +71,6 @@ public class GetTransactionsHandlerTests
         success.FromDate.Should().Be(fromDate);
         success.ToDate.Should().Be(toDate);
         success.CategoryNames.Should().Equal("Food");
-        success.Type.Should().Be(TransactionType.Expense);
         success.Transactions.Should().BeEquivalentTo(transactions);
 
         await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
@@ -179,7 +178,6 @@ public class GetTransactionsHandlerTests
         success.FromDate.Should().Be(fromDate);
         success.ToDate.Should().Be(toDate);
         success.CategoryNames.Should().BeEmpty();
-        success.Type.Should().BeNull();
         success.Transactions.Should().BeEquivalentTo(transactions);
 
         await categoryRepository.DidNotReceive().Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>());
