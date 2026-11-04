@@ -98,7 +98,7 @@ internal sealed partial class YamlCategoryLoader(
         }
 
         return [.. data.Categories
-            .Select(c => new Category(c.Id, c.Name, c.Aliases, c.IsIncome))];
+            .Select(c => new Category(c.Id, c.Name, c.Aliases))];
     }
 
     private sealed class YamlCategoryRoot
@@ -110,7 +110,6 @@ internal sealed partial class YamlCategoryLoader(
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public bool IsIncome { get; set; }
         public List<string> Aliases { get; set; } = [];
     }
 }

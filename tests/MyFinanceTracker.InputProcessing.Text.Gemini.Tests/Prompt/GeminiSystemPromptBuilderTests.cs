@@ -1,7 +1,7 @@
 using FluentAssertions;
 using MediatR;
-using MyFinanceTracker.InputProcessing.Text.Gemini.Prompt;
 using MyFinanceTracker.Domain.Entities;
+using MyFinanceTracker.InputProcessing.Text.Gemini.Prompt;
 using MyFinanceTracker.UseCases.Category.List;
 using NSubstitute;
 using Xunit;
@@ -24,8 +24,8 @@ public class GeminiSystemPromptBuilderTests
         // Arrange
         var categories = new List<Category>
         {
-            new("cat_1", "Groceries",["food", "supermarket"], false),
-            new("cat_2", "Salary", ["paycheck"], true)
+            new("cat_1", "Groceries", ["food", "supermarket"]),
+            new("cat_2", "Salary", ["paycheck"])
         };
 
         mediator.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
@@ -37,8 +37,6 @@ public class GeminiSystemPromptBuilderTests
         // Assert
         result.Should().Contain("Groceries");
         result.Should().Contain("Salary");
-        result.Should().Contain("[INCOME]");
-        result.Should().Contain("[EXPENSE]");
         result.Should().Contain("food, supermarket");
     }
 

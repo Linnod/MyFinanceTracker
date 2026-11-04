@@ -43,7 +43,7 @@ public class GeminiToolExecutorTests
             }
         };
 
-        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"], isIncome: false);
+        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"]);
         var createdTransactions = new List<Transaction>
         {
             new(
@@ -97,7 +97,7 @@ public class GeminiToolExecutorTests
             }
         };
 
-        var category = new Category(Guid.NewGuid().ToString(), "Food", ["food"], isIncome: false);
+        var category = new Category(Guid.NewGuid().ToString(), "Food", ["food"]);
         var createdTransactions = new List<Transaction>
         {
             new(
@@ -182,7 +182,7 @@ public class GeminiToolExecutorTests
             }
         };
 
-        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"], isIncome: false);
+        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"]);
         var transactions = new List<Transaction>
         {
             new(

@@ -7,13 +7,11 @@ public record Category
     public string Id { get; }
     public string Name { get; }
     public IReadOnlyCollection<string> Aliases { get; }
-    public bool IsIncome { get; }
 
     public Category(
         string id,
         string name,
-        IReadOnlyCollection<string> aliases,
-        bool isIncome = false)
+        IReadOnlyCollection<string> aliases)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -33,7 +31,6 @@ public record Category
         Id = id;
         Name = name;
         Aliases = aliases;
-        IsIncome = isIncome;
     }
 
     public override string ToString() => Name;

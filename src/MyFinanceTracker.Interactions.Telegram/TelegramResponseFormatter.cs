@@ -101,13 +101,12 @@ internal static class TelegramResponseFormatter
                     sb.AppendLine($"📋 <b>Available Categories ({listed.Categories.Count}):</b>");
                     foreach (var c in listed.Categories)
                     {
-                        var icon = c.IsIncome ? "💰" : "💸";
                         var aliases = c.Aliases.Count > 0
                             ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
                             : string.Empty;
 
                         sb.AppendLine(
-                            $"   {icon} <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
+                            $"   • <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
                     }
                     break;
 

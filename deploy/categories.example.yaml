@@ -3,20 +3,16 @@
 categories:
   - id: "income"
     name: "Income"
-    isIncome: true
     aliases: ["income", "salary", "paycheck"]
 
   - id: "food"
     name: "Food"
-    isIncome: false
     aliases: ["food", "grocery", "supermarket"]
 
   - id: "transport"
     name: "Transport"
-    isIncome: false
     aliases: ["transport", "bus", "taxi"]
 
   - id: "other"
     name: "Other"
-    isIncome: false
     aliases: ["other", "misc"]

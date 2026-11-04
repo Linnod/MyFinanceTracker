@@ -37,7 +37,7 @@ public class TransactionTests
         // arrange
         var id = Guid.NewGuid();
         var type = TransactionType.Income;
-        var category = new Category("salary", "Salary", ["salary"], isIncome: true);
+        var category = new Category("salary", "Salary", ["salary"]);
         var amount = 1500.00m;
         var date = new DateOnly(2026, 5, 10);
         var note = "Monthly salary";

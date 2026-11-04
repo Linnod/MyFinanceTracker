@@ -12,31 +12,14 @@ public class CategoryTests
         var id = "salary";
         var name = "Salary";
         var aliases = new[] { "salary", "income", "main" };
-        var isIncome = true;
-
-        // act
-        var category = new Category(id, name, aliases, isIncome);
-
-        // assert
-        Assert.Equal(id, category.Id);
-        Assert.Equal(name, category.Name);
-        Assert.Equal(aliases, category.Aliases);
-        Assert.True(category.IsIncome);
-    }
-
-    [Fact]
-    void Constructor_WithoutIsIncome_DefaultsToFalse()
-    {
-        // arrange
-        var id = "food";
-        var name = "Food";
-        var aliases = new[] { "food" };
 
         // act
         var category = new Category(id, name, aliases);
 
         // assert
-        Assert.False(category.IsIncome);
+        Assert.Equal(id, category.Id);
+        Assert.Equal(name, category.Name);
+        Assert.Equal(aliases, category.Aliases);
     }
 
     [Theory]

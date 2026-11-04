@@ -17,7 +17,7 @@ public class GoogleSheetMapperTests
     };
 
     private readonly Category foodCategory = new("food_id", "Food", ["food"]);
-    private readonly Category salaryCategory = new("salary_id", "Salary", ["salary"], isIncome: true);
+    private readonly Category salaryCategory = new("salary_id", "Salary", ["salary"]);
 
     [Fact]
     public void MapToRow_ShouldFormatExpenseCorrectly()

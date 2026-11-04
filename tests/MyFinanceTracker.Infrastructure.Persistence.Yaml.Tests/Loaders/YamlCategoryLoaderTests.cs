@@ -47,7 +47,6 @@ public class YamlCategoryLoaderTests : IDisposable
             categories:
               - id: income
                 name: Income
-                isIncome: true
                 aliases: [income]
               - id: A
                 name: First
@@ -74,7 +73,6 @@ public class YamlCategoryLoaderTests : IDisposable
             categories:
               - id: income
                 name: Income
-                isIncome: true
                 aliases: [income]
               - id: food_1
                 name: Products
@@ -101,7 +99,6 @@ public class YamlCategoryLoaderTests : IDisposable
             categories:
               - id: A
                 name: Income
-                isIncome: true
                 aliases: [income]
               - id: B
                 name: Food
@@ -128,11 +125,9 @@ public class YamlCategoryLoaderTests : IDisposable
             categories:
               - id: INCOME
                 name: Salary
-                isIncome: true
                 aliases: [income]
               - id: FOOD
                 name: Products
-                isIncome: false
                 aliases: [eat, meal]
             """);
         var sut = CreateSut();
@@ -145,7 +140,6 @@ public class YamlCategoryLoaderTests : IDisposable
 
         result.Should().ContainSingle(c =>
             c.Id == "INCOME" &&
-            c.IsIncome &&
             c.Aliases.Contains("income"));
 
         result.Should().ContainSingle(c =>

@@ -14,8 +14,7 @@ public class YamlCategoryRepositoryTests
     private readonly Category salary = new(
         "salary",
         "Зарплата",
-        ["зарплата", "доход"],
-        isIncome: true);
+        ["зарплата", "доход"]);
 
     private readonly YamlCategoryRepository sut;
 

@@ -69,8 +69,7 @@ internal static class ConsoleCommands
                     System.Console.WriteLine($"📋 Listed {listed.Categories.Count} categories:");
                     foreach (var c in listed.Categories)
                     {
-                        var icon = c.IsIncome ? "💰" : "💸";
-                        System.Console.WriteLine($"  {icon} {c.Name} (Aliases: {string.Join(", ", c.Aliases)})");
+                        System.Console.WriteLine($"  • {c.Name} (Aliases: {string.Join(", ", c.Aliases)})");
                     }
                     break;
 

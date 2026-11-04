@@ -65,7 +65,7 @@ internal sealed class GeminiSystemPromptBuilder(
         }
 
         var lines = categories.Select(c =>
-            $"  - {(c.IsIncome ? "[INCOME]" : "[EXPENSE]")} Name: '{c.Name}', Id: '{c.Id}', Aliases: [{string.Join(", ", c.Aliases)}]");
+            $"  - Name: '{c.Name}', Id: '{c.Id}', Aliases: [{string.Join(", ", c.Aliases)}]");
 
         return string.Join("\n", lines);
     }
