@@ -14,6 +14,7 @@ namespace MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
 
 internal sealed partial class GeminiToolExecutor(
     IMediator mediator,
+    TimeProvider timeProvider,
     ILogger<GeminiToolExecutor> logger) : IGeminiToolExecutor
 {
     private const string DefaultRawInputForAddingTransaction = "Adding transaction";
@@ -49,12 +50,14 @@ internal sealed partial class GeminiToolExecutor(
         }
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForAddingTransaction);
+        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
+        var date = typedArgs.Date ?? today;
 
         var items = typedArgs.Amounts.Select(amount => new CreateTransactionItem(
             TransactionType: typedArgs.Type,
             Amount: amount,
-            CategoryAlias: typedArgs.CategoryAlias,
-            Date: typedArgs.Date,
+            CategoryAlias: typedArgs.CategoryAlias ?? string.Empty,
+            Date: date,
             Note: typedArgs.Note
         )).ToList();
 

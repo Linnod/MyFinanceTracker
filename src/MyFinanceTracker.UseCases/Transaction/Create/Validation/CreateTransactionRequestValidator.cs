@@ -17,12 +17,13 @@ internal sealed class CreateTransactionsRequestValidator : AbstractValidator<Cre
                 .GreaterThan(0)
                 .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive);
 
-            item.When(i => i.Date.HasValue, () =>
-            {
-                item.RuleFor(i => i.Date!.Value.Year)
-                    .InclusiveBetween(FinancialRules.MinAllowedYear, FinancialRules.MaxAllowedYear)
-                    .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
-            });
+            item.RuleFor(i => i.CategoryAlias)
+                .NotEmpty()
+                .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
+
+            item.RuleFor(i => i.Date.Year)
+                .InclusiveBetween(FinancialRules.MinAllowedYear, FinancialRules.MaxAllowedYear)
+                .WithErrorCode(ValidationErrorCode.Transaction.DateOutOfRange);
         });
     }
 }

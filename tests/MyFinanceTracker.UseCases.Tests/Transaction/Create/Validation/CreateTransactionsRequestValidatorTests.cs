@@ -75,6 +75,31 @@ public class CreateTransactionsRequestValidatorTests
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData(null)]
+    void Validate_CategoryAliasIsEmpty_ReturnsCategoryRequiredError(string? categoryAlias)
+    {
+        // arrange
+        var request = new CreateTransactionsRequest(
+        [
+            new CreateTransactionItem(
+                TransactionType.Expense,
+                100m,
+                categoryAlias!,
+                new DateOnly(2026, 1, 27),
+                "Lunch")
+        ]);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldHaveValidationErrorFor("Items[0].CategoryAlias")
+            .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
+    }
+
+    [Theory]
     [InlineData(-1)]
     [InlineData(1)]
     void Validate_DateOutOfRange_ReturnsError(int offset)
@@ -99,7 +124,7 @@ public class CreateTransactionsRequestValidatorTests
 
         // assert
         result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Items[0].Date.Value.Year" &&
+            e.PropertyName == "Items[0].Date.Year" &&
             e.ErrorCode == ValidationErrorCode.Transaction.DateOutOfRange);
     }
 }

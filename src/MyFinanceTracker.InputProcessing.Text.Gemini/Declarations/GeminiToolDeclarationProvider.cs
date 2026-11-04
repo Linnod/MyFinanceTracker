@@ -57,7 +57,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Description = "ALWAYS REQUIRED. Short human-readable summary of this specific action in user's language (e.g. 'Expense 100 EUR in Food')."
                             }
                         },
-                        Required = ["type", "amounts", "recognizedInput"]
+                        Required = ["type", "amounts", "categoryAlias", "date", "recognizedInput"]
                     }
                 },
                 new FunctionDeclaration

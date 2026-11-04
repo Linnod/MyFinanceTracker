@@ -34,9 +34,4 @@ internal class CategoryLoaderException : Exception
     {
         return new CategoryLoaderException($"Failed to deserialize YAML category file at: {path}", inner);
     }
-
-    public static CategoryLoaderException DefaultIncomeCategoryMissing(string alias)
-    {
-        return new CategoryLoaderException($"Required default income category with alias '{alias}' is missing in the YAML configuration.");
-    }
 }

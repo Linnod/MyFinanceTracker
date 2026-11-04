@@ -8,8 +8,7 @@ namespace MyFinanceTracker.UseCases.Transaction.Create;
 
 internal sealed class CreateTransactionsHandler(
     ICategoryRepository categoryRepository,
-    ITransactionRepository transactionRepository,
-    TimeProvider timeProvider)
+    ITransactionRepository transactionRepository)
     : IRequestHandler<CreateTransactionsRequest, CreateTransactionsResponse>
 {
     public async Task<CreateTransactionsResponse> Handle(CreateTransactionsRequest request, CancellationToken ct)
@@ -18,7 +17,6 @@ internal sealed class CreateTransactionsHandler(
         var lookup = new CategoryLookup(allCategories);
 
         var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
-        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
         foreach (var item in request.Items)
         {
             var (category, error) = ResolveCategory(item, lookup);
@@ -32,7 +30,7 @@ internal sealed class CreateTransactionsHandler(
                 type: item.TransactionType,
                 category: category!,
                 amount: item.Amount,
-                date: item.Date ?? today,
+                date: item.Date,
                 note: item.Note
             ));
         }
@@ -46,22 +44,18 @@ internal sealed class CreateTransactionsHandler(
         CreateTransactionItem item,
         CategoryLookup lookup)
     {
-        var alias = string.IsNullOrWhiteSpace(item.CategoryAlias) && item.TransactionType == TransactionType.Income
-            ? FinancialRules.DefaultIncomeCategoryAlias
-            : item.CategoryAlias;
-
-        if (string.IsNullOrWhiteSpace(alias))
+        if (string.IsNullOrWhiteSpace(item.CategoryAlias))
         {
             return (null, new CreateTransactionsResponse.ValidationError([
                 new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryRequired)
             ]));
         }
 
-        return lookup.Resolve(alias) switch
+        return lookup.Resolve(item.CategoryAlias) switch
         {
             CategoryResolution.Found found => (found.Category, null),
             CategoryResolution.NotFound notFound => (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, alias)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, item.CategoryAlias)
             ])),
             _ => throw new UnreachableException()
         };

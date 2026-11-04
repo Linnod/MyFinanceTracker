@@ -51,21 +51,23 @@ internal sealed partial class YamlCategoryLoader(
         }
     }
 
-    private static List<Category> ValidateAndMap(YamlCategoryRoot? data)
+    private static IReadOnlyList<Category> ValidateAndMap(YamlCategoryRoot? data)
     {
         if (data?.Categories == null || data.Categories.Count == 0)
         {
             return [];
         }
 
-        var invalidCategory = data.Categories.FirstOrDefault(c => c.Aliases == null || c.Aliases.Count == 0);
+        var invalidCategory = data.Categories
+            .FirstOrDefault(c => c.Aliases == null || c.Aliases.Count == 0);
+
         if (invalidCategory != null)
         {
             throw CategoryLoaderException.MissingAliases(invalidCategory.Id);
         }
 
         var duplicateId = data.Categories
-            .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
 
         if (duplicateId != null)
@@ -74,7 +76,7 @@ internal sealed partial class YamlCategoryLoader(
         }
 
         var duplicateName = data.Categories
-            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
 
         if (duplicateName != null)
@@ -93,14 +95,6 @@ internal sealed partial class YamlCategoryLoader(
         if (duplicateAlias != null)
         {
             throw CategoryLoaderException.DuplicateAlias(duplicateAlias.Key);
-        }
-
-        var hasDefaultIncome = data.Categories.Any(c =>
-            c.Aliases.Contains(FinancialRules.DefaultIncomeCategoryAlias, StringComparer.OrdinalIgnoreCase));
-
-        if (!hasDefaultIncome)
-        {
-            throw CategoryLoaderException.DefaultIncomeCategoryMissing(FinancialRules.DefaultIncomeCategoryAlias);
         }
 
         return [.. data.Categories

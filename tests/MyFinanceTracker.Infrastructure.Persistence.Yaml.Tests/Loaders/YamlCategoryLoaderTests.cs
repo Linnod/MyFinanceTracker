@@ -40,36 +40,15 @@ public class YamlCategoryLoaderTests : IDisposable
     }
 
     [Fact]
-    void Load_ShouldThrowDefaultIncomeCategoryMissing_WhenIncomeIsMissing()
+    void Load_ShouldThrowDuplicateId_WhenIdsAreNotUnique()
     {
         // arrange:
         WriteYaml("""
             categories:
-              - id: FOOD
-                name: Products
-                isIncome: false
-                aliases: [eat, meal]
-            """);
-        var sut = CreateSut();
-
-        // act
-        var act = () => sut.Load();
-
-        // assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage($"*Required default income category with alias '{FinancialRules.DefaultIncomeCategoryAlias}' is missing*");
-    }
-
-    [Fact]
-    void Load_ShouldThrowDuplicateId_WhenIdsAreNotUnique()
-    {
-        // arrange:
-        WriteYaml($"""
-            categories:
-              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+              - id: income
                 name: Income
                 isIncome: true
-                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
+                aliases: [income]
               - id: A
                 name: First
                 aliases: [first]
@@ -91,12 +70,12 @@ public class YamlCategoryLoaderTests : IDisposable
     void Load_ShouldThrowDuplicateName_WhenNamesAreNotUnique()
     {
         // arrange:
-        WriteYaml($"""
+        WriteYaml("""
             categories:
-              - id: {FinancialRules.DefaultIncomeCategoryAlias}
+              - id: income
                 name: Income
                 isIncome: true
-                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
+                aliases: [income]
               - id: food_1
                 name: Products
                 aliases: [first]
@@ -118,12 +97,12 @@ public class YamlCategoryLoaderTests : IDisposable
     void Load_ShouldThrowDuplicateAlias_WhenAliasesAreNotUnique()
     {
         // arrange:
-        WriteYaml($"""
+        WriteYaml("""
             categories:
               - id: A
                 name: Income
                 isIncome: true
-                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
+                aliases: [income]
               - id: B
                 name: Food
                 aliases: [test]
@@ -145,12 +124,12 @@ public class YamlCategoryLoaderTests : IDisposable
     void Load_ShouldReturnCategories_WhenYamlIsValid()
     {
         // arrange
-        WriteYaml($"""
+        WriteYaml("""
             categories:
               - id: INCOME
                 name: Salary
                 isIncome: true
-                aliases: [{FinancialRules.DefaultIncomeCategoryAlias}]
+                aliases: [income]
               - id: FOOD
                 name: Products
                 isIncome: false
@@ -167,7 +146,7 @@ public class YamlCategoryLoaderTests : IDisposable
         result.Should().ContainSingle(c =>
             c.Id == "INCOME" &&
             c.IsIncome &&
-            c.Aliases.Contains(FinancialRules.DefaultIncomeCategoryAlias));
+            c.Aliases.Contains("income"));
 
         result.Should().ContainSingle(c =>
             c.Id == "FOOD" &&
