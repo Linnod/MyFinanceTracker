@@ -31,8 +31,7 @@ public class CategoryLookupTests
         var result = sut.Resolve("groceries");
 
         // assert
-        var found = result.Should().BeOfType<CategoryResolution.Found>().Subject;
-        found.Category.Should().Be(groceriesCategory);
+        result.Should().Be(groceriesCategory);
     }
 
     [Fact]
@@ -42,8 +41,7 @@ public class CategoryLookupTests
         var result = sut.Resolve("Продукты");
 
         // assert
-        var found = result.Should().BeOfType<CategoryResolution.Found>().Subject;
-        found.Category.Should().Be(groceriesCategory);
+        result.Should().Be(groceriesCategory);
     }
 
     [Fact]
@@ -53,8 +51,7 @@ public class CategoryLookupTests
         var result = sut.Resolve("еда");
 
         // assert
-        var found = result.Should().BeOfType<CategoryResolution.Found>().Subject;
-        found.Category.Should().Be(groceriesCategory);
+        result.Should().Be(groceriesCategory);
     }
 
     [Theory]
@@ -70,29 +67,18 @@ public class CategoryLookupTests
         var result = sut.Resolve(query);
 
         // assert
-        var found = result.Should().BeOfType<CategoryResolution.Found>().Subject;
-        found.Category.Should().Be(groceriesCategory);
+        result.Should().Be(groceriesCategory);
     }
 
-    [Fact]
-    public void Resolve_NotFound_WithCloseTypo_ReturnsNotFoundWithSuggestion()
+    [Theory]
+    [InlineData("groceris")]
+    [InlineData("completely_unrelated_text_12345")]
+    public void Resolve_NotFound_ReturnsNull(string query)
     {
         // act
-        var result = sut.Resolve("groceris");
+        var result = sut.Resolve(query);
 
         // assert
-        var notFound = result.Should().BeOfType<CategoryResolution.NotFound>().Subject;
-        notFound.Suggestion.Should().Be("groceries");
-    }
-
-    [Fact]
-    public void Resolve_NotFound_WithoutCloseMatch_ReturnsNotFoundWithNullSuggestion()
-    {
-        // act
-        var result = sut.Resolve("completely_unrelated_text_12345");
-
-        // assert
-        var notFound = result.Should().BeOfType<CategoryResolution.NotFound>().Subject;
-        notFound.Suggestion.Should().BeNull();
+        result.Should().BeNull();
     }
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MediatR;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.UseCases.Common;
@@ -26,19 +25,16 @@ internal sealed class GetTransactionsHandler(
 
             foreach (var alias in request.CategoryAliases)
             {
-                switch (lookup.Resolve(alias))
+                var category = lookup.Resolve(alias);
+                if (category is null)
                 {
-                    case CategoryResolution.NotFound notFound:
-                        errors.Add(new ValidationErrorItem(
-                            ValidationErrorCode.Transaction.CategoryNotFound,
-                            notFound.Suggestion,
-                            alias));
-                        break;
-                    case CategoryResolution.Found found:
-                        foundCategories.Add(found.Category);
-                        break;
-                    default:
-                        throw new UnreachableException();
+                    errors.Add(new ValidationErrorItem(
+                        ValidationErrorCode.Transaction.CategoryNotFound,
+                        alias));
+                }
+                else
+                {
+                    foundCategories.Add(category);
                 }
             }
 

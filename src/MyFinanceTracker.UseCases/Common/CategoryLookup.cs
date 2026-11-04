@@ -1,4 +1,3 @@
-using MyFinanceTracker.Common.Utilities;
 using DomainCategory = MyFinanceTracker.Domain.Entities.Category;
 
 namespace MyFinanceTracker.UseCases.Common;
@@ -21,14 +20,8 @@ internal sealed class CategoryLookup
         }
     }
 
-    public CategoryResolution Resolve(string alias)
+    public DomainCategory? Resolve(string alias)
     {
-        if (map.TryGetValue(alias, out var category))
-        {
-            return new CategoryResolution.Found(category);
-        }
-
-        var suggestion = FuzzyMatcher.GetClosest(alias, map.Keys);
-        return new CategoryResolution.NotFound(suggestion);
+        return map.TryGetValue(alias, out var category) ? category : null;
     }
 }

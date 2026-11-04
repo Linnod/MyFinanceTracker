@@ -2,7 +2,6 @@ namespace MyFinanceTracker.UseCases;
 
 public sealed record ValidationErrorItem(
     string ErrorCode,
-    string? Suggestion = null,
     string? AttemptedValue = null);
 
 public static class ValidationErrorCode

@@ -119,13 +119,6 @@ internal static class TelegramResponseFormatter
                     foreach (var err in input.Errors)
                     {
                         sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err))}");
-
-                        if (err.Suggestion is not null)
-                        {
-                            sb.AppendLine(
-                                $"   💡 Suggestion: " +
-                                $"<code>{WebUtility.HtmlEncode(err.Suggestion)}</code>");
-                        }
                     }
                     break;
 

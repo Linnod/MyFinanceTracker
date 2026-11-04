@@ -80,10 +80,6 @@ internal static class ConsoleCommands
                     foreach (var err in input.Errors)
                     {
                         System.Console.WriteLine($"  • {FormatValidationError(err)}");
-                        if (err.Suggestion is not null)
-                        {
-                            System.Console.WriteLine($"    💡 Suggestion: {err.Suggestion}");
-                        }
                     }
                     System.Console.ResetColor();
                     break;

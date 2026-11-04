@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using MediatR;
-using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.UseCases.Common;
 
@@ -51,13 +49,14 @@ internal sealed class CreateTransactionsHandler(
             ]));
         }
 
-        return lookup.Resolve(item.CategoryAlias) switch
+        var category = lookup.Resolve(item.CategoryAlias);
+        if (category is null)
         {
-            CategoryResolution.Found found => (found.Category, null),
-            CategoryResolution.NotFound notFound => (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, notFound.Suggestion, item.CategoryAlias)
-            ])),
-            _ => throw new UnreachableException()
-        };
+            return (null, new CreateTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, item.CategoryAlias)
+            ]));
+        }
+
+        return (category, null);
     }
 }
