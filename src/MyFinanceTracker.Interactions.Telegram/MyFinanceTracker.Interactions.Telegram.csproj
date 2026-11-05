@@ -17,9 +17,6 @@
     <ProjectReference Include="..\MyFinanceTracker.InputProcessing\MyFinanceTracker.InputProcessing.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Logging\" />
-  </ItemGroup>
-  <ItemGroup>
     <InternalsVisibleTo Include="MyFinanceTracker.Interactions.Telegram.Tests" />
   </ItemGroup>
 </Project>

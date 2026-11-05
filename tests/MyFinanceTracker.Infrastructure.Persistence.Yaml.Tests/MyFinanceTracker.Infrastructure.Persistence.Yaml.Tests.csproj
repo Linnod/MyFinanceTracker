@@ -18,7 +18,4 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Loaders\" />
-  </ItemGroup>
 </Project>

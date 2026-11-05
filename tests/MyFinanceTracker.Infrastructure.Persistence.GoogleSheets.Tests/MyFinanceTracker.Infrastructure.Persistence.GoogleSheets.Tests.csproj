@@ -19,8 +19,4 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Mapping\" />
-    <Folder Include="Repositories\" />
-  </ItemGroup>
 </Project>

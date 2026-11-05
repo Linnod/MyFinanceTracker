@@ -18,10 +18,6 @@
     <ProjectReference Include="..\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Configuration\" />
-    <Folder Include="Logging\" />
-  </ItemGroup>
-  <ItemGroup>
     <InternalsVisibleTo Include="MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>

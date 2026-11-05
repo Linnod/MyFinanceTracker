@@ -10,11 +10,6 @@
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Loaders\" />
-    <Folder Include="Loaders\Exceptions\" />
-    <Folder Include="Logging\" />
-  </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
