@@ -9,13 +9,6 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.Mapping
 
 public class GoogleSheetMapperTests
 {
-    private readonly GoogleSheetsOptions defaultOptions = new()
-    {
-        SpreadsheetId = "test-id",
-        TransactionsSheetName = "Transactions",
-        DecimalSeparator = "."
-    };
-
     private readonly Category foodCategory = new("food_id", "Food", ["food"]);
     private readonly Category salaryCategory = new("salary_id", "Salary", ["salary"]);
 

@@ -28,5 +28,5 @@ public abstract record ActionResult
         IReadOnlyCollection<ValidationErrorItem> Errors
     ) : ActionResult;
 
-    public sealed record Failure(string? Message = null) : ActionResult;
+    public sealed record Failure : ActionResult;
 }

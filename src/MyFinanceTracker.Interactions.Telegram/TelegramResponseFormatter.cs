@@ -13,8 +13,6 @@ internal static class TelegramResponseFormatter
     {
         ProcessingResult.Completed completed => FormatCompleted(completed),
 
-        ProcessingResult.EmptyInput => "ℹ️ <i>Received empty input.</i>",
-
         ProcessingResult.InvalidInput invalid => BuildInvalidInputMessage(invalid),
 
         ProcessingResult.SystemError systemError => $"""

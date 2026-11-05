@@ -78,7 +78,7 @@ public class GeminiInputProcessorTests
         using var cancellation = new CancellationTokenSource();
         var calls = new List<string>();
         ActionResult first = new ActionResult.Category.Listed([]) { RawInput = "first" };
-        ActionResult second = new ActionResult.Failure("failed") { RawInput = "second" };
+        ActionResult second = new ActionResult.Failure { RawInput = "second" };
         fixture.Executor.ExecuteToolCall(Arg.Any<FunctionCall>(), cancellation.Token).Returns(call =>
         {
             var name = call.Arg<FunctionCall>().Name!;
@@ -142,7 +142,7 @@ public class GeminiInputProcessorTests
 
         var error = result.Should().BeOfType<ProcessingResult.SystemError>().Which;
         error.Message.Should().Be("Failed to process your request. Please try again later.");
-        error.Exception.Should().BeSameAs(exception);
+
         fixture.Handler.RequestBody.Should().BeNull();
     }
 
@@ -156,7 +156,7 @@ public class GeminiInputProcessorTests
         var result = await fixture.Processor.Process(new Input.Audio(stream, "audio/ogg"), CancellationToken.None);
 
         result.Should().Be(new ProcessingResult.SystemError(
-            "Failed to process your request. Please try again later.", exception));
+            "Failed to process your request. Please try again later."));
         stream.IsDisposed.Should().BeFalse();
         fixture.PromptBuilder.ReceivedCalls().Should().BeEmpty();
         fixture.Handler.RequestBody.Should().BeNull();
@@ -219,7 +219,7 @@ public class GeminiInputProcessorTests
 
         // Assert
         result.Should().Be(new ProcessingResult.SystemError(
-            "Failed to process your request. Please try again later.", exception));
+            "Failed to process your request. Please try again later."));
         stream.IsDisposed.Should().BeFalse();
         fixture.PromptBuilder.ReceivedCalls().Should().BeEmpty();
         fixture.Handler.RequestBody.Should().BeNull();

@@ -162,10 +162,6 @@ dotnet run --project src/MyFinanceTracker.Host
 > [!IMPORTANT]
 > Category `id` is a unique identifier (slug), and `name` is used as the category name recorded on the `Transactions` sheet.
 
-> [!IMPORTANT]
-> At least one income category must contain the alias `income`.
-> This alias is used as the default income category by the application.
-
 ### Telegram Mode
 
 ```json
@@ -221,7 +217,6 @@ Natural language input in any language:
 Spent 15.50 on groceries
 Spent 8.40 at Starbucks yesterday
 Received salary 2500
-Clear expenses for groceries today
 ```
 
 ### Voice Messages (Telegram)

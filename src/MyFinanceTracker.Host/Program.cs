@@ -1,9 +1,8 @@
-﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Host;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
-using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.InputProcessing.Text.Gemini;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +11,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddSingleton(TimeProvider.System)
     .AddYamlCategoryRepository(builder.Configuration)
-    .AddInputProcessing(b => b.UseGemini(builder.Configuration))
+    .AddGeminiInputProcessor(builder.Configuration)
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)
     .AddConfiguredInteractions(builder.Configuration);

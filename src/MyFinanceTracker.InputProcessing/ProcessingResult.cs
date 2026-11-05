@@ -11,17 +11,12 @@ public abstract record ProcessingResult
         public override string ToString() => $"Completed ({Actions.Count} actions)";
     }
 
-    public sealed record EmptyInput() : ProcessingResult
-    {
-        public override string ToString() => "EmptyInput";
-    }
-
     public sealed record InvalidInput(string Details) : ProcessingResult
     {
         public override string ToString() => $"InvalidInput: {Details}";
     }
 
-    public sealed record SystemError(string Message, Exception? Exception = null) : ProcessingResult
+    public sealed record SystemError(string Message) : ProcessingResult
     {
         public override string ToString() => $"SystemError: {Message}";
     }

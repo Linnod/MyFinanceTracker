@@ -2,7 +2,6 @@ using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Configuration;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Text.Gemini.Execution;
@@ -84,7 +83,7 @@ internal sealed partial class GeminiInputProcessor(
         catch (Exception ex)
         {
             LogError(ex);
-            return new ProcessingResult.SystemError(ProcessingFailureMessage, ex);
+            return new ProcessingResult.SystemError(ProcessingFailureMessage);
         }
     }
 

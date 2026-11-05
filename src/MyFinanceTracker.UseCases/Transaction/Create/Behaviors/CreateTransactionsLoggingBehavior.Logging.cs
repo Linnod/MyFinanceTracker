@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.UseCases.Logging;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create.Behaviors;
@@ -25,18 +24,6 @@ internal sealed partial class CreateTransactionsLoggingBehavior
         Level = LogLevel.Information,
         Message = "Transaction validation failed: {Error} (Time: {Ms}ms)")]
     partial void LogValidationError(CreateTransactionsResponse.ValidationError error, long ms);
-
-    [LoggerMessage(
-        EventId = CategoryNotFound,
-        Level = LogLevel.Information,
-        Message = "Category '{RequestedAlias}' not found. (Time: {Ms}ms)")]
-    partial void LogCategoryNotFound(string requestedAlias, long ms);
-
-    [LoggerMessage(
-        EventId = CategoryRequired,
-        Level = LogLevel.Information,
-        Message = "Category is required for transaction type '{Type}' (Time: {Ms}ms)")]
-    partial void LogCategoryRequired(TransactionType type, long ms);
 
     [LoggerMessage(
         EventId = Failure,
