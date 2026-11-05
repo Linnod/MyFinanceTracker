@@ -7,11 +7,13 @@ public record Category
     public string Id { get; }
     public string Name { get; }
     public IReadOnlyCollection<string> Aliases { get; }
+    public bool IsArchived { get; }
 
     public Category(
         string id,
         string name,
-        IReadOnlyCollection<string> aliases)
+        IReadOnlyCollection<string> aliases,
+        bool isArchived = false)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -31,6 +33,7 @@ public record Category
         Id = id;
         Name = name;
         Aliases = aliases;
+        IsArchived = isArchived;
     }
 
     public override string ToString() => Name;

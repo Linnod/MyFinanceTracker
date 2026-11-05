@@ -190,6 +190,44 @@ public class CreateTransactionsHandlerTests
     }
 
     [Fact]
+    async Task Handle_CategoryIsArchived_ReturnsValidationError()
+    {
+        // arrange
+        var archivedCategory = new Domain.Entities.Category("A", "Food", ["food"], isArchived: true);
+
+        categoryRepository
+            .Resolve("food", Arg.Any<CancellationToken>())
+            .Returns(archivedCategory);
+
+        var request = new CreateTransactionsRequest(
+        [
+            new CreateTransactionItem(
+                TransactionType.Expense,
+                100m,
+                "food",
+                new DateOnly(2026, 1, 27),
+                "Lunch")
+        ]);
+
+        // act
+        var result = await sut.Handle(request, CancellationToken.None);
+
+        // assert
+        var error = result.Should()
+            .BeOfType<CreateTransactionsResponse.ValidationError>()
+            .Subject;
+
+        error.Errors.Should().ContainSingle();
+        error.Errors.Single().ErrorCode.Should().Be(ValidationErrorCode.Transaction.CategoryArchived);
+        error.Errors.Single().AttemptedValue.Should().Be("food");
+
+        await transactionRepository.DidNotReceive()
+            .AddRange(
+                Arg.Any<IReadOnlyCollection<Domain.Entities.Transaction>>(),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     async Task Handle_OneItemIsInvalid_DoesNotCreateAnyTransactions()
     {
         // arrange

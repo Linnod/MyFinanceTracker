@@ -20,3 +20,9 @@ categories:
   - id: "other"
     name: "Other"
     aliases: ["other", "misc"]
+
+  # Obsolete categories can be archived so they remain in history:
+  # - id: "old_hobby"
+  #   name: "Old Hobby"
+  #   aliases: ["old_hobby"]
+  #   archived: true

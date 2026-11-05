@@ -10,6 +10,11 @@ internal sealed class ListCategoriesCommandHandler(ICategoryRepository categoryR
     {
         var categories = await categoryRepository.GetAll(cancellationToken);
 
+        if (!request.IncludeArchived)
+        {
+            categories = [.. categories.Where(c => !c.IsArchived)];
+        }
+
         return new ListCategoriesResponse.Success(categories);
     }
 }

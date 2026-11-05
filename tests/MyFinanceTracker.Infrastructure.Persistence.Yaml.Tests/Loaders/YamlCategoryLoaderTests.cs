@@ -167,6 +167,31 @@ public class YamlCategoryLoaderTests : IDisposable
     }
 
     [Fact]
+    void Load_ShouldSetIsArchived_WhenArchivedFlagIsSpecifiedInYaml()
+    {
+        // arrange
+        WriteYaml("""
+            categories:
+              - id: ACTIVE
+                name: Active Category
+                aliases: [active]
+              - id: ARCHIVED
+                name: Archived Category
+                aliases: [archived]
+                archived: true
+            """);
+        var sut = CreateSut();
+
+        // act
+        var result = sut.Load();
+
+        // assert
+        result.Should().HaveCount(2);
+        result.Single(c => c.Id == "ACTIVE").IsArchived.Should().BeFalse();
+        result.Single(c => c.Id == "ARCHIVED").IsArchived.Should().BeTrue();
+    }
+
+    [Fact]
     void Load_ShouldThrowDeserializationFailed_WhenYamlIsInvalid()
     {
         //arrange

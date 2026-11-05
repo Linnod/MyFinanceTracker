@@ -53,6 +53,13 @@ internal sealed class CreateTransactionsHandler(
             ]));
         }
 
+        if (category.IsArchived)
+        {
+            return (null, new CreateTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, item.CategoryAlias)
+            ]));
+        }
+
         return (category, null);
     }
 }

@@ -20,6 +20,19 @@ public class CategoryTests
         Assert.Equal(id, category.Id);
         Assert.Equal(name, category.Name);
         Assert.Equal(aliases, category.Aliases);
+        Assert.False(category.IsArchived);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    void Constructor_WithArchivedFlag_InitializesIsArchivedCorrectly(bool isArchived)
+    {
+        // arrange & act
+        var category = new Category("salary", "Salary", ["salary"], isArchived);
+
+        // assert
+        Assert.Equal(isArchived, category.IsArchived);
     }
 
     [Theory]
