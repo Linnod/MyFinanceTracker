@@ -62,7 +62,8 @@ tests/
 ├── MyFinanceTracker.UseCases.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
-└── MyFinanceTracker.InputProcessing.Gemini.Tests/
+├── MyFinanceTracker.InputProcessing.Gemini.Tests/
+└── MyFinanceTracker.Interactions.Telegram.Tests/
 ```
 
 ## Quick Start
