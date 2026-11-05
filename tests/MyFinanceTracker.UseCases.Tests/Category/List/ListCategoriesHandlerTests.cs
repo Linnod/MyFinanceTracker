@@ -5,14 +5,14 @@ using NSubstitute;
 
 namespace MyFinanceTracker.UseCases.Tests.Category.List;
 
-public class ListCategoriesCommandHandlerTests
+public class ListCategoriesHandlerTests
 {
     private readonly ICategoryRepository categoryRepository = Substitute.For<ICategoryRepository>();
-    private readonly ListCategoriesCommandHandler sut;
+    private readonly ListCategoriesHandler sut;
 
-    public ListCategoriesCommandHandlerTests()
+    public ListCategoriesHandlerTests()
     {
-        sut = new ListCategoriesCommandHandler(categoryRepository);
+        sut = new ListCategoriesHandler(categoryRepository);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,7 +58,7 @@ public static class DependencyInjection
             .AddScoped<IValidator<DeleteTransactionsRequest>, DeleteTransactionsRequestValidator>()
             .AddTransient<
                 IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>,
-                DeleteTransactionValidationBehavior>();
+                DeleteTransactionsValidationBehavior>();
     }
 
     private static IServiceCollection AddTransactionGet(this IServiceCollection services)

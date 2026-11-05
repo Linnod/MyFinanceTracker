@@ -137,6 +137,9 @@ internal static class ConsoleCommands
         ValidationErrorCode.Transaction.CategoryNotFound => err.AttemptedValue is not null
             ? $"Category '{err.AttemptedValue}' was not found."
             : "Category was not found.",
+        ValidationErrorCode.Transaction.CategoryArchived => err.AttemptedValue is not null
+            ? $"Category '{err.AttemptedValue}' is archived and cannot be used for new transactions."
+            : "Category is archived and cannot be used for new transactions.",
         ValidationErrorCode.Transaction.IdRequired => "At least one transaction ID is required.",
         ValidationErrorCode.Transaction.InvalidId => err.AttemptedValue is not null
             ? $"Transaction ID '{err.AttemptedValue}' is invalid."
