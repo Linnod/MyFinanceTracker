@@ -9,6 +9,9 @@ namespace MyFinanceTracker.Interactions.Telegram;
 
 internal static class TelegramResponseFormatter
 {
+    private const int MaxDisplayedTransactions = 25;
+    private const int MaxMessageLength = 3800;
+
     public static string FormatResponse(ProcessingResult response) => response switch
     {
         ProcessingResult.Completed completed => FormatCompleted(completed),
@@ -38,19 +41,10 @@ internal static class TelegramResponseFormatter
                     sb.AppendLine(
                         $"🔹 Created <b>{totalCreatedCount}</b> transaction(s)");
 
-                    foreach (var t in added.Transactions)
-                    {
-                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
-                        var note = string.IsNullOrWhiteSpace(t.Note)
-                            ? string.Empty
-                            : $" ({WebUtility.HtmlEncode(t.Note)})";
-
-                        sb.AppendLine(
-                            $"   • <code>{t.Id}</code> | " +
-                            $"<code>{t.Date:dd.MM.yyyy}</code> | " +
-                            $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
-                            $"<code>{sign}{t.Amount:0.00}</code>{note}");
-                    }
+                    AppendTransactions(
+                        sb,
+                        added.Transactions,
+                        "<i>...and {0} more transaction(s) not shown.</i>");
                     break;
 
                 case ActionResult.Transaction.Deleted deleted:
@@ -79,20 +73,10 @@ internal static class TelegramResponseFormatter
                         break;
                     }
 
-                    foreach (var t in listed.Transactions)
-                    {
-                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
-                        var note = string.IsNullOrWhiteSpace(t.Note)
-                            ? string.Empty
-                            : $" ({WebUtility.HtmlEncode(t.Note)})";
-
-                        sb.AppendLine(
-                            $"   • <code>{t.Id}</code> | " +
-                            $"<code>{t.Date:dd.MM.yyyy}</code> | " +
-                            $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
-                            $"<code>{sign}{t.Amount:0.00}</code>{note}");
-                    }
-
+                    AppendTransactions(
+                        sb,
+                        listed.Transactions,
+                        "<i>...and {0} more transaction(s) hidden. Please narrow down the date range or category to view more.</i>");
                     break;
 
                 case ActionResult.Category.Listed listed:
@@ -135,6 +119,46 @@ internal static class TelegramResponseFormatter
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    private static void AppendTransactions(
+        StringBuilder sb,
+        IReadOnlyList<Transaction> transactions,
+        string overflowTemplate)
+    {
+        var displayedCount = 0;
+
+        foreach (var t in transactions)
+        {
+            if (displayedCount >= MaxDisplayedTransactions)
+            {
+                break;
+            }
+
+            var sign = t.Type == TransactionType.Expense ? "-" : "+";
+            var note = string.IsNullOrWhiteSpace(t.Note)
+                ? string.Empty
+                : $" ({WebUtility.HtmlEncode(t.Note)})";
+
+            var line = $"   • <code>{t.Id}</code> | " +
+                       $"<code>{t.Date:dd.MM.yyyy}</code> | " +
+                       $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
+                       $"<code>{sign}{t.Amount:0.00}</code>{note}";
+
+            if (sb.Length + line.Length > MaxMessageLength)
+            {
+                break;
+            }
+
+            sb.AppendLine(line);
+            displayedCount++;
+        }
+
+        var remaining = transactions.Count - displayedCount;
+        if (remaining > 0)
+        {
+            sb.AppendLine(string.Format(overflowTemplate, remaining));
+        }
     }
 
     private static string BuildInvalidInputMessage(ProcessingResult.InvalidInput invalid)

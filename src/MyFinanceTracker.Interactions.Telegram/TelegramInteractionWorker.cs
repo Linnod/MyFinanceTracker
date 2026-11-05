@@ -75,6 +75,18 @@ internal sealed partial class TelegramInteractionWorker(
             catch (Exception ex)
             {
                 LogMessageSendFailed(ex, message.Chat.Id, message.Id);
+
+                try
+                {
+                    await bot.SendMessage(
+                        chatId: message.Chat.Id,
+                        text: "⚠️ Failed to send response. The message may have been too long or an unexpected error occurred. Please try a narrower query.",
+                        cancellationToken: ct);
+                }
+                catch
+                {
+                    // Ignore secondary failure
+                }
             }
         }
     }
