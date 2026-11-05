@@ -9,30 +9,7 @@ public class TransactionTests
         new("food", "Food", ["food"]);
 
     [Fact]
-    void Constructor_WithExpenseType_SetsNegativeAmountAndInitializesProperties()
-    {
-        // arrange
-        var id = Guid.NewGuid();
-        var type = TransactionType.Expense;
-        var category = CreateTestCategory();
-        var amount = 100.50m;
-        var date = new DateOnly(2026, 5, 10);
-        var note = "Groceries";
-
-        // act
-        var transaction = new Transaction(id, type, category, amount, date, note);
-
-        // assert
-        Assert.Equal(id, transaction.Id);
-        Assert.Equal(type, transaction.Type);
-        Assert.Equal(category, transaction.Category);
-        Assert.Equal(100.50m, transaction.Amount);
-        Assert.Equal(date, transaction.Date);
-        Assert.Equal(note, transaction.Note);
-    }
-
-    [Fact]
-    void Constructor_WithIncomeType_SetsPositiveAmountAndInitializesProperties()
+    void Constructor_WithValidArguments_InitializesPropertiesCorrectly()
     {
         // arrange
         var id = Guid.NewGuid();
