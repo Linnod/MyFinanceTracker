@@ -14,7 +14,7 @@ services:
       - GoogleSheets__DecimalSeparator=,
       - YamlPersistence__FilePath=/app/data/categories.yaml
       - SqlitePersistence__ConnectionString=Data Source=/app/data/finance.db
-      - SqlitePersistence__SyncIntervalSeconds=60
+      - SqlitePersistence__SyncIntervalSeconds=${SYNC_INTERVAL_SECONDS:-20}
       - Interactions__EnableConsole=false
       - Interactions__EnableTelegram=true
       - Gemini__ApiKey=${GEMINI_API_KEY}
