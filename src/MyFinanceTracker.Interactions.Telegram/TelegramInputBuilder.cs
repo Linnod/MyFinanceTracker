@@ -16,13 +16,13 @@ internal static class TelegramInputBuilder
         if (message.Voice is { } voice)
         {
             var mimeType = voice.MimeType ?? "audio/ogg";
-            return await DownloadAsInput(botClient, voice.FileId, stream => new Input.Audio(stream, mimeType), ct);
+            return await DownloadAsInput(botClient, voice.FileId, bytes => new Input.Audio(bytes, mimeType), ct);
         }
 
         if (message.Photo is { Length: > 0 } photos)
         {
             var photo = photos[^1];
-            return await DownloadAsInput(botClient, photo.FileId, stream => new Input.Image(stream, "image/jpeg", message.Caption), ct);
+            return await DownloadAsInput(botClient, photo.FileId, bytes => new Input.Image(bytes, "image/jpeg", message.Caption), ct);
         }
 
         return new TelegramInputBuilderResult.Unsupported();
@@ -31,10 +31,10 @@ internal static class TelegramInputBuilder
     private static async Task<TelegramInputBuilderResult> DownloadAsInput(
         ITelegramBotClient botClient,
         string fileId,
-        Func<Stream, Input> createInput,
+        Func<byte[], Input> createInput,
         CancellationToken ct)
     {
-        var stream = new MemoryStream();
+        using var stream = new MemoryStream();
         try
         {
             await botClient.GetInfoAndDownloadFile(
@@ -42,17 +42,14 @@ internal static class TelegramInputBuilder
                 destination: stream,
                 cancellationToken: ct);
 
-            stream.Position = 0;
-            return new TelegramInputBuilderResult.Success(createInput(stream));
+            return new TelegramInputBuilderResult.Success(createInput(stream.ToArray()));
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            await stream.DisposeAsync();
             throw;
         }
         catch (Exception ex)
         {
-            await stream.DisposeAsync();
             return new TelegramInputBuilderResult.Failed(ex);
         }
     }

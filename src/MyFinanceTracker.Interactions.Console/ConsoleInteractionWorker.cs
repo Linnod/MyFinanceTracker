@@ -53,7 +53,7 @@ internal sealed partial class ConsoleInteractionWorker(
 
             try
             {
-                await using var input = new Input.Text(rawLine);
+                var input = new Input.Text(rawLine);
                 var response = await inputReceiver.Receive(input, ct);
                 HandleResponse(response);
             }

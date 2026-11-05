@@ -31,28 +31,27 @@ internal sealed partial class GeminiInputProcessor(
             Parts = [new Part { Text = input.Content }]
         };
 
-        return ProcessCore(Task.FromResult(content), ct);
+        return ProcessCore(content, ct);
     }
 
     public Task<ProcessingResult> Process(Input.Audio input, CancellationToken ct)
     {
         LogExecuteEntry(input);
 
-        return ProcessCore(CreateAudioContent(input, ct), ct);
+        return ProcessCore(CreateAudioContent(input), ct);
     }
 
     public Task<ProcessingResult> Process(Input.Image input, CancellationToken ct)
     {
         LogExecuteEntry(input);
 
-        return ProcessCore(CreateImageContent(input, ct), ct);
+        return ProcessCore(CreateImageContent(input), ct);
     }
 
-    private async Task<ProcessingResult> ProcessCore(Task<Content> contentTask, CancellationToken ct)
+    private async Task<ProcessingResult> ProcessCore(Content content, CancellationToken ct)
     {
         try
         {
-            var content = await contentTask;
             var config = await BuildConfig(ct);
             var response = await client.Models.GenerateContentAsync(
                 model: options.Value.Model,
@@ -87,9 +86,8 @@ internal sealed partial class GeminiInputProcessor(
         }
     }
 
-    private static async Task<Content> CreateImageContent(Input.Image input, CancellationToken ct)
+    private static Content CreateImageContent(Input.Image input)
     {
-        var imageBytes = await ReadBytesAsync(input.Stream, ct);
         var promptText = string.IsNullOrWhiteSpace(input.Caption)
             ? ExtractionInstruction
             : $"{ExtractionInstruction} User caption: {input.Caption}";
@@ -98,20 +96,19 @@ internal sealed partial class GeminiInputProcessor(
         {
             Parts =
             [
-                Part.FromBytes(imageBytes, input.ContentType),
+                Part.FromBytes(input.Data, input.ContentType),
                 new Part { Text = promptText }
             ]
         };
     }
 
-    private static async Task<Content> CreateAudioContent(Input.Audio input, CancellationToken ct)
+    private static Content CreateAudioContent(Input.Audio input)
     {
-        var audioBytes = await ReadBytesAsync(input.Stream, ct);
         return new Content
         {
             Parts =
             [
-                Part.FromBytes(audioBytes, input.ContentType),
+                Part.FromBytes(input.Data, input.ContentType),
                 new Part { Text = ExtractionInstruction }
             ]
         };
@@ -126,18 +123,6 @@ internal sealed partial class GeminiInputProcessor(
             },
             Tools = [.. declarationProvider.GetToolDeclarations()]
         };
-
-    private static async Task<byte[]> ReadBytesAsync(Stream stream, CancellationToken ct)
-    {
-        if (stream is MemoryStream ms)
-        {
-            return ms.ToArray();
-        }
-
-        using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream, ct);
-        return memoryStream.ToArray();
-    }
 
     private async Task<List<ActionResult>> ExecuteTools(List<FunctionCall> functionCalls, CancellationToken ct)
     {

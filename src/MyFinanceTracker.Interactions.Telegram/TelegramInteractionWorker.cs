@@ -90,7 +90,7 @@ internal sealed partial class TelegramInteractionWorker(
         {
             case TelegramInputBuilderResult.Success success:
                 {
-                    await using var input = success.Input;
+                    var input = success.Input;
 
                     LogUpdateReceived(input);
 

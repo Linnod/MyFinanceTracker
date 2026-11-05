@@ -37,30 +37,22 @@ public class GeminiInputProcessorTests
         fixture.Handler.RequestUri!.AbsolutePath.Should().EndWith("/models/test-model:generateContent");
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task Process_Audio_PreservesStreamReadingAndLeavesInputOpen(bool memoryStream)
+    [Fact]
+    public async Task Process_Audio_SendsBytesAndDefaultPrompt()
     {
         using var fixture = new Fixture();
         byte[] bytes = [1, 2, 3, 4];
-        using Stream stream = memoryStream
-            ? new MemoryStream(bytes)
-            : new BufferedStream(new MemoryStream(bytes));
-        stream.Position = 1;
 
-        await fixture.Processor.Process(new Input.Audio(stream, "audio/ogg"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Audio(bytes, "audio/ogg"), CancellationToken.None);
 
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
         parts.GetArrayLength().Should().Be(2);
         parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("audio/ogg");
         parts[0].GetProperty("inlineData").GetProperty("data").GetString()
-            .Should().Be(Convert.ToBase64String(memoryStream ? bytes : bytes[1..]));
+            .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
             "Extract financial transaction details and execute the corresponding function call.");
-        stream.CanRead.Should().BeTrue();
-        stream.Position.Should().Be(memoryStream ? 1 : bytes.Length);
     }
 
     [Theory]
@@ -147,31 +139,14 @@ public class GeminiInputProcessorTests
     }
 
     [Fact]
-    public async Task Process_AudioReadFailure_ReturnsSystemErrorAndLeavesStreamOpen()
-    {
-        using var fixture = new Fixture();
-        var exception = new IOException("Read failure");
-        using var stream = new FailingStream(exception);
-
-        var result = await fixture.Processor.Process(new Input.Audio(stream, "audio/ogg"), CancellationToken.None);
-
-        result.Should().Be(new ProcessingResult.SystemError(
-            "Failed to process your request. Please try again later."));
-        stream.IsDisposed.Should().BeFalse();
-        fixture.PromptBuilder.ReceivedCalls().Should().BeEmpty();
-        fixture.Handler.RequestBody.Should().BeNull();
-    }
-
-    [Fact]
     public async Task Process_ImageWithoutCaption_SendsBytesAndDefaultPrompt()
     {
         // Arrange
         using var fixture = new Fixture();
         byte[] bytes = [1, 2, 3, 4];
-        using var stream = new MemoryStream(bytes);
 
         // Act
-        await fixture.Processor.Process(new Input.Image(stream, "image/jpeg"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Image(bytes, "image/jpeg"), CancellationToken.None);
 
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
@@ -190,10 +165,9 @@ public class GeminiInputProcessorTests
         // Arrange
         using var fixture = new Fixture();
         byte[] bytes = [1, 2, 3, 4];
-        using var stream = new MemoryStream(bytes);
 
         // Act
-        await fixture.Processor.Process(new Input.Image(stream, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
+        await fixture.Processor.Process(new Input.Image(bytes, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
 
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
@@ -204,25 +178,6 @@ public class GeminiInputProcessorTests
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
             "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
-    }
-
-    [Fact]
-    public async Task Process_ImageReadFailure_ReturnsSystemErrorAndLeavesStreamOpen()
-    {
-        // Arrange
-        using var fixture = new Fixture();
-        var exception = new IOException("Read failure");
-        using var stream = new FailingStream(exception);
-
-        // Act
-        var result = await fixture.Processor.Process(new Input.Image(stream, "image/jpeg"), CancellationToken.None);
-
-        // Assert
-        result.Should().Be(new ProcessingResult.SystemError(
-            "Failed to process your request. Please try again later."));
-        stream.IsDisposed.Should().BeFalse();
-        fixture.PromptBuilder.ReceivedCalls().Should().BeEmpty();
-        fixture.Handler.RequestBody.Should().BeNull();
     }
 
     private sealed class Fixture : IDisposable
@@ -256,8 +211,7 @@ public class GeminiInputProcessorTests
             if (!audio)
                 return await Processor.Process(new Input.Text("coffee 5"), ct);
 
-            using var stream = new MemoryStream([1, 2, 3]);
-            return await Processor.Process(new Input.Audio(stream, "audio/ogg"), ct);
+            return await Processor.Process(new Input.Audio([1, 2, 3], "audio/ogg"), ct);
         }
 
         public void Dispose() => client.Dispose();
@@ -276,28 +230,6 @@ public class GeminiInputProcessorTests
             {
                 Content = new StringContent(response, Encoding.UTF8, "application/json")
             };
-        }
-    }
-
-    private sealed class FailingStream(Exception exception) : Stream
-    {
-        public bool IsDisposed { get; private set; }
-        public override bool CanRead => true;
-        public override bool CanSeek => false;
-        public override bool CanWrite => false;
-        public override long Length => throw new NotSupportedException();
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-        public override int Read(byte[] buffer, int offset, int count) => throw exception;
-        public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
-            => Task.FromException(exception);
-        public override void Flush() => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        protected override void Dispose(bool disposing)
-        {
-            IsDisposed = true;
-            base.Dispose(disposing);
         }
     }
 }
