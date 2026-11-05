@@ -18,7 +18,7 @@ public static class DependencyInjection
         services
             .AddInputProcessing()
             .ConfigureGeminiOptions(configuration)
-            .AddScoped(sp =>
+            .AddSingleton(sp =>
             {
                 var options = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
                 return new Client(apiKey: options.ApiKey);
