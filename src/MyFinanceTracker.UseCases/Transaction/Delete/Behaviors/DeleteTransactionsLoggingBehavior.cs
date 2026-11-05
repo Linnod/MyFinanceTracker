@@ -38,6 +38,10 @@ internal sealed partial class DeleteTransactionsLoggingBehavior(
 
             return response;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             sw.Stop();

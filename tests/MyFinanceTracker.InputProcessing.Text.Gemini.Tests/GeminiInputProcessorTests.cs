@@ -118,7 +118,7 @@ public class GeminiInputProcessorTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public async Task Process_PromptFailureIncludingCancellation_ReturnsOriginalException(bool audio, bool cancelled)
+    public async Task Process_PromptFailureIncludingCancellation_HandlesCancellationOrSystemError(bool audio, bool cancelled)
     {
         using var fixture = new Fixture();
         using var cancellation = new CancellationTokenSource();
@@ -130,10 +130,17 @@ public class GeminiInputProcessorTests
         fixture.PromptBuilder.BuildSystemInstruction(cancellation.Token)
             .Returns(Task.FromException<string>(exception));
 
-        var result = await fixture.Process(audio, cancellation.Token);
-
-        var error = result.Should().BeOfType<ProcessingResult.SystemError>().Which;
-        error.Message.Should().Be("Failed to process your request. Please try again later.");
+        if (cancelled)
+        {
+            var act = () => fixture.Process(audio, cancellation.Token);
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        else
+        {
+            var result = await fixture.Process(audio, cancellation.Token);
+            var error = result.Should().BeOfType<ProcessingResult.SystemError>().Which;
+            error.Message.Should().Be("Failed to process your request. Please try again later.");
+        }
 
         fixture.Handler.RequestBody.Should().BeNull();
     }

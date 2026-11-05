@@ -37,6 +37,10 @@ public sealed partial class InputReceiver(
             LogReceiveExit(result);
             return result;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             LogCriticalSystemError(input, ex);

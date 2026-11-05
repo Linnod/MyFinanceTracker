@@ -79,6 +79,10 @@ internal sealed partial class GeminiInputProcessor(
             LogEmptyResponse();
             return new ProcessingResult.SystemError(ProcessingFailureMessage);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             LogError(ex);

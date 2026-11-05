@@ -57,6 +57,10 @@ internal sealed partial class ConsoleInteractionWorker(
                 var response = await inputReceiver.Receive(input, ct);
                 HandleResponse(response);
             }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 LogCommandFailed(ex, rawLine);

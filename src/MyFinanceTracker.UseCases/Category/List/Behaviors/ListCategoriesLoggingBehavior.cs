@@ -28,6 +28,10 @@ internal sealed partial class ListCategoriesLoggingBehavior(
 
             return response;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             sw.Stop();
