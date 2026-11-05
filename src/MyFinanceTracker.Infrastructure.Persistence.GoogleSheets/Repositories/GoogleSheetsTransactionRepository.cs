@@ -15,10 +15,15 @@ internal sealed partial class GoogleSheetsTransactionRepository(
     GoogleSheetMapper mapper,
     IGoogleSheetsClient client,
     ICategoryRepository categoryRepository,
-    ILogger<GoogleSheetsTransactionRepository> logger) : ITransactionRepository
+    ILogger<GoogleSheetsTransactionRepository> logger) : ITransactionRepository, IDisposable
 {
     private readonly GoogleSheetsOptions options = options.Value;
-    private static readonly SemaphoreSlim semaphore = new(1, 1);
+    private readonly SemaphoreSlim semaphore = new(1, 1);
+
+    public void Dispose()
+    {
+        semaphore.Dispose();
+    }
 
     public async Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct)
     {
