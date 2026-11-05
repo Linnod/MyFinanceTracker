@@ -52,7 +52,7 @@ src/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
 ├── MyFinanceTracker.InputProcessing/
-├── MyFinanceTracker.InputProcessing.Text.Gemini/
+├── MyFinanceTracker.InputProcessing.Gemini/
 ├── MyFinanceTracker.Interactions.Console/
 ├── MyFinanceTracker.Interactions.Telegram/
 └── MyFinanceTracker.Host/
@@ -62,7 +62,7 @@ tests/
 ├── MyFinanceTracker.UseCases.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
-└── MyFinanceTracker.InputProcessing.Text.Gemini.Tests/
+└── MyFinanceTracker.InputProcessing.Gemini.Tests/
 ```
 
 ## Quick Start

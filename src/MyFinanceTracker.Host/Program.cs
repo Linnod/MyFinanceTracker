@@ -4,7 +4,7 @@ using MyFinanceTracker.Host;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
 using MyFinanceTracker.UseCases;
-using MyFinanceTracker.InputProcessing.Text.Gemini;
+using MyFinanceTracker.InputProcessing.Gemini;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);

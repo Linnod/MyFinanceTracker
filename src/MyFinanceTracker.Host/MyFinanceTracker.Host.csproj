@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Text.Gemini\MyFinanceTracker.InputProcessing.Text.Gemini.csproj" />
+    <ProjectReference Include="..\MyFinanceTracker.InputProcessing.Gemini\MyFinanceTracker.InputProcessing.Gemini.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets\MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Infrastructure.Persistence.Yaml\MyFinanceTracker.Infrastructure.Persistence.Yaml.csproj" />
     <ProjectReference Include="..\MyFinanceTracker.Interactions.Console\MyFinanceTracker.Interactions.Console.csproj" />
