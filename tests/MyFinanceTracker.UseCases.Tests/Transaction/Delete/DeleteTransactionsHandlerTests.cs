@@ -27,7 +27,7 @@ public class DeleteTransactionsHandlerTests
 
         transactionRepository
             .DeleteRange(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new DeleteTransactionsResult.Success(2));
+            .Returns(2);
 
         var request = new DeleteTransactionsRequest([id1, id2]);
 
@@ -52,7 +52,7 @@ public class DeleteTransactionsHandlerTests
 
         transactionRepository
             .DeleteRange(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new DeleteTransactionsResult.Success(2));
+            .Returns(2);
 
         var request = new DeleteTransactionsRequest([id1, id1, id2, id2]);
 
@@ -69,32 +69,27 @@ public class DeleteTransactionsHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenRepositoryReturnsNotFound_ShouldReturnValidationError()
+    public async Task Handle_WhenSomeOrNoIdsDeleted_ShouldReturnSuccessWithDeletedCount()
     {
         // arrange
-        var foundId = Guid.NewGuid();
-        var missingId1 = Guid.NewGuid();
-        var missingId2 = Guid.NewGuid();
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
 
         transactionRepository
             .DeleteRange(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
-            .Returns(new DeleteTransactionsResult.NotFound([missingId1, missingId2]));
+            .Returns(1);
 
-        var request = new DeleteTransactionsRequest([foundId, missingId1, missingId2]);
+        var request = new DeleteTransactionsRequest([id1, id2]);
 
         // act
         var result = await sut.Handle(request, CancellationToken.None);
 
         // assert
-        var validationError = result.Should().BeOfType<DeleteTransactionsResponse.ValidationError>().Subject;
-        validationError.Errors.Should().HaveCount(2);
+        var success = result.Should().BeOfType<DeleteTransactionsResponse.Success>().Subject;
+        success.DeletedCount.Should().Be(1);
 
-        validationError.Errors.Should().Contain(e =>
-            e.ErrorCode == ValidationErrorCode.Transaction.TransactionNotFound &&
-            e.AttemptedValue == missingId1.ToString());
-
-        validationError.Errors.Should().Contain(e =>
-            e.ErrorCode == ValidationErrorCode.Transaction.TransactionNotFound &&
-            e.AttemptedValue == missingId2.ToString());
+        await transactionRepository.Received(1).DeleteRange(
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Count == 2 && ids.Contains(id1) && ids.Contains(id2)),
+            Arg.Any<CancellationToken>());
     }
 }

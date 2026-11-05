@@ -1,0 +1,334 @@
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using MyFinanceTracker.Domain.Entities;
+using MyFinanceTracker.Domain.Repositories;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Models;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Repositories;
+using NSubstitute;
+
+namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Tests.Repositories;
+
+public sealed class SqliteTransactionRepositoryTests : IDisposable
+{
+    private readonly SqliteConnection connection;
+    private readonly DbContextOptions<SqliteDbContext> options;
+    private readonly IDbContextFactory<SqliteDbContext> contextFactory;
+    private readonly ICategoryRepository categoryRepository;
+    private readonly TimeProvider timeProvider;
+    private readonly ILogger<SqliteTransactionRepository> logger;
+    private readonly DateTimeOffset fixedTime = new(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
+
+    private readonly Category foodCategory = new("food", "Food", ["groceries", "food"]);
+    private readonly Category transportCategory = new("transport", "Transport", ["bus", "taxi"]);
+    private readonly Category salaryCategory = new("salary", "Salary", ["paycheck", "income"]);
+
+    public SqliteTransactionRepositoryTests()
+    {
+        connection = new SqliteConnection("DataSource=:memory:");
+        connection.Open();
+
+        options = new DbContextOptionsBuilder<SqliteDbContext>()
+            .UseSqlite(connection)
+            .Options;
+
+        using var context = new SqliteDbContext(options);
+        context.Database.EnsureCreated();
+
+        contextFactory = new TestDbContextFactory(options);
+        categoryRepository = Substitute.For<ICategoryRepository>();
+        categoryRepository.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var query = callInfo.Arg<string>();
+                return new[] { foodCategory, transportCategory, salaryCategory }
+                    .FirstOrDefault(c => c.Id.Equals(query, StringComparison.OrdinalIgnoreCase) ||
+                                         c.Name.Equals(query, StringComparison.OrdinalIgnoreCase));
+            });
+        timeProvider = new FixedTimeProvider(fixedTime);
+        logger = Substitute.For<ILogger<SqliteTransactionRepository>>();
+    }
+
+    public void Dispose()
+    {
+        connection.Dispose();
+    }
+
+    private SqliteTransactionRepository CreateRepository() =>
+        new(contextFactory, categoryRepository, timeProvider, logger);
+
+    [Fact]
+    public async Task AddRange_ShouldPersistTransactionsAndCreateOutboxMessage()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        var tx1 = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            foodCategory,
+            120.50m,
+            new DateOnly(2026, 11, 1),
+            "Supermarket");
+
+        var tx2 = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Income,
+            salaryCategory,
+            3000.00m,
+            new DateOnly(2026, 11, 2),
+            null);
+
+        // Act
+        await repository.AddRange([tx1, tx2], CancellationToken.None);
+
+        // Assert - Verify Transactions table
+        await using var assertContext = new SqliteDbContext(options);
+        var transactions = await assertContext.Transactions.OrderBy(t => t.Date).ToListAsync();
+
+        transactions.Should().HaveCount(2);
+
+        transactions[0].Id.Should().Be(tx1.Id);
+        transactions[0].Type.Should().Be(TransactionType.Expense);
+        transactions[0].CategoryId.Should().Be("food");
+        transactions[0].Amount.Should().Be(120.50m);
+        transactions[0].Date.Should().Be(new DateOnly(2026, 11, 1));
+        transactions[0].Note.Should().Be("Supermarket");
+
+        transactions[1].Id.Should().Be(tx2.Id);
+        transactions[1].Type.Should().Be(TransactionType.Income);
+        transactions[1].CategoryId.Should().Be("salary");
+        transactions[1].Amount.Should().Be(3000.00m);
+        transactions[1].Date.Should().Be(new DateOnly(2026, 11, 2));
+        transactions[1].Note.Should().BeNull();
+
+        // Assert - Verify OutboxMessages table
+        var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
+        outboxMessages.Should().HaveCount(1);
+
+        var outboxMessage = outboxMessages[0];
+        outboxMessage.OperationType.Should().Be(OutboxOperationType.Add);
+        outboxMessage.CreatedAtUtc.Should().Be(fixedTime);
+
+        var payload = JsonSerializer.Deserialize<AddTransactionsOutboxPayload>(outboxMessage.PayloadJson);
+        payload.Should().NotBeNull();
+        payload!.Transactions.Should().HaveCount(2);
+
+        payload.Transactions[0].Should().BeEquivalentTo(new TransactionOutboxDto(
+            tx1.Id,
+            TransactionType.Expense,
+            "food",
+            120.50m,
+            new DateOnly(2026, 11, 1),
+            "Supermarket"));
+
+        payload.Transactions[1].Should().BeEquivalentTo(new TransactionOutboxDto(
+            tx2.Id,
+            TransactionType.Income,
+            "salary",
+            3000.00m,
+            new DateOnly(2026, 11, 2),
+            null));
+    }
+
+    [Fact]
+    public async Task AddRange_ShouldDoNothing_WhenListIsEmpty()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        // Act
+        await repository.AddRange([], CancellationToken.None);
+
+        // Assert
+        await using var assertContext = new SqliteDbContext(options);
+        var transactions = await assertContext.Transactions.ToListAsync();
+        var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
+
+        transactions.Should().BeEmpty();
+        outboxMessages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Get_ShouldFilterByDateRangeCategoriesAndType()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), "Lunch");
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 75m, new DateOnly(2026, 11, 5), "Dinner");
+        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateOnly(2026, 11, 5), "Bus ticket");
+        var tx4 = new Transaction(Guid.NewGuid(), TransactionType.Income, salaryCategory, 2500m, new DateOnly(2026, 11, 5), "Paycheck");
+        var tx5 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 100m, new DateOnly(2026, 11, 10), "Groceries");
+
+        await repository.AddRange([tx1, tx2, tx3, tx4, tx5], CancellationToken.None);
+
+        // Act & Assert 1: Filter by Date Range
+        var dateFilter = new TransactionFilter(
+            FromDate: new DateOnly(2026, 11, 2),
+            ToDate: new DateOnly(2026, 11, 6));
+        var dateResults = await repository.Get(dateFilter, CancellationToken.None);
+        dateResults.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id, tx4.Id]);
+
+        // Act & Assert 2: Filter by Type
+        var typeFilter = new TransactionFilter(Type: TransactionType.Income);
+        var typeResults = await repository.Get(typeFilter, CancellationToken.None);
+        typeResults.Select(t => t.Id).Should().BeEquivalentTo([tx4.Id]);
+
+        // Act & Assert 3: Filter by Categories
+        var categoryFilter = new TransactionFilter(Categories: [foodCategory]);
+        var categoryResults = await repository.Get(categoryFilter, CancellationToken.None);
+        categoryResults.Select(t => t.Id).Should().BeEquivalentTo([tx1.Id, tx2.Id, tx5.Id]);
+
+        // Act & Assert 4: Filter combined
+        var combinedFilter = new TransactionFilter(
+            FromDate: new DateOnly(2026, 11, 5),
+            ToDate: new DateOnly(2026, 11, 5),
+            Categories: [foodCategory],
+            Type: TransactionType.Expense);
+        var combinedResults = await repository.Get(combinedFilter, CancellationToken.None);
+
+        combinedResults.Should().HaveCount(1);
+        var singleResult = combinedResults[0];
+        singleResult.Id.Should().Be(tx2.Id);
+        singleResult.Amount.Should().Be(75m);
+        singleResult.Category.Should().Be(foodCategory);
+        singleResult.Category.Aliases.Should().Contain("groceries");
+
+        // Act & Assert 5: Filter by multiple categories
+        var multiCategoryFilter = new TransactionFilter(Categories: [foodCategory, transportCategory]);
+        var multiCategoryResults = await repository.Get(multiCategoryFilter, CancellationToken.None);
+        multiCategoryResults.Select(t => t.Id).Should().BeEquivalentTo([tx1.Id, tx2.Id, tx3.Id, tx5.Id]);
+    }
+
+    [Fact]
+    public async Task DeleteRange_ShouldRemoveTransactionsAndCreateOutboxMessage_WhenAllIdsExist()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), null);
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 75m, new DateOnly(2026, 11, 2), null);
+        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateOnly(2026, 11, 3), null);
+
+        await repository.AddRange([tx1, tx2, tx3], CancellationToken.None);
+
+        // Clear outbox messages from AddRange to focus only on DeleteRange
+        await using (var clearOutboxContext = new SqliteDbContext(options))
+        {
+            clearOutboxContext.OutboxMessages.RemoveRange(clearOutboxContext.OutboxMessages);
+            await clearOutboxContext.SaveChangesAsync();
+        }
+
+        // Act - Delete tx1 and tx2 (with duplicate ID in request to ensure Distinct handling)
+        var result = await repository.DeleteRange([tx1.Id, tx2.Id, tx1.Id], CancellationToken.None);
+
+        // Assert Result
+        result.Should().Be(2);
+
+        // Assert DB - Transactions
+        await using var assertContext = new SqliteDbContext(options);
+        var remainingTransactions = await assertContext.Transactions.ToListAsync();
+        remainingTransactions.Should().HaveCount(1);
+        remainingTransactions[0].Id.Should().Be(tx3.Id);
+
+        // Assert DB - OutboxMessages
+        var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
+        outboxMessages.Should().HaveCount(1);
+
+        var outboxMessage = outboxMessages[0];
+        outboxMessage.OperationType.Should().Be(OutboxOperationType.Delete);
+        outboxMessage.CreatedAtUtc.Should().Be(fixedTime);
+
+        var payload = JsonSerializer.Deserialize<DeleteTransactionsOutboxPayload>(outboxMessage.PayloadJson);
+        payload.Should().NotBeNull();
+        payload!.Ids.Should().BeEquivalentTo([tx1.Id, tx2.Id]);
+    }
+
+    [Fact]
+    public async Task DeleteRange_ShouldDeleteExistingEntitiesAndIgnoreMissingIds()
+    {
+        // Arrange
+        var repository = CreateRepository();
+
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), null);
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateOnly(2026, 11, 2), null);
+
+        await repository.AddRange([tx1, tx2], CancellationToken.None);
+
+        var missingId = Guid.NewGuid();
+
+        // Clear outbox to verify delete outbox message is written only for existing entity
+        await using (var clearOutboxContext = new SqliteDbContext(options))
+        {
+            clearOutboxContext.OutboxMessages.RemoveRange(clearOutboxContext.OutboxMessages);
+            await clearOutboxContext.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await repository.DeleteRange([tx1.Id, missingId], CancellationToken.None);
+
+        // Assert Result
+        result.Should().Be(1);
+
+        // Assert DB - tx1 deleted, tx2 remains
+        await using var assertContext = new SqliteDbContext(options);
+        var transactions = await assertContext.Transactions.ToListAsync();
+        transactions.Should().HaveCount(1);
+        transactions[0].Id.Should().Be(tx2.Id);
+
+        // Assert DB - OutboxMessages created only for tx1
+        var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
+        outboxMessages.Should().HaveCount(1);
+        var payload = JsonSerializer.Deserialize<DeleteTransactionsOutboxPayload>(outboxMessages[0].PayloadJson);
+        payload.Should().NotBeNull();
+        payload!.Ids.Should().BeEquivalentTo([tx1.Id]);
+    }
+
+    [Fact]
+    public async Task DeleteRange_ShouldDoNothing_WhenIdsIsEmpty()
+    {
+        // Arrange
+        var repository = CreateRepository();
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), null);
+
+        await repository.AddRange([tx1], CancellationToken.None);
+
+        await using (var clearOutboxContext = new SqliteDbContext(options))
+        {
+            clearOutboxContext.OutboxMessages.RemoveRange(clearOutboxContext.OutboxMessages);
+            await clearOutboxContext.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await repository.DeleteRange([], CancellationToken.None);
+
+        // Assert Result
+        result.Should().Be(0);
+
+        // Assert DB - Transactions unchanged
+        await using var assertContext = new SqliteDbContext(options);
+        var transactions = await assertContext.Transactions.ToListAsync();
+        transactions.Should().HaveCount(1);
+
+        // Assert DB - No OutboxMessages created
+        var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
+        outboxMessages.Should().BeEmpty();
+    }
+
+    private sealed class TestDbContextFactory(DbContextOptions<SqliteDbContext> options) : IDbContextFactory<SqliteDbContext>
+    {
+        public SqliteDbContext CreateDbContext() => new(options);
+
+        public Task<SqliteDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new SqliteDbContext(options));
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+}

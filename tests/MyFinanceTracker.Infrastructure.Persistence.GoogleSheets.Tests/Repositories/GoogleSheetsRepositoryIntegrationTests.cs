@@ -259,8 +259,7 @@ public class GoogleSheetsRepositoryIntegrationTests
         var result = await sut.DeleteRange([id1, id2], CancellationToken.None);
 
         // assert
-        result.Should().BeOfType<DeleteTransactionsResult.Success>()
-            .Which.DeletedCount.Should().Be(2);
+        result.Should().Be(2);
 
         await clientMock.Received(1).DeleteRows(
             "Transactions",
@@ -272,7 +271,7 @@ public class GoogleSheetsRepositoryIntegrationTests
     }
 
     [Fact]
-    public async Task DeleteRange_ShouldNotCallDeleteRows_WhenAnyIdDoesNotMatch()
+    public async Task DeleteRange_ShouldDeleteOnlyExistingRows_WhenSomeIdsDoNotExist()
     {
         // arrange
         var options = Options.Create(defaultOptions);
@@ -306,12 +305,13 @@ public class GoogleSheetsRepositoryIntegrationTests
         var result = await sut.DeleteRange([existingId, missingId], CancellationToken.None);
 
         // assert
-        var notFound = result.Should().BeOfType<DeleteTransactionsResult.NotFound>().Subject;
-        notFound.MissingIds.Should().ContainSingle().Which.Should().Be(missingId);
+        result.Should().Be(1);
 
-        await clientMock.DidNotReceive().DeleteRows(
-            Arg.Any<string>(),
-            Arg.Any<IReadOnlyCollection<GoogleSheetRow>>(),
+        await clientMock.Received(1).DeleteRows(
+            "Transactions",
+            Arg.Is<IReadOnlyCollection<GoogleSheetRow>>(rows =>
+                rows.Count == 1 &&
+                rows.Contains(otherDateRow)),
             Arg.Any<CancellationToken>());
     }
 
@@ -336,8 +336,7 @@ public class GoogleSheetsRepositoryIntegrationTests
         var result = await sut.DeleteRange([], CancellationToken.None);
 
         // assert
-        result.Should().BeOfType<DeleteTransactionsResult.Success>()
-            .Which.DeletedCount.Should().Be(0);
+        result.Should().Be(0);
 
         await clientMock.DidNotReceive().GetRows(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await clientMock.DidNotReceive().DeleteRows(

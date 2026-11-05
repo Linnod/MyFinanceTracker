@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Host;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.InputProcessing.Gemini;
@@ -14,6 +15,7 @@ builder.Services
     .AddGeminiInputProcessor(builder.Configuration)
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)
+    .AddSqlitePersistence(builder.Configuration)
     .AddConfiguredInteractions(builder.Configuration);
 
 builder.Logging

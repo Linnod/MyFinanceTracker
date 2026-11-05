@@ -5,6 +5,7 @@ using Google.Apis.Sheets.v4;
 using MyFinanceTracker.Domain.Repositories;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
+using MyFinanceTracker.Common;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
@@ -19,7 +20,7 @@ public static class DependencyInjection
     {
         services.ConfigureGoogleSheetsOptions(configuration)
             .AddSheetsService()
-            .AddSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>()
+            .AddKeyedSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>(PersistenceServiceKeys.RemoteTransactionRepository)
             .AddSingleton<GoogleSheetMapper>()
             .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>();
 

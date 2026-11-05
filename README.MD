@@ -9,9 +9,10 @@ Personal finance tracker that stores transactions in Google Sheets and supports 
 
 - Multimodal transaction input: text commands, voice messages, receipt photos, and banking screenshots
 - Gemini-powered natural language processing, audio transcription, and image analysis
-- Google Sheets persistence with automated category mapping
+- Local SQLite persistence with Transactional Outbox pattern
+- Resilient background synchronization to Google Sheets (retry policy & dead-letter queue)
+- Automated category mapping with YAML configuration
 - Telegram Bot & Console interaction modes
-- YAML-based category and alias configuration
 - Clean Architecture + CQRS (MediatR)
 - Structured logging with correlation IDs
 
@@ -30,6 +31,12 @@ flowchart LR
 
     UseCases["Use Cases"]
 
+    Sqlite[("SQLite DB
+    & Outbox")]
+
+    Sync["Outbox Sync
+    Worker"]
+
     Sheets["Google Sheets"]
 
     User --> Interactions
@@ -39,7 +46,9 @@ flowchart LR
 
     Gemini --> UseCases
 
-    UseCases --> Sheets
+    UseCases --> Sqlite
+    Sqlite -.-> Sync
+    Sync --> Sheets
 ```
 
 ## Project Structure
@@ -50,6 +59,7 @@ src/
 ├── MyFinanceTracker.Common/
 ├── MyFinanceTracker.UseCases/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/
+├── MyFinanceTracker.Infrastructure.Persistence.Sqlite/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
 ├── MyFinanceTracker.InputProcessing/
 ├── MyFinanceTracker.InputProcessing.Gemini/
@@ -61,6 +71,7 @@ tests/
 ├── MyFinanceTracker.Domain.Tests/
 ├── MyFinanceTracker.UseCases.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
+├── MyFinanceTracker.Infrastructure.Persistence.Sqlite.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
 ├── MyFinanceTracker.InputProcessing.Gemini.Tests/
 └── MyFinanceTracker.Interactions.Telegram.Tests/
@@ -140,6 +151,11 @@ dotnet run --project src/MyFinanceTracker.Host
     "ApplicationName": "MyFinanceTracker",
     "DecimalSeparator": ","
   },
+  "SqlitePersistence": {
+    "ConnectionString": "Data Source=finance.db",
+    "SyncIntervalSeconds": 60,
+    "MaxRetryAttempts": 5
+  },
   "YamlPersistence": {
     "FilePath": "categories.yaml"
   },
@@ -194,11 +210,12 @@ Make sure that:
 
 You can also run the application as a background service via Docker Compose:
 
-1. Prepare configuration files and secrets:
+1. Prepare configuration files, persistent data directory, and secrets:
    ```bash
    cp .env.example .env
    cp deploy/categories.example.yaml deploy/categories.yaml
    cp google-api-credentials.json deploy/google-api-credentials.json
+   mkdir -p deploy/data
    ```
 
 2. Fill in `.env` with your Telegram, Google Sheets, and Gemini credentials.
@@ -207,6 +224,9 @@ You can also run the application as a background service via Docker Compose:
    ```bash
    docker compose up -d
    ```
+
+> [!NOTE]
+> The SQLite database and outbox queue are stored in `deploy/data/finance.db` via a mounted Docker volume, ensuring transaction data and sync state persist across container updates and restarts.
 
 ## Usage Examples
 

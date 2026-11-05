@@ -13,12 +13,15 @@ services:
       - GoogleSheets__TransactionsSheetName=Transactions
       - GoogleSheets__DecimalSeparator=,
       - YamlPersistence__FilePath=/app/data/categories.yaml
+      - SqlitePersistence__ConnectionString=Data Source=/app/data/finance.db
+      - SqlitePersistence__SyncIntervalSeconds=60
       - Interactions__EnableConsole=false
       - Interactions__EnableTelegram=true
       - Gemini__ApiKey=${GEMINI_API_KEY}
       - Gemini__Model=${GEMINI_MODEL}
     volumes:
       - ./deploy/google-api-credentials.json:/app/secrets/google-api-credentials.json:ro
+      - ./deploy/data:/app/data
       - ./deploy/categories.yaml:/app/data/categories.yaml:ro
     logging:
       driver: "json-file"

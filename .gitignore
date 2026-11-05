@@ -40,6 +40,9 @@ Thumbs.db
 # 3. Domain/Business Data
 # If your category mapping contains private info
 categories.yaml
+*.db
+*.db-shm
+*.db-wal
 
 # 4. Docker & Environment
 .env

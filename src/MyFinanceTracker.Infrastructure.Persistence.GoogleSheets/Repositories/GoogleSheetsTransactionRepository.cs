@@ -25,10 +25,9 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         semaphore.Dispose();
     }
 
-    public async Task AddRange(IEnumerable<Transaction> transactions, CancellationToken ct)
+    public async Task AddRange(IReadOnlyCollection<Transaction> transactions, CancellationToken ct)
     {
-        var transactionList = transactions.ToList();
-        if (transactionList.Count == 0)
+        if (transactions.Count == 0)
         {
             return;
         }
@@ -36,9 +35,9 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         await semaphore.WaitAsync(ct);
         try
         {
-            LogAddingTransactions(transactionList.Count);
+            LogAddingTransactions(transactions.Count);
 
-            var rows = mapper.MapToRows(transactionList);
+            var rows = mapper.MapToRows(transactions);
             await client.AppendRows(options.TransactionsSheetName, rows, ct);
         }
         finally
@@ -47,27 +46,20 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         }
     }
 
-    public async Task<DeleteTransactionsResult> DeleteRange(IReadOnlyCollection<Guid> ids, CancellationToken ct)
+    public async Task<int> DeleteRange(IReadOnlyCollection<Guid> ids, CancellationToken ct)
     {
         LogDeletingTransactions(ids.Count);
 
         if (ids.Count == 0)
         {
-            return new DeleteTransactionsResult.Success(0);
+            return 0;
         }
 
         await semaphore.WaitAsync(ct);
         try
         {
             var validRows = await LoadValidRows(ct);
-            var existingIds = validRows.Select(s => s.Transaction.Id).ToHashSet();
-
             var idsSet = ids.ToHashSet();
-            var missingIds = idsSet.Where(id => !existingIds.Contains(id)).ToList();
-            if (missingIds.Count > 0)
-            {
-                return new DeleteTransactionsResult.NotFound(missingIds);
-            }
 
             var rowsToDelete = validRows
                 .Where(s => idsSet.Contains(s.Transaction.Id))
@@ -79,7 +71,7 @@ internal sealed partial class GoogleSheetsTransactionRepository(
                 await client.DeleteRows(options.TransactionsSheetName, rowsToDelete, ct);
             }
 
-            return new DeleteTransactionsResult.Success(idsSet.Count);
+            return rowsToDelete.Count;
         }
         finally
         {
