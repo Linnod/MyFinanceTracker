@@ -5,6 +5,17 @@ set -euo pipefail
 TARGET_PATH="${TARGET_DIR/#\~/$HOME}"
 cd "$TARGET_PATH"
 
+if [ "${CLEAN_DATA:-false}" = "true" ]; then
+  if [ "$PROJECT_NAME" = "fintracker-prod" ] || [ "$TARGET_PATH" = "$HOME/production" ]; then
+    echo "::error::Safety guard triggered: clean_data is strictly forbidden for production!"
+    exit 1
+  fi
+
+  echo "Cleaning deploy/data directory for fresh test deployment..."
+  docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.prod.yml down || true
+  rm -rf deploy/data/* || true
+fi
+
 mkdir -p deploy/data && chmod 777 deploy/data
 
 if [ -n "${GH_TOKEN:-}" ] && [ -n "${GH_ACTOR:-}" ]; then

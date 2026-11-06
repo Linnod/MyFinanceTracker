@@ -53,6 +53,7 @@ jobs:
       target_dir: "~/test"
       project_name: "fintracker-test"
       container_name: "fintracker_test_app"
+      clean_data: true
     secrets:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
