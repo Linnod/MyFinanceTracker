@@ -2,17 +2,6 @@ name: Production CD
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - 'README.MD'
-      - 'README.md'
-      - '**.md'
-      - '**.MD'
-      - 'docs/**'
-      - '.gitignore'
-      - '.env.example'
-      - 'LICENSE'
 
 concurrency:
   group: production-deploy
