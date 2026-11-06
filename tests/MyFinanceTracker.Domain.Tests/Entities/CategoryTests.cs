@@ -11,7 +11,7 @@ public class CategoryTests
         // arrange
         var id = "salary";
         var name = "Salary";
-        var aliases = new[] { "salary", "income", "main" };
+        string[] aliases = ["salary", "income", "main"];
 
         // act
         var category = new Category(id, name, aliases);
@@ -43,7 +43,7 @@ public class CategoryTests
     {
         // arrange
         var name = "Food";
-        var aliases = new[] { "food" };
+        string[] aliases = ["food"];
 
         // act
         Category act() => new(invalidId!, name, aliases);
@@ -61,7 +61,7 @@ public class CategoryTests
     {
         // arrange
         var id = "food";
-        var aliases = new[] { "food" };
+        string[] aliases = ["food"];
 
         // act
         Category act() => new(id, invalidName!, aliases);

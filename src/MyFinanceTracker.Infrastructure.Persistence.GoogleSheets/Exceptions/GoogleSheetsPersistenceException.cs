@@ -2,7 +2,7 @@ using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Exceptions;
 
-internal class GoogleSheetsPersistenceException : Exception
+internal sealed class GoogleSheetsPersistenceException : Exception
 {
     public IReadOnlyList<RowMappingResult.Failure> Failures { get; }
 

@@ -1,6 +1,6 @@
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders.Exceptions;
 
-internal class CategoryLoaderException : Exception
+internal sealed class CategoryLoaderException : Exception
 {
     private CategoryLoaderException(string message, Exception? innerException = null)
         : base(message, innerException) { }

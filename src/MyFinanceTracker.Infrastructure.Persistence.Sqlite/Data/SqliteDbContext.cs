@@ -3,7 +3,7 @@ using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 
-internal class SqliteDbContext(DbContextOptions<SqliteDbContext> options) : DbContext(options)
+internal sealed class SqliteDbContext(DbContextOptions<SqliteDbContext> options) : DbContext(options)
 {
 
     public DbSet<TransactionEntity> Transactions => Set<TransactionEntity>();

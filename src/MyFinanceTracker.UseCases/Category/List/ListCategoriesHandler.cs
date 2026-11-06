@@ -6,9 +6,9 @@ namespace MyFinanceTracker.UseCases.Category.List;
 internal sealed class ListCategoriesHandler(ICategoryRepository categoryRepository)
  : IRequestHandler<ListCategoriesRequest, ListCategoriesResponse>
 {
-    public async Task<ListCategoriesResponse> Handle(ListCategoriesRequest request, CancellationToken cancellationToken)
+    public async Task<ListCategoriesResponse> Handle(ListCategoriesRequest request, CancellationToken ct)
     {
-        var categories = await categoryRepository.GetAll(cancellationToken);
+        var categories = await categoryRepository.GetAll(ct);
 
         if (!request.IncludeArchived)
         {

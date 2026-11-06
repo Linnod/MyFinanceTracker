@@ -6,7 +6,7 @@ using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 
-internal class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
+internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 {
     private const NumberStyles AmountNumberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
 
