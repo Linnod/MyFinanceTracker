@@ -1,0 +1,66 @@
+name: Test CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - destroy
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+concurrency:
+  group: test-deploy
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    name: Destroy Test Environment
+    if: github.event.action == 'closed' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Destroy test environment via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          TARGET_DIR: "~/test"
+          PROJECT_NAME: "fintracker-test"
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: TARGET_DIR,PROJECT_NAME
+          script_path: .github/scripts/destroy-remote.sh
+
+  deploy:
+    name: Deploy to Test
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/_cd.yml
+    with:
+      target_dir: "~/test"
+      project_name: "fintracker-test"
+      container_name: "fintracker_test_app"
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      TG_TOKEN: ${{ secrets.TEST_TG_TOKEN }}
+      TG_USER_ID: ${{ secrets.TEST_TG_USER_ID }}
+      GOOGLE_SHEET_ID: ${{ secrets.TEST_GOOGLE_SHEET_ID }}
+      GEMINI_API_KEY: ${{ secrets.TEST_GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.TEST_GEMINI_MODEL }}
+      CATEGORIES_YAML: ${{ secrets.TEST_CATEGORIES_YAML }}
+      GOOGLE_CREDENTIALS_JSON: ${{ secrets.TEST_GOOGLE_CREDENTIALS_JSON }}
