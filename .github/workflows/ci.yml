@@ -3,7 +3,9 @@ name: CI (Build & Test)
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/**'
     paths-ignore:
       - 'README.MD'
       - 'README.md'
