@@ -3,9 +3,6 @@ name: CI (Build & Test)
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - 'feature/**'
     paths-ignore:
       - 'README.MD'
       - 'README.md'
@@ -26,6 +23,10 @@ on:
       - '.gitignore'
       - '.env.example'
       - 'LICENSE'
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
