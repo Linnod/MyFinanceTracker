@@ -1,6 +1,6 @@
 services:
   fintracker-bot:
-    container_name: fintracker_app
+    container_name: ${CONTAINER_NAME:-fintracker_app}
     image: myfinancetracker:latest
     restart: always
     environment:

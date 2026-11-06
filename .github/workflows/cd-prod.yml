@@ -1,0 +1,42 @@
+name: Production CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'README.MD'
+      - 'README.md'
+      - '**.md'
+      - '**.MD'
+      - 'docs/**'
+      - '.gitignore'
+      - '.env.example'
+      - 'LICENSE'
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/_cd.yml
+    with:
+      target_dir: "~/production"
+      project_name: "fintracker-prod"
+      container_name: "fintracker_app"
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      TG_TOKEN: ${{ secrets.PROD_TG_TOKEN }}
+      TG_USER_ID: ${{ secrets.PROD_TG_USER_ID }}
+      GOOGLE_SHEET_ID: ${{ secrets.PROD_GOOGLE_SHEET_ID }}
+      GEMINI_API_KEY: ${{ secrets.PROD_GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ secrets.PROD_GEMINI_MODEL }}
+      CATEGORIES_YAML: ${{ secrets.PROD_CATEGORIES_YAML }}
+      GOOGLE_CREDENTIALS_JSON: ${{ secrets.PROD_GOOGLE_CREDENTIALS_JSON }}
