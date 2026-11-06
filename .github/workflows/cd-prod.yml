@@ -21,6 +21,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Production
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
