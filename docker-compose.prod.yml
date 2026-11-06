@@ -1,3 +1,7 @@
 services:
   fintracker-bot:
     image: ghcr.io/linnod/myfinancetracker:${IMAGE_TAG:-latest}
+    logging:
+      driver: "journald"
+      options:
+        tag: "fintracker-bot"
