@@ -16,6 +16,8 @@ internal static class LogEvents
         public const int RowsAppended = SubBase + 4;
         public const int DeletingRows = SubBase + 5;
         public const int RowsDeleted = SubBase + 6;
+        public const int UpdatingRow = SubBase + 7;
+        public const int RowUpdated = SubBase + 8;
     }
 
     public static class Repository
@@ -25,5 +27,7 @@ internal static class LogEvents
         public const int AddingTransactions = SubBase + 1;
         public const int DeletingTransactions = SubBase + 2;
         public const int GettingTransactions = SubBase + 3;
+        public const int GettingTransactionById = SubBase + 4;
+        public const int UpdatingTransaction = SubBase + 5;
     }
 }

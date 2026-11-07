@@ -12,6 +12,14 @@ internal sealed class GoogleSheetsPersistenceException : Exception
         Failures = failures;
     }
 
+    private GoogleSheetsPersistenceException(string message) : base(message)
+    {
+        Failures = [];
+    }
+
+    public static GoogleSheetsPersistenceException TransactionNotFound(string sheetName, Guid transactionId) =>
+        new($"Transaction '{transactionId}' was not found in Google Sheet '{sheetName}'.");
+
     private static string FormatMessage(string sheetName, IReadOnlyList<RowMappingResult.Failure> failures)
     {
         var errors = string.Join(Environment.NewLine, failures.Select(f => $"Row {f.RowNumber}: {f.Reason}"));

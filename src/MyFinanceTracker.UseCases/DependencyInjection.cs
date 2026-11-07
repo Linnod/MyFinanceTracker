@@ -13,6 +13,9 @@ using MyFinanceTracker.UseCases.Transaction.Delete.Validation;
 using MyFinanceTracker.UseCases.Transaction.Get;
 using MyFinanceTracker.UseCases.Transaction.Get.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Get.Validation;
+using MyFinanceTracker.UseCases.Transaction.Update;
+using MyFinanceTracker.UseCases.Transaction.Update.Behaviors;
+using MyFinanceTracker.UseCases.Transaction.Update.Validation;
 
 namespace MyFinanceTracker.UseCases;
 
@@ -34,7 +37,8 @@ public static class DependencyInjection
         return services
             .AddTransactionCreate()
             .AddTransactionDelete()
-            .AddTransactionGet();
+            .AddTransactionGet()
+            .AddTransactionUpdate();
     }
 
     private static IServiceCollection AddTransactionCreate(this IServiceCollection services)
@@ -71,6 +75,18 @@ public static class DependencyInjection
             .AddTransient<
                 IPipelineBehavior<GetTransactionsRequest, GetTransactionsResponse>,
                 GetTransactionsValidationBehavior>();
+    }
+
+    private static IServiceCollection AddTransactionUpdate(this IServiceCollection services)
+    {
+        return services
+            .AddTransient<
+                IPipelineBehavior<UpdateTransactionRequest, UpdateTransactionResponse>,
+                UpdateTransactionLoggingBehavior>()
+            .AddScoped<IValidator<UpdateTransactionRequest>, UpdateTransactionRequestValidator>()
+            .AddTransient<
+                IPipelineBehavior<UpdateTransactionRequest, UpdateTransactionResponse>,
+                UpdateTransactionValidationBehavior>();
     }
 
     private static IServiceCollection AddCategoriesUseCases(this IServiceCollection services)

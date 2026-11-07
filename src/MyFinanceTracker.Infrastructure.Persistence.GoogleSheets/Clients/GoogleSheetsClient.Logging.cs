@@ -42,4 +42,16 @@ internal partial class GoogleSheetsClient
         Level = LogLevel.Debug,
         Message = "Successfully deleted rows from sheet '{SheetName}'")]
     partial void LogRowsDeleted(string sheetName);
+
+    [LoggerMessage(
+        EventId = UpdatingRow,
+        Level = LogLevel.Information,
+        Message = "Updating row at index {RowIndex} in sheet '{SheetName}' in spreadsheet '{SpreadsheetId}'")]
+    partial void LogUpdatingRow(int rowIndex, string sheetName, string spreadsheetId);
+
+    [LoggerMessage(
+        EventId = RowUpdated,
+        Level = LogLevel.Debug,
+        Message = "Successfully updated row at index {RowIndex} in sheet '{SheetName}'")]
+    partial void LogRowUpdated(int rowIndex, string sheetName);
 }

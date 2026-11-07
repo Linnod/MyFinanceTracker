@@ -2,6 +2,7 @@ using FluentAssertions;
 using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
+using MyFinanceTracker.UseCases;
 
 namespace MyFinanceTracker.Interactions.Telegram.Tests;
 
@@ -278,5 +279,65 @@ public class TelegramResponseFormatterTests
         formatted.Should().Contain("🚨 <b>Outbox Sync Failed</b>");
         formatted.Should().Contain("&lt;sync failed &amp; details&gt;");
         formatted.Should().NotContain("<sync failed & details>");
+    }
+
+    [Fact]
+    public void FormatResponse_Updated_SingleTransaction_FormatsPropertiesWithHeader()
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var transaction = new Transaction(
+            id,
+            TransactionType.Expense,
+            TestCategory,
+            25.50m,
+            new DateOnly(2026, 11, 7),
+            "Supermarket");
+
+        var action = new ActionResult.Transaction.Updated(transaction)
+        {
+            RawInput = "update 25.50"
+        };
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        var expected = $"""
+            <b>Updated transaction</b>
+
+            <b>-25.50</b>
+            <b>Groceries</b>
+            Supermarket
+            07.11.2026
+            <code>{id}</code>
+            """;
+
+        formatted.ReplaceLineEndings().Should().Be(expected.ReplaceLineEndings());
+    }
+
+    [Fact]
+    public void FormatResponse_InvalidInput_NothingToUpdate_FormatsErrorMessage()
+    {
+        // arrange
+        var action = new ActionResult.InvalidInput([
+            new ValidationErrorItem(ValidationErrorCode.Transaction.NothingToUpdate)
+        ])
+        {
+            RawInput = "update 123"
+        };
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        var expected = """
+            ⚠️ <b>Validation Error(s)</b> for '<b>update 123</b>':
+            • At least one field must be provided to update the transaction.
+            """;
+
+        formatted.ReplaceLineEndings().Should().Be(expected.ReplaceLineEndings());
     }
 }

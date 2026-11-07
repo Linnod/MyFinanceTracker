@@ -86,6 +86,60 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 },
                 new FunctionDeclaration
                 {
+                    Name = ToolNames.UpdateTransaction,
+                    Description = "Update an existing financial transaction by its unique ID (UUID/GUID). Only provided fields will be updated.",
+                    Parameters = new Schema
+                    {
+                        Type = Type.Object,
+                        Properties = new Dictionary<string, Schema>
+                        {
+                            ["id"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Unique transaction ID (UUID/GUID) to update."
+                            },
+                            ["type"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = $"Optional new transaction type: {TransactionTypesDescription}.",
+                                Enum = TransactionTypes
+                            },
+                            ["amount"] = new Schema
+                            {
+                                Type = Type.Number,
+                                Description = "Optional new positive amount."
+                            },
+                            ["categoryAlias"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Optional new category alias."
+                            },
+                            ["date"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Optional new date in YYYY-MM-DD format."
+                            },
+                            ["note"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Optional new note or comment describing the transaction."
+                            },
+                            ["clearNote"] = new Schema
+                            {
+                                Type = Type.Boolean,
+                                Description = "Set to true ONLY if user explicitly requested to remove/clear the existing note or comment."
+                            },
+                            ["recognizedInput"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "ALWAYS REQUIRED. Short human-readable summary of this update action in user's language (e.g. 'Update transaction [UUID] to 50 EUR')."
+                            }
+                        },
+                        Required = ["id", "recognizedInput"]
+                    }
+                },
+                new FunctionDeclaration
+                {
                     Name = ToolNames.GetTransactions,
                     Description = "Get transactions for a date range, optionally filtered by categories and transaction type.",
                     Parameters = new Schema
@@ -152,8 +206,8 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
     {
         public const string AddTransaction = "add_transaction";
         public const string DeleteTransactions = "delete_transactions";
+        public const string UpdateTransaction = "update_transaction";
         public const string GetTransactions = "get_transactions";
         public const string ListCategories = "list_categories";
-
     }
 }

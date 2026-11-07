@@ -344,4 +344,185 @@ public class GoogleSheetsRepositoryIntegrationTests
             Arg.Any<IReadOnlyCollection<GoogleSheetRow>>(),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task GetById_ExistingId_ReturnsTransaction()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory]);
+
+        var targetId = Guid.NewGuid();
+        var date = new DateOnly(2026, 11, 2);
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([targetId.ToString(), "2026-11-02", "Expense", "Food", "-50.5", "Lunch"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        // act
+        var result = await sut.GetById(targetId, CancellationToken.None);
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(targetId);
+        result.Type.Should().Be(TransactionType.Expense);
+        result.Category.Should().Be(foodCategory);
+        result.Amount.Should().Be(50.5m);
+        result.Date.Should().Be(date);
+        result.Note.Should().Be("Lunch");
+    }
+
+    [Fact]
+    public async Task GetById_NonExistentId_ReturnsNull()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory]);
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-50", "Lunch"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        // act
+        var result = await sut.GetById(Guid.NewGuid(), CancellationToken.None);
+
+        // assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Update_ExistingTransaction_CallsClientUpdateRowWithCorrectIndexAndValues()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory, transportCategory]);
+
+        var targetId = Guid.NewGuid();
+        var otherId = Guid.NewGuid();
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([otherId.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"])),
+                new(2, new([targetId.ToString(), "2026-11-02", "Expense", "Food", "-50", "Lunch"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        var updatedTx = new Transaction(
+            targetId,
+            TransactionType.Income,
+            transportCategory,
+            350.50m,
+            new DateOnly(2026, 11, 3),
+            "Bonus reimbursement");
+
+        // act
+        await sut.Update(updatedTx, CancellationToken.None);
+
+        // assert
+        await clientMock.Received(1).UpdateRow(
+            "Transactions",
+            Arg.Is<GoogleSheetRow>(row =>
+                row.Index == 2 &&
+                row.Values.Values[0] == targetId.ToString() &&
+                row.Values.Values[1] == "2026-11-03" &&
+                row.Values.Values[2] == "Income" &&
+                row.Values.Values[3] == "Transport" &&
+                row.Values.Values[4] == "350.5" &&
+                row.Values.Values[5] == "Bonus reimbursement"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Update_NonExistentTransaction_ThrowsGoogleSheetsPersistenceException()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory]);
+
+        var existingId = Guid.NewGuid();
+        var nonExistentId = Guid.NewGuid();
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([existingId.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        var nonExistentTx = new Transaction(
+            nonExistentId,
+            TransactionType.Expense,
+            foodCategory,
+            25m,
+            new DateOnly(2026, 11, 2),
+            null);
+
+        // act
+        var act = () => sut.Update(nonExistentTx, CancellationToken.None);
+
+        // assert
+        await act.Should().ThrowAsync<GoogleSheetsPersistenceException>()
+            .WithMessage($"*{nonExistentId}*");
+
+        await clientMock.DidNotReceiveWithAnyArgs().UpdateRow(default!, default!, default);
+    }
 }

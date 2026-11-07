@@ -28,6 +28,18 @@ internal static class ConsoleCommands
                     }
                     break;
 
+                case ActionResult.Transaction.Updated updated:
+                    System.Console.WriteLine("🔹 Updated transaction:");
+                    {
+                        var t = updated.Item;
+                        var sign = t.Type == TransactionType.Expense ? "-" : "+";
+                        var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
+
+                        System.Console.WriteLine(
+                            $"  • {t.Id} | {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
+                    }
+                    break;
+
                 case ActionResult.Transaction.Deleted deleted:
                     System.Console.WriteLine($"🗑️ Deleted {deleted.DeletedCount} transaction(s)");
                     break;
@@ -155,6 +167,7 @@ internal static class ConsoleCommands
         ValidationErrorCode.Transaction.InvalidDateRange => "Start date must be on or before end date.",
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
+        ValidationErrorCode.Transaction.NothingToUpdate => "At least one field must be provided to update the transaction.",
         _ => err.ErrorCode
     };
 }

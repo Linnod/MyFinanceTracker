@@ -5,6 +5,7 @@ using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Exceptions;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Models;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Repositories;
@@ -99,6 +100,72 @@ internal sealed partial class SqliteTransactionRepository(
         return existingEntities.Count;
     }
 
+    public async Task<Transaction?> GetById(Guid id, CancellationToken ct)
+    {
+        LogGettingTransactionById(id);
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var entity = await dbContext.Transactions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, ct);
+
+        if (entity is null)
+        {
+            return null;
+        }
+
+        var category = await categoryRepository.Resolve(entity.CategoryId, ct)
+            ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
+
+        return new Transaction(
+            entity.Id,
+            entity.Type,
+            category,
+            entity.Amount,
+            entity.Date,
+            entity.Note);
+    }
+
+    public async Task Update(Transaction transaction, CancellationToken ct)
+    {
+        LogUpdatingTransaction(transaction.Id);
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var entity = await dbContext.Transactions.FirstOrDefaultAsync(t => t.Id == transaction.Id, ct);
+        if (entity is null)
+        {
+            throw SqlitePersistenceException.TransactionNotFound(transaction.Id);
+        }
+
+        entity.Type = transaction.Type;
+        entity.CategoryId = transaction.Category.Id;
+        entity.Amount = transaction.Amount;
+        entity.Date = transaction.Date;
+        entity.Note = transaction.Note;
+
+        var outboxDto = new TransactionOutboxDto(
+            transaction.Id,
+            transaction.Type,
+            transaction.Category.Id,
+            transaction.Amount,
+            transaction.Date,
+            transaction.Note);
+
+        var payload = new UpdateTransactionOutboxPayload(outboxDto);
+        var outboxMessage = new OutboxMessageEntity
+        {
+            OperationType = OutboxOperationType.Update,
+            PayloadJson = JsonSerializer.Serialize(payload),
+            CreatedAtUtc = timeProvider.GetUtcNow()
+        };
+
+        dbContext.OutboxMessages.Add(outboxMessage);
+
+        await dbContext.SaveChangesAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Transaction>> Get(TransactionFilter filter, CancellationToken ct)
     {
         LogGettingTransactions(filter);
@@ -133,7 +200,8 @@ internal sealed partial class SqliteTransactionRepository(
         var transactions = new List<Transaction>(entities.Count);
         foreach (var entity in entities)
         {
-            var category = (await categoryRepository.Resolve(entity.CategoryId, ct))!;
+            var category = await categoryRepository.Resolve(entity.CategoryId, ct)
+                ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
 
             transactions.Add(new Transaction(
                 entity.Id,

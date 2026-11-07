@@ -433,6 +433,98 @@ public sealed class OutboxProcessorTests : IDisposable
         await notificationPublisher.DidNotReceiveWithAnyArgs().Publish(default!, default);
     }
 
+    [Fact]
+    public async Task ProcessPendingMessages_ShouldSendUpdateOperation_AndRemoveMessageFromQueue()
+    {
+        // arrange
+        var txDto = new TransactionOutboxDto(
+            Guid.NewGuid(),
+            TransactionType.Income,
+            "food",
+            200m,
+            new DateOnly(2026, 11, 4),
+            "Updated note");
+
+        var payload = new UpdateTransactionOutboxPayload(txDto);
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.OutboxMessages.Add(new OutboxMessageEntity
+            {
+                OperationType = OutboxOperationType.Update,
+                PayloadJson = JsonSerializer.Serialize(payload),
+                CreatedAtUtc = DateTimeOffset.UtcNow
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        using var processor = CreateProcessor();
+
+        // act
+        await processor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert
+        await remoteRepository.Received(1).Update(
+            Arg.Is<Transaction>(t =>
+                t.Id == txDto.Id &&
+                t.Type == TransactionType.Income &&
+                t.Category.Id == "food" &&
+                t.Amount == 200m &&
+                t.Date == new DateOnly(2026, 11, 4) &&
+                t.Note == "Updated note"),
+            Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        var remainingMessages = await assertContext.OutboxMessages.ToListAsync();
+        remainingMessages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ProcessPendingMessages_UpdateWithUnknownCategory_ShouldMoveToDeadLetterAfterMaxRetries()
+    {
+        // arrange
+        var txDto = new TransactionOutboxDto(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            "unknown_category",
+            75m,
+            new DateOnly(2026, 11, 4),
+            null);
+
+        var payload = new UpdateTransactionOutboxPayload(txDto);
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.OutboxMessages.Add(new OutboxMessageEntity
+            {
+                Id = 50,
+                OperationType = OutboxOperationType.Update,
+                PayloadJson = JsonSerializer.Serialize(payload),
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                RetryCount = 2
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        using var processor = CreateProcessor(maxRetries: 3);
+
+        // act
+        await processor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert
+        await using var assertContext = new SqliteDbContext(options);
+        var outbox = await assertContext.OutboxMessages.ToListAsync();
+        outbox.Should().BeEmpty();
+
+        var deadLetters = await assertContext.DeadLetterMessages.ToListAsync();
+        deadLetters.Should().HaveCount(1);
+        deadLetters[0].OriginalOutboxMessageId.Should().Be(50);
+        deadLetters[0].RetryCount.Should().Be(3);
+        deadLetters[0].ErrorMessage.Should().Contain("Category 'unknown_category'");
+
+        await remoteRepository.DidNotReceiveWithAnyArgs().Update(default!, default);
+    }
+
     private sealed class TestDbContextFactory(DbContextOptions<SqliteDbContext> options) : IDbContextFactory<SqliteDbContext>
     {
         public SqliteDbContext CreateDbContext() => new(options);

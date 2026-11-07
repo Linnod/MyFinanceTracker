@@ -7,6 +7,7 @@ using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Exceptions;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Models;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Repositories;
 using NSubstitute;
@@ -317,6 +318,158 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         // Assert DB - No OutboxMessages created
         var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
         outboxMessages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetById_ExistingTransaction_ReturnsTransaction()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var tx = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            foodCategory,
+            45.50m,
+            new DateOnly(2026, 11, 3),
+            "Coffee and cake");
+
+        await repository.AddRange([tx], CancellationToken.None);
+
+        // act
+        var result = await repository.GetById(tx.Id, CancellationToken.None);
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(tx.Id);
+        result.Type.Should().Be(TransactionType.Expense);
+        result.Category.Should().Be(foodCategory);
+        result.Amount.Should().Be(45.50m);
+        result.Date.Should().Be(new DateOnly(2026, 11, 3));
+        result.Note.Should().Be("Coffee and cake");
+    }
+
+    [Fact]
+    public async Task GetById_NonExistentTransaction_ReturnsNull()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var nonExistentId = Guid.NewGuid();
+
+        // act
+        var result = await repository.GetById(nonExistentId, CancellationToken.None);
+
+        // assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetById_UnresolvableCategory_ThrowsSqlitePersistenceException()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var txId = Guid.NewGuid();
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.Transactions.Add(new TransactionEntity
+            {
+                Id = txId,
+                Type = TransactionType.Expense,
+                CategoryId = "unresolvable_cat",
+                Amount = 50m,
+                Date = new DateOnly(2026, 11, 1),
+                Note = "Test"
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        // act
+        var act = () => repository.GetById(txId, CancellationToken.None);
+
+        // assert
+        await act.Should().ThrowAsync<SqlitePersistenceException>()
+            .WithMessage($"*{txId}*");
+    }
+
+    [Fact]
+    public async Task Update_ExistingTransaction_UpdatesDatabaseAndCreatesOutboxMessage()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var tx = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            foodCategory,
+            100m,
+            new DateOnly(2026, 11, 1),
+            "Original note");
+
+        await repository.AddRange([tx], CancellationToken.None);
+
+        await using (var clearOutboxContext = new SqliteDbContext(options))
+        {
+            clearOutboxContext.OutboxMessages.RemoveRange(clearOutboxContext.OutboxMessages);
+            await clearOutboxContext.SaveChangesAsync();
+        }
+
+        var updatedTx = new Transaction(
+            tx.Id,
+            TransactionType.Income,
+            salaryCategory,
+            2500.50m,
+            new DateOnly(2026, 11, 5),
+            "Updated note");
+
+        // act
+        await repository.Update(updatedTx, CancellationToken.None);
+
+        // assert
+        await using var assertContext = new SqliteDbContext(options);
+        var entity = await assertContext.Transactions.FirstOrDefaultAsync(t => t.Id == tx.Id);
+        entity.Should().NotBeNull();
+        entity!.Type.Should().Be(TransactionType.Income);
+        entity.CategoryId.Should().Be("salary");
+        entity.Amount.Should().Be(2500.50m);
+        entity.Date.Should().Be(new DateOnly(2026, 11, 5));
+        entity.Note.Should().Be("Updated note");
+
+        var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
+        outboxMessages.Should().HaveCount(1);
+
+        var outboxMessage = outboxMessages[0];
+        outboxMessage.OperationType.Should().Be(OutboxOperationType.Update);
+        outboxMessage.CreatedAtUtc.Should().Be(fixedTime);
+
+        var payload = JsonSerializer.Deserialize<UpdateTransactionOutboxPayload>(outboxMessage.PayloadJson);
+        payload.Should().NotBeNull();
+        payload!.Transaction.Should().BeEquivalentTo(new TransactionOutboxDto(
+            updatedTx.Id,
+            TransactionType.Income,
+            "salary",
+            2500.50m,
+            new DateOnly(2026, 11, 5),
+            "Updated note"));
+    }
+
+    [Fact]
+    public async Task Update_NonExistentTransaction_ThrowsSqlitePersistenceException()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var nonExistentTx = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            foodCategory,
+            50m,
+            new DateOnly(2026, 11, 1),
+            null);
+
+        // act
+        var act = () => repository.Update(nonExistentTx, CancellationToken.None);
+
+        // assert
+        await act.Should().ThrowAsync<SqlitePersistenceException>()
+            .WithMessage($"*{nonExistentTx.Id}*");
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<SqliteDbContext> options) : IDbContextFactory<SqliteDbContext>

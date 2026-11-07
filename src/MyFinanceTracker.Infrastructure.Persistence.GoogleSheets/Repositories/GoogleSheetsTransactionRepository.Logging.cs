@@ -25,4 +25,16 @@ internal partial class GoogleSheetsTransactionRepository
         Level = LogLevel.Debug,
         Message = "Preparing to get transactions with filter {Filter}")]
     partial void LogGettingTransactions(TransactionFilter filter);
+
+    [LoggerMessage(
+        EventId = GettingTransactionById,
+        Level = LogLevel.Debug,
+        Message = "Preparing to get transaction with ID {Id} from Google Sheets")]
+    partial void LogGettingTransactionById(Guid id);
+
+    [LoggerMessage(
+        EventId = UpdatingTransaction,
+        Level = LogLevel.Debug,
+        Message = "Preparing to update transaction {Id} in Google Sheets")]
+    partial void LogUpdatingTransaction(Guid id);
 }

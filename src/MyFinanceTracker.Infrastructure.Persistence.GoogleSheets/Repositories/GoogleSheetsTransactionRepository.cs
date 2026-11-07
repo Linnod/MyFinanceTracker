@@ -79,6 +79,38 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         }
     }
 
+    public async Task<Transaction?> GetById(Guid id, CancellationToken ct)
+    {
+        LogGettingTransactionById(id);
+
+        var validRows = await LoadValidRows(ct);
+        var targetRow = validRows.FirstOrDefault(s => s.Transaction.Id == id);
+        return targetRow?.Transaction;
+    }
+
+    public async Task Update(Transaction transaction, CancellationToken ct)
+    {
+        LogUpdatingTransaction(transaction.Id);
+
+        await semaphore.WaitAsync(ct);
+        try
+        {
+            var validRows = await LoadValidRows(ct);
+            var targetRow = validRows.FirstOrDefault(s => s.Transaction.Id == transaction.Id);
+            if (targetRow is null)
+            {
+                throw GoogleSheetsPersistenceException.TransactionNotFound(options.TransactionsSheetName, transaction.Id);
+            }
+
+            var rowValues = mapper.MapToRow(transaction);
+            await client.UpdateRow(options.TransactionsSheetName, new GoogleSheetRow(targetRow.Row.Index, rowValues), ct);
+        }
+        finally
+        {
+            semaphore.Release();
+        }
+    }
+
     public async Task<IReadOnlyList<Transaction>> Get(
         TransactionFilter filter,
         CancellationToken ct)

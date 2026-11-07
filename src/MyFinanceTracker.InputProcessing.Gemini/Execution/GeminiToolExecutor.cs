@@ -9,6 +9,7 @@ using MyFinanceTracker.UseCases.Category.List;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.Update;
 
 namespace MyFinanceTracker.InputProcessing.Gemini.Execution;
 
@@ -19,6 +20,7 @@ internal sealed partial class GeminiToolExecutor(
 {
     private const string DefaultRawInputForAddingTransaction = "Adding transaction";
     private const string DefaultRawInputForDeletingTransactions = "Deleting transactions";
+    private const string DefaultRawInputForUpdatingTransaction = "Updating transaction";
     private const string DefaultRawInputForListingCategories = "Listing Categories";
     private const string DefaultRawInputForGettingTransactions = "Getting transactions";
 
@@ -32,6 +34,7 @@ internal sealed partial class GeminiToolExecutor(
         {
             GeminiToolDeclarationProvider.ToolNames.AddTransaction => await HandleAddTransaction(args, ct),
             GeminiToolDeclarationProvider.ToolNames.DeleteTransactions => await HandleDeleteTransactions(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.UpdateTransaction => await HandleUpdateTransaction(args, ct),
             GeminiToolDeclarationProvider.ToolNames.ListCategories => await HandleListCategories(args, ct),
             GeminiToolDeclarationProvider.ToolNames.GetTransactions => await HandleGetTransactions(args, ct),
             _ => throw new UnreachableException($"Unsupported function call: '{functionCall.Name}'")
@@ -104,6 +107,46 @@ internal sealed partial class GeminiToolExecutor(
             },
 
             DeleteTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
+            {
+                RawInput = rawInput
+            },
+
+            _ => new ActionResult.Failure()
+            {
+                RawInput = rawInput
+            }
+        };
+    }
+
+    private async Task<ActionResult> HandleUpdateTransaction(IDictionary<string, object>? args, CancellationToken ct)
+    {
+        var typedArgs = args.BindArgs<UpdateTransactionArgs>();
+        if (typedArgs is null)
+        {
+            return new ActionResult.Failure() { RawInput = DefaultRawInputForUpdatingTransaction };
+        }
+
+        var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForUpdatingTransaction);
+
+        var request = new UpdateTransactionRequest(
+            Id: typedArgs.Id ?? Guid.Empty,
+            Type: typedArgs.Type,
+            Amount: typedArgs.Amount,
+            CategoryAlias: typedArgs.CategoryAlias,
+            Date: typedArgs.Date,
+            Note: typedArgs.Note,
+            ClearNote: typedArgs.ClearNote ?? false);
+
+        var response = await sender.Send(request, ct);
+
+        return response switch
+        {
+            UpdateTransactionResponse.Success s => new ActionResult.Transaction.Updated(s.Transaction)
+            {
+                RawInput = rawInput
+            },
+
+            UpdateTransactionResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
             {
                 RawInput = rawInput
             },

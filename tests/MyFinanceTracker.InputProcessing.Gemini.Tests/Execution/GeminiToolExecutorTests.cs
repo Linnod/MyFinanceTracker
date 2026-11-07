@@ -9,6 +9,7 @@ using MyFinanceTracker.UseCases;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.Update;
 using NSubstitute;
 using Xunit;
 
@@ -285,5 +286,93 @@ public class GeminiToolExecutorTests
                 r.Ids.SequenceEqual(new[] { id1, id2 })),
             Arg.Any<CancellationToken>()
         );
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateTransactionCall_ShouldSendUpdateTransactionRequest()
+    {
+        // arrange
+        var txId = Guid.NewGuid();
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = txId.ToString(),
+                ["amount"] = 75.50m,
+                ["type"] = "expense",
+                ["categoryAlias"] = "food",
+                ["recognizedInput"] = "update tx amount 75.50"
+            }
+        };
+
+        var category = new Category("food", "Food", ["groceries", "food"]);
+        var updatedTransaction = new Transaction(
+            txId,
+            TransactionType.Expense,
+            category,
+            75.50m,
+            new DateOnly(2026, 11, 1),
+            "Lunch");
+
+        sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new UpdateTransactionResponse.Success(updatedTransaction));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<ActionResult.Transaction.Updated>();
+        var updated = (ActionResult.Transaction.Updated)response;
+        updated.Item.Should().Be(updatedTransaction);
+        updated.RawInput.Should().Be("update tx amount 75.50");
+
+        await sender.Received(1).Send(
+            Arg.Is<UpdateTransactionRequest>(r =>
+                r.Id == txId &&
+                r.Amount == 75.50m &&
+                r.Type == TransactionType.Expense &&
+                r.CategoryAlias == "food" &&
+                r.Date == null &&
+                r.Note == null &&
+                !r.ClearNote),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateTransactionReturnsValidationError_ShouldReturnInvalidInput()
+    {
+        // arrange
+        var txId = Guid.NewGuid();
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = txId.ToString(),
+                ["recognizedInput"] = "update without changes"
+            }
+        };
+
+        ValidationErrorItem[] errors =
+        [
+            new(ValidationErrorCode.Transaction.NothingToUpdate)
+        ];
+
+        sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new UpdateTransactionResponse.ValidationError(errors));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<ActionResult.InvalidInput>();
+        var invalid = (ActionResult.InvalidInput)response;
+        invalid.Errors.Should().BeEquivalentTo(errors);
+        invalid.RawInput.Should().Be("update without changes");
+
+        await sender.Received(1).Send(
+            Arg.Is<UpdateTransactionRequest>(r => r.Id == txId),
+            Arg.Any<CancellationToken>());
     }
 }

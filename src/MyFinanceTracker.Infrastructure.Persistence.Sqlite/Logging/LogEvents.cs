@@ -13,6 +13,8 @@ internal static class LogEvents
         public const int AddingTransactions = SubBase + 1;
         public const int DeletingTransactions = SubBase + 2;
         public const int GettingTransactions = SubBase + 3;
+        public const int GettingTransactionById = SubBase + 4;
+        public const int UpdatingTransaction = SubBase + 5;
     }
 
     public static class Sync

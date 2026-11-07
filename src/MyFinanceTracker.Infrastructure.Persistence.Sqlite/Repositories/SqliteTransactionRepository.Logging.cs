@@ -25,4 +25,16 @@ internal partial class SqliteTransactionRepository
         Level = LogLevel.Debug,
         Message = "Getting transactions from SQLite with filter {Filter}")]
     partial void LogGettingTransactions(TransactionFilter filter);
+
+    [LoggerMessage(
+        EventId = GettingTransactionById,
+        Level = LogLevel.Debug,
+        Message = "Getting transaction from SQLite with ID {Id}")]
+    partial void LogGettingTransactionById(Guid id);
+
+    [LoggerMessage(
+        EventId = UpdatingTransaction,
+        Level = LogLevel.Debug,
+        Message = "Updating transaction {Id} in SQLite")]
+    partial void LogUpdatingTransaction(Guid id);
 }

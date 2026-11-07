@@ -71,6 +71,7 @@ internal sealed partial class OutboxProcessor(
             {
                 OutboxOperationType.Add => ProcessAdd(message, ct),
                 OutboxOperationType.Delete => ProcessDelete(message, ct),
+                OutboxOperationType.Update => ProcessUpdate(message, ct),
                 _ => throw OutboxProcessingException.UnsupportedOperation(message)
             };
 
@@ -160,6 +161,25 @@ internal sealed partial class OutboxProcessor(
         var payload = DeserializePayload<DeleteTransactionsOutboxPayload>(message);
 
         await transactionRepository.DeleteRange(payload.Ids, ct);
+    }
+
+    private async Task ProcessUpdate(OutboxMessageEntity message, CancellationToken ct)
+    {
+        var payload = DeserializePayload<UpdateTransactionOutboxPayload>(message);
+        var dto = payload.Transaction;
+
+        var category = await categoryRepository.Resolve(dto.CategoryId, ct)
+            ?? throw OutboxProcessingException.CategoryNotFound(message, dto);
+
+        var transaction = new Transaction(
+            dto.Id,
+            dto.Type,
+            category,
+            dto.Amount,
+            dto.Date,
+            dto.Note);
+
+        await transactionRepository.Update(transaction, ct);
     }
 
     private static T DeserializePayload<T>(OutboxMessageEntity message)

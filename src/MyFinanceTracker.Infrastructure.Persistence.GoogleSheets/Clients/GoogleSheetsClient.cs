@@ -98,6 +98,24 @@ internal sealed partial class GoogleSheetsClient(
         LogRowsDeleted(sheetName);
     }
 
+    public async Task UpdateRow(string sheetName, GoogleSheetRow row, CancellationToken ct)
+    {
+        LogUpdatingRow(row.Index, sheetName, options.SpreadsheetId);
+
+        var range = $"{sheetName}!A{row.Index + 1}";
+        var valueRange = new ValueRange
+        {
+            Values = [(IList<object>)[.. row.Values.Values]]
+        };
+
+        var updateRequest = sheetsService.Spreadsheets.Values.Update(valueRange, options.SpreadsheetId, range);
+        updateRequest.ValueInputOption = UpdateRequest.ValueInputOptionEnum.USERENTERED;
+
+        await updateRequest.ExecuteAsync(ct);
+
+        LogRowUpdated(row.Index, sheetName);
+    }
+
     private async Task<int> GetSheetId(string sheetName, CancellationToken ct)
     {
         var spreadsheet = await sheetsService.Spreadsheets

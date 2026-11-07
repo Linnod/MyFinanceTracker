@@ -12,6 +12,7 @@ public abstract record ActionResult
     {
         public sealed record Added(IReadOnlyList<Domain.Entities.Transaction> Transactions) : ActionResult;
         public sealed record Deleted(int DeletedCount) : ActionResult;
+        public sealed record Updated(Domain.Entities.Transaction Item) : ActionResult;
         public sealed record Listed(
             DateOnly FromDate,
             DateOnly ToDate,
