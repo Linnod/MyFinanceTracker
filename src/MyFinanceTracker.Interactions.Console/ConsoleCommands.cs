@@ -1,6 +1,11 @@
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Category.List;
+using MyFinanceTracker.UseCases.Transaction.Create;
+using MyFinanceTracker.UseCases.Transaction.Delete;
+using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.Update;
 
 namespace MyFinanceTracker.Interactions.Console;
 
@@ -12,9 +17,9 @@ internal static class ConsoleCommands
 
         foreach (var action in completed.Actions)
         {
-            switch (action)
+            switch (action.Response)
             {
-                case ActionResult.Transaction.Added added:
+                case CreateTransactionsResponse.Success added:
                     var totalCreated = added.Transactions.Count;
                     System.Console.WriteLine($"🔹 Created {totalCreated} transaction(s)");
 
@@ -28,10 +33,10 @@ internal static class ConsoleCommands
                     }
                     break;
 
-                case ActionResult.Transaction.Updated updated:
+                case UpdateTransactionResponse.Success updated:
                     System.Console.WriteLine("🔹 Updated transaction:");
                     {
-                        var t = updated.Item;
+                        var t = updated.Transaction;
                         var sign = t.Type == TransactionType.Expense ? "-" : "+";
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
@@ -40,11 +45,11 @@ internal static class ConsoleCommands
                     }
                     break;
 
-                case ActionResult.Transaction.Deleted deleted:
+                case DeleteTransactionsResponse.Success deleted:
                     System.Console.WriteLine($"🗑️ Deleted {deleted.DeletedCount} transaction(s)");
                     break;
 
-                case ActionResult.Transaction.Listed listed:
+                case GetTransactionsResponse.Success listed:
                     var totalListedAmount = listed.Transactions.Sum(t =>
                         t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
 
@@ -77,7 +82,7 @@ internal static class ConsoleCommands
                     }
                     break;
 
-                case ActionResult.Category.Listed listed:
+                case ListCategoriesResponse.Success listed:
                     System.Console.WriteLine($"📋 Listed {listed.Categories.Count} categories:");
                     foreach (var c in listed.Categories)
                     {
@@ -85,22 +90,22 @@ internal static class ConsoleCommands
                     }
                     break;
 
-                case ActionResult.InvalidInput input:
-                    WriteWarning($"⚠️ Validation Error(s) for '{input.RawInput}':");
+                case IValidationErrorResponse validationError:
+                    WriteWarning($"⚠️ Validation Error(s) for '{action.RawInput}':");
                     System.Console.ForegroundColor = ConsoleColor.Yellow;
-                    foreach (var err in input.Errors)
+                    foreach (var err in validationError.Errors)
                     {
                         System.Console.WriteLine($"  • {FormatValidationError(err)}");
                     }
                     System.Console.ResetColor();
                     break;
 
-                case ActionResult.Failure failure:
-                    WriteError($"Action for '{failure.RawInput}' failed due to pipeline processing failure.");
+                case IFailureResponse:
+                    WriteError($"Action for '{action.RawInput}' failed due to pipeline processing failure.");
                     break;
 
                 default:
-                    System.Console.WriteLine($"• {action}");
+                    System.Console.WriteLine($"• {action.Response}");
                     break;
             }
         }

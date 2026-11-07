@@ -1,6 +1,6 @@
 namespace MyFinanceTracker.UseCases.Category.List;
 
-public abstract record ListCategoriesResponse
+public abstract record ListCategoriesResponse : UseCaseResponse
 {
     private ListCategoriesResponse() { }
 
@@ -10,5 +10,5 @@ public abstract record ListCategoriesResponse
         public override string ToString() => $"Found {Categories.Count} categories";
     }
 
-    public sealed record Failure() : ListCategoriesResponse;
+    public sealed record Failure() : ListCategoriesResponse, IFailureResponse;
 }

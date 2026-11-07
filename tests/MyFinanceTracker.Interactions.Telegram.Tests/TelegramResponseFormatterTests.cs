@@ -3,6 +3,9 @@ using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Transaction.Create;
+using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.Update;
 
 namespace MyFinanceTracker.Interactions.Telegram.Tests;
 
@@ -23,10 +26,7 @@ public class TelegramResponseFormatterTests
             new DateOnly(2026, 11, 7),
             "Carrefour");
 
-        var action = new ActionResult.Transaction.Added([transaction])
-        {
-            RawInput = "groceries 16.59 Carrefour"
-        };
+        var action = new ActionResult("groceries 16.59 Carrefour", new CreateTransactionsResponse.Success([transaction]));
         var result = new ProcessingResult.Completed([action]);
 
         // act
@@ -59,10 +59,7 @@ public class TelegramResponseFormatterTests
             new DateOnly(2026, 11, 7),
             null);
 
-        var action = new ActionResult.Transaction.Added([transaction])
-        {
-            RawInput = "salary 100"
-        };
+        var action = new ActionResult("salary 100", new CreateTransactionsResponse.Success([transaction]));
         var result = new ProcessingResult.Completed([action]);
 
         // act
@@ -101,10 +98,7 @@ public class TelegramResponseFormatterTests
             new DateOnly(2026, 11, 7),
             null);
 
-        var action = new ActionResult.Transaction.Added([t1, t2])
-        {
-            RawInput = "coffee 10, groceries 20"
-        };
+        var action = new ActionResult("coffee 10, groceries 20", new CreateTransactionsResponse.Success([t1, t2]));
         var result = new ProcessingResult.Completed([action]);
 
         // act
@@ -130,10 +124,7 @@ public class TelegramResponseFormatterTests
             new DateOnly(2026, 11, 7),
             "<script>alert('xss')</script> & more");
 
-        var action = new ActionResult.Transaction.Added([transaction])
-        {
-            RawInput = "hack 15"
-        };
+        var action = new ActionResult("hack 15", new CreateTransactionsResponse.Success([transaction]));
         var result = new ProcessingResult.Completed([action]);
 
         // act
@@ -155,14 +146,13 @@ public class TelegramResponseFormatterTests
             new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 200m, new DateOnly(2026, 11, 2), "Bread"),
         };
 
-        var action = new ActionResult.Transaction.Listed(
-            new DateOnly(2026, 11, 1),
-            new DateOnly(2026, 11, 2),
-            [],
-            transactions)
-        {
-            RawInput = "get transactions"
-        };
+        var action = new ActionResult(
+            "get transactions",
+            new GetTransactionsResponse.Success(
+                new DateOnly(2026, 11, 1),
+                new DateOnly(2026, 11, 2),
+                [],
+                transactions));
 
         var result = new ProcessingResult.Completed([action]);
 
@@ -191,14 +181,13 @@ public class TelegramResponseFormatterTests
                 $"Item {i}"))
             .ToList();
 
-        var action = new ActionResult.Transaction.Listed(
-            new DateOnly(2026, 11, 1),
-            new DateOnly(2026, 11, 30),
-            [],
-            transactions)
-        {
-            RawInput = "get transactions"
-        };
+        var action = new ActionResult(
+            "get transactions",
+            new GetTransactionsResponse.Success(
+                new DateOnly(2026, 11, 1),
+                new DateOnly(2026, 11, 30),
+                [],
+                transactions));
 
         var result = new ProcessingResult.Completed([action]);
 
@@ -227,14 +216,13 @@ public class TelegramResponseFormatterTests
                 longNote))
             .ToList();
 
-        var action = new ActionResult.Transaction.Listed(
-            new DateOnly(2026, 11, 1),
-            new DateOnly(2026, 11, 30),
-            [],
-            transactions)
-        {
-            RawInput = "get transactions"
-        };
+        var action = new ActionResult(
+            "get transactions",
+            new GetTransactionsResponse.Success(
+                new DateOnly(2026, 11, 1),
+                new DateOnly(2026, 11, 30),
+                [],
+                transactions));
 
         var result = new ProcessingResult.Completed([action]);
 
@@ -294,10 +282,7 @@ public class TelegramResponseFormatterTests
             new DateOnly(2026, 11, 7),
             "Supermarket");
 
-        var action = new ActionResult.Transaction.Updated(transaction)
-        {
-            RawInput = "update 25.50"
-        };
+        var action = new ActionResult("update 25.50", new UpdateTransactionResponse.Success(transaction));
         var result = new ProcessingResult.Completed([action]);
 
         // act
@@ -321,12 +306,11 @@ public class TelegramResponseFormatterTests
     public void FormatResponse_InvalidInput_NothingToUpdate_FormatsErrorMessage()
     {
         // arrange
-        var action = new ActionResult.InvalidInput([
-            new ValidationErrorItem(ValidationErrorCode.Transaction.NothingToUpdate)
-        ])
-        {
-            RawInput = "update 123"
-        };
+        var action = new ActionResult(
+            "update 123",
+            new UpdateTransactionResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.NothingToUpdate)
+            ]));
         var result = new ProcessingResult.Completed([action]);
 
         // act
@@ -339,5 +323,31 @@ public class TelegramResponseFormatterTests
             """;
 
         formatted.ReplaceLineEndings().Should().Be(expected.ReplaceLineEndings());
+    }
+
+    [Fact]
+    public void FormatResponse_UseCaseResponse_FormatsDirectlyWithoutActionResult()
+    {
+        // arrange
+        var validationResponse = new UpdateTransactionResponse.ValidationError([
+            new ValidationErrorItem(ValidationErrorCode.Transaction.NothingToUpdate)
+        ]);
+
+        // act
+        var formattedWithRawInput = TelegramResponseFormatter.FormatResponse(validationResponse, "update 123");
+        var formattedWithoutRawInput = TelegramResponseFormatter.FormatResponse(validationResponse);
+
+        // assert
+        var expectedWithRaw = """
+            ⚠️ <b>Validation Error(s)</b> for '<b>update 123</b>':
+            • At least one field must be provided to update the transaction.
+            """;
+        var expectedWithoutRaw = """
+            ⚠️ <b>Validation Error(s):</b>
+            • At least one field must be provided to update the transaction.
+            """;
+
+        formattedWithRawInput.ReplaceLineEndings().Should().Be(expectedWithRaw.ReplaceLineEndings());
+        formattedWithoutRawInput.ReplaceLineEndings().Should().Be(expectedWithoutRaw.ReplaceLineEndings());
     }
 }

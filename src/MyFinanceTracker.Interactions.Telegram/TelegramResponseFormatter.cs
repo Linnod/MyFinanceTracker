@@ -5,6 +5,11 @@ using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Category.List;
+using MyFinanceTracker.UseCases.Transaction.Create;
+using MyFinanceTracker.UseCases.Transaction.Delete;
+using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.Update;
 
 namespace MyFinanceTracker.Interactions.Telegram;
 
@@ -45,109 +50,127 @@ internal static class TelegramResponseFormatter
         _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
     };
 
+    public static string FormatResponse(UseCaseResponse response, string? rawInput = null)
+    {
+        var sb = new StringBuilder();
+        AppendUseCaseResponse(sb, response, rawInput);
+        return sb.ToString().TrimEnd();
+    }
+
     private static string FormatCompleted(ProcessingResult.Completed completed)
     {
         var sb = new StringBuilder();
 
         foreach (var action in completed.Actions)
         {
-            switch (action)
-            {
-                case ActionResult.Transaction.Added added:
-                    var totalCreatedCount = added.Transactions.Count;
-
-                    sb.AppendLine($"<b>Created {totalCreatedCount} transaction(s)</b>");
-                    sb.AppendLine();
-
-                    AppendTransactions(
-                        sb,
-                        added.Transactions,
-                        "<i>...and {0} more transaction(s) not shown.</i>");
-                    break;
-
-                case ActionResult.Transaction.Updated updated:
-                    sb.AppendLine("<b>Updated transaction</b>");
-                    sb.AppendLine();
-
-                    AppendTransactions(
-                        sb,
-                        [updated.Item],
-                        "<i>...and {0} more transaction(s) not shown.</i>");
-                    break;
-
-                case ActionResult.Transaction.Deleted deleted:
-                    sb.AppendLine($"Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
-                    break;
-
-                case ActionResult.Transaction.Listed listed:
-                    var totalListedAmount = listed.Transactions.Sum(t =>
-                        t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
-                    var balanceSign = totalListedAmount > 0 ? "+" : string.Empty;
-
-                    var datePart = listed.FromDate == listed.ToDate
-                        ? $"for <code>{listed.FromDate:dd.MM.yyyy}</code>"
-                        : $"from <code>{listed.FromDate:dd.MM.yyyy}</code> to <code>{listed.ToDate:dd.MM.yyyy}</code>";
-
-                    var header = listed.CategoryNames.Count > 0
-                        ? $"<b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
-                        : $"<b>Transactions</b> {datePart}";
-
-                    sb.AppendLine(header);
-                    sb.AppendLine($"Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
-                    sb.AppendLine();
-
-                    if (listed.Transactions.Count == 0)
-                    {
-                        sb.AppendLine("No transactions found.");
-                        break;
-                    }
-
-                    AppendTransactions(
-                        sb,
-                        listed.Transactions,
-                        "<i>...and {0} more transaction(s) hidden. Please narrow down the date range or category to view more.</i>");
-                    break;
-
-                case ActionResult.Category.Listed listedCat:
-                    sb.AppendLine($"📋 <b>Available Categories ({listedCat.Categories.Count}):</b>");
-                    foreach (var c in listedCat.Categories)
-                    {
-                        var aliases = c.Aliases.Count > 0
-                            ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
-                            : string.Empty;
-
-                        sb.AppendLine(
-                            $"   • <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
-                    }
-                    break;
-
-                case ActionResult.InvalidInput input:
-                    sb.AppendLine(
-                        $"⚠️ <b>Validation Error(s)</b> for " +
-                        $"'<b>{WebUtility.HtmlEncode(input.RawInput)}</b>':");
-
-                    foreach (var err in input.Errors)
-                    {
-                        sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err))}");
-                    }
-                    break;
-
-                case ActionResult.Failure failure:
-                    sb.AppendLine(
-                        $"❌ <b>Action Failed</b> for " +
-                        $"'<b>{WebUtility.HtmlEncode(failure.RawInput)}</b>'");
-                    break;
-
-                default:
-                    sb.AppendLine(
-                        $"• {WebUtility.HtmlEncode(action.ToString())}");
-                    break;
-            }
-
+            AppendUseCaseResponse(sb, action.Response, action.RawInput);
             sb.AppendLine();
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    private static void AppendUseCaseResponse(
+        StringBuilder sb,
+        UseCaseResponse response,
+        string? rawInput = null)
+    {
+        switch (response)
+        {
+            case CreateTransactionsResponse.Success added:
+                var totalCreatedCount = added.Transactions.Count;
+
+                sb.AppendLine($"<b>Created {totalCreatedCount} transaction(s)</b>");
+                sb.AppendLine();
+
+                AppendTransactions(
+                    sb,
+                    added.Transactions,
+                    "<i>...and {0} more transaction(s) not shown.</i>");
+                break;
+
+            case UpdateTransactionResponse.Success updated:
+                sb.AppendLine("<b>Updated transaction</b>");
+                sb.AppendLine();
+
+                AppendTransactions(
+                    sb,
+                    [updated.Transaction],
+                    "<i>...and {0} more transaction(s) not shown.</i>");
+                break;
+
+            case DeleteTransactionsResponse.Success deleted:
+                sb.AppendLine($"Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
+                break;
+
+            case GetTransactionsResponse.Success listed:
+                var totalListedAmount = listed.Transactions.Sum(t =>
+                    t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
+                var balanceSign = totalListedAmount > 0 ? "+" : string.Empty;
+
+                var datePart = listed.FromDate == listed.ToDate
+                    ? $"for <code>{listed.FromDate:dd.MM.yyyy}</code>"
+                    : $"from <code>{listed.FromDate:dd.MM.yyyy}</code> to <code>{listed.ToDate:dd.MM.yyyy}</code>";
+
+                var header = listed.CategoryNames.Count > 0
+                    ? $"<b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
+                    : $"<b>Transactions</b> {datePart}";
+
+                sb.AppendLine(header);
+                sb.AppendLine($"Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
+                sb.AppendLine();
+
+                if (listed.Transactions.Count == 0)
+                {
+                    sb.AppendLine("No transactions found.");
+                    break;
+                }
+
+                AppendTransactions(
+                    sb,
+                    listed.Transactions,
+                    "<i>...and {0} more transaction(s) hidden. Please narrow down the date range or category to view more.</i>");
+                break;
+
+            case ListCategoriesResponse.Success listedCat:
+                sb.AppendLine($"📋 <b>Available Categories ({listedCat.Categories.Count}):</b>");
+                foreach (var c in listedCat.Categories)
+                {
+                    var aliases = c.Aliases.Count > 0
+                        ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
+                        : string.Empty;
+
+                    sb.AppendLine(
+                        $"   • <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
+                }
+                break;
+
+            case IValidationErrorResponse validationError:
+                var validationHeader = !string.IsNullOrWhiteSpace(rawInput)
+                    ? $"⚠️ <b>Validation Error(s)</b> for '<b>{WebUtility.HtmlEncode(rawInput)}</b>':"
+                    : "⚠️ <b>Validation Error(s):</b>";
+
+                sb.AppendLine(validationHeader);
+
+                foreach (var err in validationError.Errors)
+                {
+                    sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err))}");
+                }
+                break;
+
+            case IFailureResponse:
+                var failureMessage = !string.IsNullOrWhiteSpace(rawInput)
+                    ? $"❌ <b>Action Failed</b> for '<b>{WebUtility.HtmlEncode(rawInput)}</b>'"
+                    : "❌ <b>Action Failed</b>";
+
+                sb.AppendLine(failureMessage);
+                break;
+
+            default:
+                sb.AppendLine(
+                    $"• {WebUtility.HtmlEncode(response.ToString())}");
+                break;
+        }
     }
 
     private static void AppendTransactions(

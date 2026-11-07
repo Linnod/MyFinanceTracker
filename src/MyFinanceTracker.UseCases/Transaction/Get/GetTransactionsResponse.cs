@@ -1,6 +1,6 @@
 namespace MyFinanceTracker.UseCases.Transaction.Get;
 
-public abstract record GetTransactionsResponse
+public abstract record GetTransactionsResponse : UseCaseResponse
 {
     private GetTransactionsResponse() { }
 
@@ -17,14 +17,14 @@ public abstract record GetTransactionsResponse
 
     public sealed record ValidationError(
         IReadOnlyCollection<ValidationErrorItem> Errors
-    ) : GetTransactionsResponse
+    ) : GetTransactionsResponse, IValidationErrorResponse
     {
         public override string ToString() => Errors.Count == 0
             ? "No validation errors"
             : string.Join("; ", Errors.Select(e => e.ErrorCode));
     }
 
-    public sealed record Failure() : GetTransactionsResponse
+    public sealed record Failure() : GetTransactionsResponse, IFailureResponse
     {
         public override string ToString() => "Failed to get transactions";
     }

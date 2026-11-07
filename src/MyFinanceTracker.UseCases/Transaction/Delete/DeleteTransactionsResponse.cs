@@ -1,6 +1,6 @@
 namespace MyFinanceTracker.UseCases.Transaction.Delete;
 
-public abstract record DeleteTransactionsResponse
+public abstract record DeleteTransactionsResponse : UseCaseResponse
 {
     private DeleteTransactionsResponse() { }
 
@@ -13,14 +13,14 @@ public abstract record DeleteTransactionsResponse
 
     public sealed record ValidationError(
         IReadOnlyCollection<ValidationErrorItem> Errors
-    ) : DeleteTransactionsResponse
+    ) : DeleteTransactionsResponse, IValidationErrorResponse
     {
         public override string ToString() => Errors.Count == 0
             ? "No validation errors"
             : string.Join("; ", Errors.Select(e => e.ErrorCode));
     }
 
-    public sealed record Failure() : DeleteTransactionsResponse
+    public sealed record Failure() : DeleteTransactionsResponse, IFailureResponse
     {
         public override string ToString() => "Failed to delete transactions";
     }

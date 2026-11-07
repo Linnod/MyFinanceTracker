@@ -2,7 +2,7 @@ using MyFinanceTracker.Domain.Entities;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
-public abstract record CreateTransactionsResponse
+public abstract record CreateTransactionsResponse : UseCaseResponse
 {
     private CreateTransactionsResponse() { }
 
@@ -20,14 +20,14 @@ public abstract record CreateTransactionsResponse
 
     public sealed record ValidationError(
         IReadOnlyCollection<ValidationErrorItem> Errors
-    ) : CreateTransactionsResponse
+    ) : CreateTransactionsResponse, IValidationErrorResponse
     {
         public override string ToString() => Errors.Count == 0
             ? "No validation errors"
             : string.Join("; ", Errors.Select(e => $"{e.ErrorCode}"));
     }
 
-    public sealed record Failure() : CreateTransactionsResponse
+    public sealed record Failure() : CreateTransactionsResponse, IFailureResponse
     {
         public override string ToString() => "Failed to process transactions";
     }

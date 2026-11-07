@@ -64,9 +64,9 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // Assert
-        response.Should().BeOfType<ActionResult.Transaction.Added>();
+        response.Response.Should().BeOfType<CreateTransactionsResponse.Success>();
 
-        var result = (ActionResult.Transaction.Added)response;
+        var result = (CreateTransactionsResponse.Success)response.Response;
         result.Transactions.Should().HaveCount(1);
         result.Transactions[0].Amount.Should().Be(100m);
 
@@ -118,7 +118,7 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // Assert
-        response.Should().BeOfType<ActionResult.Transaction.Added>();
+        response.Response.Should().BeOfType<CreateTransactionsResponse.Success>();
 
         await sender.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r =>
@@ -155,10 +155,10 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // Assert
-        response.Should().BeOfType<ActionResult.InvalidInput>();
-        var result = (ActionResult.InvalidInput)response;
+        response.Response.Should().BeOfType<CreateTransactionsResponse.ValidationError>();
+        var result = (CreateTransactionsResponse.ValidationError)response.Response;
         result.Errors.Should().BeEquivalentTo(errors);
-        result.RawInput.Should().Be("Expense in food category");
+        response.RawInput.Should().Be("Expense in food category");
 
         await sender.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r => r.Items.Count == 0),
@@ -207,13 +207,13 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // Assert
-        response.Should().BeOfType<ActionResult.Transaction.Listed>();
-        var listed = (ActionResult.Transaction.Listed)response;
+        response.Response.Should().BeOfType<GetTransactionsResponse.Success>();
+        var listed = (GetTransactionsResponse.Success)response.Response;
         listed.FromDate.Should().Be(new DateOnly(2026, 8, 1));
         listed.ToDate.Should().Be(new DateOnly(2026, 8, 10));
         listed.CategoryNames.Should().Equal("Food", "Entertainment");
         listed.Transactions.Should().BeEquivalentTo(transactions);
-        listed.RawInput.Should().Be("View expenses in food and entertainment");
+        response.RawInput.Should().Be("View expenses in food and entertainment");
 
         await sender.Received(1).Send(
             Arg.Is<GetTransactionsRequest>(r =>
@@ -243,11 +243,11 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // Assert
-        response.Should().BeOfType<ActionResult.InvalidInput>();
-        var invalid = (ActionResult.InvalidInput)response;
+        response.Response.Should().BeOfType<GetTransactionsResponse.ValidationError>();
+        var invalid = (GetTransactionsResponse.ValidationError)response.Response;
         invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.FromDateRequired);
         invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.ToDateRequired);
-        invalid.RawInput.Should().Be("Show transactions");
+        response.RawInput.Should().Be("Show transactions");
         await sender.DidNotReceive().Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>());
     }
 
@@ -275,10 +275,10 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // Assert
-        response.Should().BeOfType<ActionResult.Transaction.Deleted>();
-        var deleted = (ActionResult.Transaction.Deleted)response;
+        response.Response.Should().BeOfType<DeleteTransactionsResponse.Success>();
+        var deleted = (DeleteTransactionsResponse.Success)response.Response;
         deleted.DeletedCount.Should().Be(2);
-        deleted.RawInput.Should().Be("Delete 2 transactions");
+        response.RawInput.Should().Be("Delete 2 transactions");
 
         await sender.Received(1).Send(
             Arg.Is<DeleteTransactionsRequest>(r =>
@@ -322,10 +322,10 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // assert
-        response.Should().BeOfType<ActionResult.Transaction.Updated>();
-        var updated = (ActionResult.Transaction.Updated)response;
-        updated.Item.Should().Be(updatedTransaction);
-        updated.RawInput.Should().Be("update tx amount 75.50");
+        response.Response.Should().BeOfType<UpdateTransactionResponse.Success>();
+        var updated = (UpdateTransactionResponse.Success)response.Response;
+        updated.Transaction.Should().Be(updatedTransaction);
+        response.RawInput.Should().Be("update tx amount 75.50");
 
         await sender.Received(1).Send(
             Arg.Is<UpdateTransactionRequest>(r =>
@@ -366,10 +366,10 @@ public class GeminiToolExecutorTests
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
         // assert
-        response.Should().BeOfType<ActionResult.InvalidInput>();
-        var invalid = (ActionResult.InvalidInput)response;
+        response.Response.Should().BeOfType<UpdateTransactionResponse.ValidationError>();
+        var invalid = (UpdateTransactionResponse.ValidationError)response.Response;
         invalid.Errors.Should().BeEquivalentTo(errors);
-        invalid.RawInput.Should().Be("update without changes");
+        response.RawInput.Should().Be("update without changes");
 
         await sender.Received(1).Send(
             Arg.Is<UpdateTransactionRequest>(r => r.Id == txId),

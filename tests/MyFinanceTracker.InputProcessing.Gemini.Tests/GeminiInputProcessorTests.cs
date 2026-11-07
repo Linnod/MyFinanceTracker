@@ -11,6 +11,7 @@ using MyFinanceTracker.InputProcessing.Gemini.Configuration;
 using MyFinanceTracker.InputProcessing.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Gemini.Execution;
 using MyFinanceTracker.InputProcessing.Gemini.Prompt;
+using MyFinanceTracker.UseCases.Category.List;
 using NSubstitute;
 using Xunit;
 
@@ -70,8 +71,8 @@ public class GeminiInputProcessorTests
             """);
         using var cancellation = new CancellationTokenSource();
         var calls = new List<string>();
-        ActionResult first = new ActionResult.Category.Listed([]) { RawInput = "first" };
-        ActionResult second = new ActionResult.Failure { RawInput = "second" };
+        ActionResult first = new("first", new ListCategoriesResponse.Success([]));
+        ActionResult second = new("second", new ListCategoriesResponse.Failure());
         fixture.Executor.ExecuteToolCall(Arg.Any<FunctionCall>(), cancellation.Token).Returns(call =>
         {
             var name = call.Arg<FunctionCall>().Name!;

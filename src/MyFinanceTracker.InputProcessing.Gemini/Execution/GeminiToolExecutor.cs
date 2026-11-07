@@ -49,7 +49,7 @@ internal sealed partial class GeminiToolExecutor(
         var typedArgs = args.BindArgs<AddTransactionArgs>();
         if (typedArgs is null)
         {
-            return new ActionResult.Failure() { RawInput = DefaultRawInputForAddingTransaction };
+            return new ActionResult(DefaultRawInputForAddingTransaction, new CreateTransactionsResponse.Failure());
         }
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForAddingTransaction);
@@ -67,23 +67,7 @@ internal sealed partial class GeminiToolExecutor(
         var request = new CreateTransactionsRequest(items);
         var response = await sender.Send(request, ct);
 
-        return response switch
-        {
-            CreateTransactionsResponse.Success s => new ActionResult.Transaction.Added(s.Transactions)
-            {
-                RawInput = rawInput
-            },
-
-            CreateTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
-            {
-                RawInput = rawInput
-            },
-
-            _ => new ActionResult.Failure()
-            {
-                RawInput = rawInput
-            }
-        };
+        return new ActionResult(rawInput, response);
     }
 
     private async Task<ActionResult> HandleDeleteTransactions(IDictionary<string, object>? args, CancellationToken ct)
@@ -91,7 +75,7 @@ internal sealed partial class GeminiToolExecutor(
         var typedArgs = args.BindArgs<DeleteTransactionsArgs>();
         if (typedArgs is null)
         {
-            return new ActionResult.Failure() { RawInput = DefaultRawInputForDeletingTransactions };
+            return new ActionResult(DefaultRawInputForDeletingTransactions, new DeleteTransactionsResponse.Failure());
         }
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForDeletingTransactions);
@@ -99,23 +83,7 @@ internal sealed partial class GeminiToolExecutor(
         var request = new DeleteTransactionsRequest(typedArgs.Ids);
         var response = await sender.Send(request, ct);
 
-        return response switch
-        {
-            DeleteTransactionsResponse.Success s => new ActionResult.Transaction.Deleted(s.DeletedCount)
-            {
-                RawInput = rawInput
-            },
-
-            DeleteTransactionsResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
-            {
-                RawInput = rawInput
-            },
-
-            _ => new ActionResult.Failure()
-            {
-                RawInput = rawInput
-            }
-        };
+        return new ActionResult(rawInput, response);
     }
 
     private async Task<ActionResult> HandleUpdateTransaction(IDictionary<string, object>? args, CancellationToken ct)
@@ -123,7 +91,7 @@ internal sealed partial class GeminiToolExecutor(
         var typedArgs = args.BindArgs<UpdateTransactionArgs>();
         if (typedArgs is null)
         {
-            return new ActionResult.Failure() { RawInput = DefaultRawInputForUpdatingTransaction };
+            return new ActionResult(DefaultRawInputForUpdatingTransaction, new UpdateTransactionResponse.Failure());
         }
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForUpdatingTransaction);
@@ -139,23 +107,7 @@ internal sealed partial class GeminiToolExecutor(
 
         var response = await sender.Send(request, ct);
 
-        return response switch
-        {
-            UpdateTransactionResponse.Success s => new ActionResult.Transaction.Updated(s.Transaction)
-            {
-                RawInput = rawInput
-            },
-
-            UpdateTransactionResponse.ValidationError v => new ActionResult.InvalidInput(v.Errors)
-            {
-                RawInput = rawInput
-            },
-
-            _ => new ActionResult.Failure()
-            {
-                RawInput = rawInput
-            }
-        };
+        return new ActionResult(rawInput, response);
     }
 
     private async Task<ActionResult> HandleGetTransactions(
@@ -165,10 +117,7 @@ internal sealed partial class GeminiToolExecutor(
         var typedArgs = args.BindArgs<GetTransactionsArgs>();
         if (typedArgs is null)
         {
-            return new ActionResult.Failure
-            {
-                RawInput = DefaultRawInputForGettingTransactions
-            };
+            return new ActionResult(DefaultRawInputForGettingTransactions, new GetTransactionsResponse.Failure());
         }
 
         var rawInput = GetRecognizedInput(
@@ -188,10 +137,7 @@ internal sealed partial class GeminiToolExecutor(
                 errors.Add(new ValidationErrorItem(ValidationErrorCode.Transaction.ToDateRequired));
             }
 
-            return new ActionResult.InvalidInput(errors)
-            {
-                RawInput = rawInput
-            };
+            return new ActionResult(rawInput, new GetTransactionsResponse.ValidationError(errors));
         }
 
         var request = new GetTransactionsRequest(
@@ -202,29 +148,7 @@ internal sealed partial class GeminiToolExecutor(
 
         var response = await sender.Send(request, ct);
 
-        return response switch
-        {
-            GetTransactionsResponse.Success s =>
-                new ActionResult.Transaction.Listed(
-                    s.FromDate,
-                    s.ToDate,
-                    s.CategoryNames,
-                    s.Transactions)
-                {
-                    RawInput = rawInput
-                },
-
-            GetTransactionsResponse.ValidationError v =>
-                new ActionResult.InvalidInput(v.Errors)
-                {
-                    RawInput = rawInput
-                },
-
-            _ => new ActionResult.Failure
-            {
-                RawInput = rawInput
-            }
-        };
+        return new ActionResult(rawInput, response);
     }
 
     private async Task<ActionResult> HandleListCategories(IDictionary<string, object>? args, CancellationToken ct)
@@ -232,25 +156,14 @@ internal sealed partial class GeminiToolExecutor(
         var typedArgs = args.BindArgs<ListCategoriesArgs>();
         if (typedArgs is null)
         {
-            return new ActionResult.Failure() { RawInput = DefaultRawInputForListingCategories };
+            return new ActionResult(DefaultRawInputForListingCategories, new ListCategoriesResponse.Failure());
         }
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForListingCategories);
 
         var response = await sender.Send(new ListCategoriesRequest(), ct);
 
-        return response switch
-        {
-            ListCategoriesResponse.Success success => new ActionResult.Category.Listed(success.Categories)
-            {
-                RawInput = rawInput
-            },
-
-            _ => new ActionResult.Failure()
-            {
-                RawInput = rawInput
-            }
-        };
+        return new ActionResult(rawInput, response);
     }
 
     private static string GetRecognizedInput(string? recognizedInput, string fallback) =>
