@@ -10,9 +10,144 @@ public class TelegramResponseFormatterTests
     private static readonly Category TestCategory = new("groceries", "Groceries", ["food"]);
 
     [Fact]
+    public void FormatResponse_Added_SingleTransactionWithNote_FormatsPropertiesAsCleanLines()
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var transaction = new Transaction(
+            id,
+            TransactionType.Expense,
+            TestCategory,
+            16.59m,
+            new DateOnly(2026, 11, 7),
+            "Carrefour");
+
+        var action = new ActionResult.Transaction.Added([transaction])
+        {
+            RawInput = "groceries 16.59 Carrefour"
+        };
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        var expected = $"""
+            <b>Created 1 transaction(s)</b>
+
+            <b>-16.59</b>
+            <b>Groceries</b>
+            Carrefour
+            07.11.2026
+            <code>{id}</code>
+            """;
+
+        formatted.ReplaceLineEndings().Should().Be(expected.ReplaceLineEndings());
+    }
+
+    [Fact]
+    public void FormatResponse_Added_WithoutNote_OmitsNoteLine()
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var transaction = new Transaction(
+            id,
+            TransactionType.Income,
+            TestCategory,
+            100m,
+            new DateOnly(2026, 11, 7),
+            null);
+
+        var action = new ActionResult.Transaction.Added([transaction])
+        {
+            RawInput = "salary 100"
+        };
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        var expected = $"""
+            <b>Created 1 transaction(s)</b>
+
+            <b>+100.00</b>
+            <b>Groceries</b>
+            07.11.2026
+            <code>{id}</code>
+            """;
+
+        formatted.ReplaceLineEndings().Should().Be(expected.ReplaceLineEndings());
+    }
+
+    [Fact]
+    public void FormatResponse_Added_MultipleTransactions_SeparatesBlocksWithEmptyLine()
+    {
+        // arrange
+        var t1 = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            TestCategory,
+            10m,
+            new DateOnly(2026, 11, 7),
+            "Coffee");
+
+        var t2 = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            TestCategory,
+            20m,
+            new DateOnly(2026, 11, 7),
+            null);
+
+        var action = new ActionResult.Transaction.Added([t1, t2])
+        {
+            RawInput = "coffee 10, groceries 20"
+        };
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        formatted.Should().Contain("<b>Created 2 transaction(s)</b>");
+        formatted.Should().Contain($"<code>{t1.Id}</code>");
+        formatted.Should().Contain($"<code>{t2.Id}</code>");
+        formatted.ReplaceLineEndings().Should().Contain($"<code>{t1.Id}</code>\n\n<b>-20.00</b>".ReplaceLineEndings());
+    }
+
+    [Fact]
+    public void FormatResponse_Added_SpecialCharacters_AreHtmlEncoded()
+    {
+        // arrange
+        var category = new Category("test", "A & B <C>", ["test"]);
+        var transaction = new Transaction(
+            Guid.NewGuid(),
+            TransactionType.Expense,
+            category,
+            15m,
+            new DateOnly(2026, 11, 7),
+            "<script>alert('xss')</script> & more");
+
+        var action = new ActionResult.Transaction.Added([transaction])
+        {
+            RawInput = "hack 15"
+        };
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        formatted.Should().Contain("<b>A &amp; B &lt;C&gt;</b>");
+        formatted.Should().Contain("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt; &amp; more");
+        formatted.Should().NotContain("<script>");
+    }
+
+    [Fact]
     public void FormatResponse_Listed_WithSmallCount_ShowsAllTransactions()
     {
-        // Arrange
+        // arrange
         var transactions = new List<Transaction>
         {
             new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 100m, new DateOnly(2026, 11, 1), "Milk"),
@@ -30,10 +165,10 @@ public class TelegramResponseFormatterTests
 
         var result = new ProcessingResult.Completed([action]);
 
-        // Act
+        // act
         var formatted = TelegramResponseFormatter.FormatResponse(result);
 
-        // Assert
+        // assert
         formatted.Should().Contain(transactions[0].Id.ToString());
         formatted.Should().Contain(transactions[1].Id.ToString());
         formatted.Should().Contain("Total: <code>-300.00</code>");
@@ -44,7 +179,7 @@ public class TelegramResponseFormatterTests
     [Fact]
     public void FormatResponse_Listed_WithMoreThanMax_CapsDisplayedAndPreservesTotal()
     {
-        // Arrange: 50 transactions
+        // arrange: 50 transactions
         var transactions = Enumerable.Range(1, 50)
             .Select(i => new Transaction(
                 Guid.NewGuid(),
@@ -66,10 +201,10 @@ public class TelegramResponseFormatterTests
 
         var result = new ProcessingResult.Completed([action]);
 
-        // Act
+        // act
         var formatted = TelegramResponseFormatter.FormatResponse(result);
 
-        // Assert
+        // assert
         formatted.Length.Should().BeLessThanOrEqualTo(4096);
         formatted.Should().Contain("Total: <code>-500.00</code>"); // 50 * 10
         formatted.Should().Contain("more transaction(s) hidden");
@@ -79,7 +214,7 @@ public class TelegramResponseFormatterTests
     [Fact]
     public void FormatResponse_Listed_WithLongNotes_NeverExceedsTelegramLimit()
     {
-        // Arrange: 30 transactions with long notes (150 chars each)
+        // arrange: 30 transactions with long notes (150 chars each)
         var longNote = new string('A', 150);
         var transactions = Enumerable.Range(1, 30)
             .Select(_ => new Transaction(
@@ -102,10 +237,10 @@ public class TelegramResponseFormatterTests
 
         var result = new ProcessingResult.Completed([action]);
 
-        // Act
+        // act
         var formatted = TelegramResponseFormatter.FormatResponse(result);
 
-        // Assert
+        // assert
         formatted.Length.Should().BeLessThanOrEqualTo(4096);
         formatted.Should().Contain("more transaction(s) hidden");
     }

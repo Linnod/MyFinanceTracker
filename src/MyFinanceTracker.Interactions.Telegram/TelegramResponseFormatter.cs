@@ -56,8 +56,8 @@ internal static class TelegramResponseFormatter
                 case ActionResult.Transaction.Added added:
                     var totalCreatedCount = added.Transactions.Count;
 
-                    sb.AppendLine(
-                        $"🔹 Created <b>{totalCreatedCount}</b> transaction(s)");
+                    sb.AppendLine($"<b>Created {totalCreatedCount} transaction(s)</b>");
+                    sb.AppendLine();
 
                     AppendTransactions(
                         sb,
@@ -66,7 +66,7 @@ internal static class TelegramResponseFormatter
                     break;
 
                 case ActionResult.Transaction.Deleted deleted:
-                    sb.AppendLine($"🗑️ Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
+                    sb.AppendLine($"Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
                     break;
 
                 case ActionResult.Transaction.Listed listed:
@@ -79,15 +79,16 @@ internal static class TelegramResponseFormatter
                         : $"from <code>{listed.FromDate:dd.MM.yyyy}</code> to <code>{listed.ToDate:dd.MM.yyyy}</code>";
 
                     var header = listed.CategoryNames.Count > 0
-                        ? $"📋 <b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
-                        : $"📋 <b>Transactions</b> {datePart}";
+                        ? $"<b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
+                        : $"<b>Transactions</b> {datePart}";
 
                     sb.AppendLine(header);
-                    sb.AppendLine($"💰 Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
+                    sb.AppendLine($"Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
+                    sb.AppendLine();
 
                     if (listed.Transactions.Count == 0)
                     {
-                        sb.AppendLine("   • No transactions.");
+                        sb.AppendLine("No transactions found.");
                         break;
                     }
 
@@ -97,9 +98,9 @@ internal static class TelegramResponseFormatter
                         "<i>...and {0} more transaction(s) hidden. Please narrow down the date range or category to view more.</i>");
                     break;
 
-                case ActionResult.Category.Listed listed:
-                    sb.AppendLine($"📋 <b>Available Categories ({listed.Categories.Count}):</b>");
-                    foreach (var c in listed.Categories)
+                case ActionResult.Category.Listed listedCat:
+                    sb.AppendLine($"📋 <b>Available Categories ({listedCat.Categories.Count}):</b>");
+                    foreach (var c in listedCat.Categories)
                     {
                         var aliases = c.Aliases.Count > 0
                             ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
@@ -154,27 +155,39 @@ internal static class TelegramResponseFormatter
             }
 
             var sign = t.Type == TransactionType.Expense ? "-" : "+";
-            var note = string.IsNullOrWhiteSpace(t.Note)
-                ? string.Empty
-                : $" ({WebUtility.HtmlEncode(t.Note)})";
+            var itemSb = new StringBuilder();
 
-            var line = $"   • <code>{t.Id}</code> | " +
-                       $"<code>{t.Date:dd.MM.yyyy}</code> | " +
-                       $"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b> | " +
-                       $"<code>{sign}{t.Amount:0.00}</code>{note}";
+            if (displayedCount > 0)
+            {
+                itemSb.AppendLine();
+            }
 
-            if (sb.Length + line.Length > MaxMessageLength)
+            itemSb.AppendLine($"<b>{sign}{t.Amount:0.00}</b>");
+            itemSb.AppendLine($"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b>");
+
+            if (!string.IsNullOrWhiteSpace(t.Note))
+            {
+                itemSb.AppendLine(WebUtility.HtmlEncode(t.Note));
+            }
+
+            itemSb.AppendLine($"{t.Date:dd.MM.yyyy}");
+            itemSb.Append($"<code>{t.Id}</code>");
+
+            var itemText = itemSb.ToString();
+
+            if (sb.Length + itemText.Length + Environment.NewLine.Length > MaxMessageLength)
             {
                 break;
             }
 
-            sb.AppendLine(line);
+            sb.AppendLine(itemText);
             displayedCount++;
         }
 
         var remaining = transactions.Count - displayedCount;
         if (remaining > 0)
         {
+            sb.AppendLine();
             sb.AppendLine(string.Format(overflowTemplate, remaining));
         }
     }
@@ -187,6 +200,7 @@ internal static class TelegramResponseFormatter
 
         return sb.ToString();
     }
+
     private static string FormatValidationError(ValidationErrorItem err) => err.ErrorCode switch
     {
         ValidationErrorCode.Transaction.CategoryRequired => "Category is required.",
