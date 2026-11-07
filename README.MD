@@ -7,6 +7,7 @@ Personal finance tracker that stores transactions in Google Sheets and supports 
 
 ## Features
 
+- Complete natural language transaction lifecycle: create, list/filter, update, and delete
 - Multimodal transaction input: text commands, voice messages, receipt photos, and banking screenshots
 - Gemini-powered natural language processing, audio transcription, and image analysis
 - Local SQLite persistence with Transactional Outbox pattern
@@ -232,12 +233,26 @@ You can also run the application as a background service via Docker Compose:
 
 ### Text Commands (Console & Telegram)
 
-Natural language input in any language:
+Natural language input in any language for adding, viewing, updating, and deleting transactions:
 
 ```text
+# Add transactions
 Spent 15.50 on groceries
 Spent 8.40 at Starbucks yesterday
 Received salary 2500
+
+# View transactions
+Show transactions for yesterday
+View food expenses for last week
+Show October transactions
+
+# Update a transaction (by ID)
+Update transaction 7d9a8c12-34ef-5678-90ab-cdef12345678: 18.50 cafe
+Change transaction 7d9a8c12-34ef-5678-90ab-cdef12345678: remove note
+
+# Delete transactions (by ID)
+Delete transaction 7d9a8c12-34ef-5678-90ab-cdef12345678
+Delete transactions 7d9a8c12-34ef-5678-90ab-cdef12345678 and 1a2b3c4d-5678-90ab-cdef-1234567890ab
 ```
 
 ### Voice Messages (Telegram)
