@@ -17,14 +17,14 @@ namespace MyFinanceTracker.InputProcessing.Gemini.Tests.Execution;
 public class GeminiToolExecutorTests
 {
     private readonly ILogger<GeminiToolExecutor> loggerMock;
-    private readonly IMediator mediator = Substitute.For<IMediator>();
+    private readonly ISender sender = Substitute.For<ISender>();
     private readonly TimeProvider timeProvider = TimeProvider.System;
     private readonly GeminiToolExecutor executor;
 
     public GeminiToolExecutorTests()
     {
         loggerMock = Substitute.For<ILogger<GeminiToolExecutor>>();
-        executor = new GeminiToolExecutor(mediator, timeProvider, loggerMock);
+        executor = new GeminiToolExecutor(sender, timeProvider, loggerMock);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class GeminiToolExecutorTests
             )
         };
 
-        mediator.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new CreateTransactionsResponse.Success(createdTransactions));
 
         // Act
@@ -69,7 +69,7 @@ public class GeminiToolExecutorTests
         result.Transactions.Should().HaveCount(1);
         result.Transactions[0].Amount.Should().Be(100m);
 
-        await mediator.Received(1).Send(
+        await sender.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r =>
                 r.Items.Count == 1 &&
                 r.Items[0].TransactionType == TransactionType.Expense &&
@@ -110,7 +110,7 @@ public class GeminiToolExecutorTests
             )
         };
 
-        mediator.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new CreateTransactionsResponse.Success(createdTransactions));
 
         // Act
@@ -119,7 +119,7 @@ public class GeminiToolExecutorTests
         // Assert
         response.Should().BeOfType<ActionResult.Transaction.Added>();
 
-        await mediator.Received(1).Send(
+        await sender.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r =>
                 r.Items.Count == 1 &&
                 r.Items[0].Date == today),
@@ -147,7 +147,7 @@ public class GeminiToolExecutorTests
             new ValidationErrorItem(ValidationErrorCode.Transaction.AmountRequired)
         };
 
-        mediator.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new CreateTransactionsResponse.ValidationError(errors));
 
         // Act
@@ -159,7 +159,7 @@ public class GeminiToolExecutorTests
         result.Errors.Should().BeEquivalentTo(errors);
         result.RawInput.Should().Be("Expense in food category");
 
-        await mediator.Received(1).Send(
+        await sender.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r => r.Items.Count == 0),
             Arg.Any<CancellationToken>()
         );
@@ -195,7 +195,7 @@ public class GeminiToolExecutorTests
             )
         };
 
-        mediator.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new GetTransactionsResponse.Success(
                 new DateOnly(2026, 8, 1),
                 new DateOnly(2026, 8, 10),
@@ -214,7 +214,7 @@ public class GeminiToolExecutorTests
         listed.Transactions.Should().BeEquivalentTo(transactions);
         listed.RawInput.Should().Be("View expenses in food and entertainment");
 
-        await mediator.Received(1).Send(
+        await sender.Received(1).Send(
             Arg.Is<GetTransactionsRequest>(r =>
                 r.FromDate == new DateOnly(2026, 8, 1) &&
                 r.ToDate == new DateOnly(2026, 8, 10) &&
@@ -247,7 +247,7 @@ public class GeminiToolExecutorTests
         invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.FromDateRequired);
         invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.ToDateRequired);
         invalid.RawInput.Should().Be("Show transactions");
-        await mediator.DidNotReceive().Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>());
+        await sender.DidNotReceive().Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -267,7 +267,7 @@ public class GeminiToolExecutorTests
             }
         };
 
-        mediator.Send(Arg.Any<DeleteTransactionsRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<DeleteTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new DeleteTransactionsResponse.Success(2));
 
         // Act
@@ -279,7 +279,7 @@ public class GeminiToolExecutorTests
         deleted.DeletedCount.Should().Be(2);
         deleted.RawInput.Should().Be("Delete 2 transactions");
 
-        await mediator.Received(1).Send(
+        await sender.Received(1).Send(
             Arg.Is<DeleteTransactionsRequest>(r =>
                 r.Ids != null &&
                 r.Ids.SequenceEqual(new[] { id1, id2 })),

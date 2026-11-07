@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using System.Net.Sockets;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MyFinanceTracker.InputProcessing;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -13,7 +14,7 @@ namespace MyFinanceTracker.Interactions.Telegram;
 
 internal sealed partial class TelegramInteractionWorker(
     ITelegramBotClient botClient,
-    IInputReceiver inputReceiver,
+    IServiceScopeFactory scopeFactory,
     IOptions<TelegramInteractionOptions> options,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
@@ -58,7 +59,10 @@ internal sealed partial class TelegramInteractionWorker(
                 return;
             }
 
-            var responseText = await ProcessMessage(bot, message, ct);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
+            var responseText = await ProcessMessage(bot, message, sender, ct);
 
             try
             {
@@ -94,6 +98,7 @@ internal sealed partial class TelegramInteractionWorker(
     private async Task<string> ProcessMessage(
         ITelegramBotClient bot,
         Message message,
+        ISender sender,
         CancellationToken ct)
     {
         var buildResult = await message.BuildInput(bot, ct);
@@ -106,7 +111,7 @@ internal sealed partial class TelegramInteractionWorker(
 
                     LogUpdateReceived(input);
 
-                    var response = await inputReceiver.Receive(input, ct);
+                    var response = await sender.Send(input, ct);
                     return TelegramResponseFormatter.FormatResponse(response);
                 }
 

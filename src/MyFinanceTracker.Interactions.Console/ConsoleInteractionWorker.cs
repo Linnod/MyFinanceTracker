@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing;
@@ -6,7 +8,7 @@ using MyFinanceTracker.InputProcessing;
 namespace MyFinanceTracker.Interactions.Console;
 
 internal sealed partial class ConsoleInteractionWorker(
-    IInputReceiver inputReceiver,
+    IServiceScopeFactory scopeFactory,
     ILogger<ConsoleInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,8 +55,11 @@ internal sealed partial class ConsoleInteractionWorker(
 
             try
             {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
                 var input = new Input.Text(rawLine);
-                var response = await inputReceiver.Receive(input, ct);
+                var response = await sender.Send(input, ct);
                 HandleResponse(response);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)

@@ -1,4 +1,5 @@
 using Google.GenAI;
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -16,16 +17,15 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services
-            .AddInputProcessing()
             .ConfigureGeminiOptions(configuration)
             .AddSingleton(sp =>
             {
                 var options = sp.GetRequiredService<IOptions<GeminiOptions>>().Value;
                 return new Client(apiKey: options.ApiKey);
             })
-            .AddScoped<IInputProcessor<Input.Text>, GeminiInputProcessor>()
-            .AddScoped<IInputProcessor<Input.Audio>, GeminiInputProcessor>()
-            .AddScoped<IInputProcessor<Input.Image>, GeminiInputProcessor>()
+            .AddScoped<IRequestHandler<Input.Text, ProcessingResult>, GeminiInputProcessor>()
+            .AddScoped<IRequestHandler<Input.Audio, ProcessingResult>, GeminiInputProcessor>()
+            .AddScoped<IRequestHandler<Input.Image, ProcessingResult>, GeminiInputProcessor>()
             .AddScoped<IGeminiSystemPromptBuilder, GeminiSystemPromptBuilder>()
             .AddSingleton<IGeminiToolDeclarationProvider, GeminiToolDeclarationProvider>()
             .AddScoped<IGeminiToolExecutor, GeminiToolExecutor>();

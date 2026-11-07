@@ -1,5 +1,6 @@
 using Google.GenAI;
 using Google.GenAI.Types;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.InputProcessing.Gemini.Configuration;
@@ -16,36 +17,38 @@ internal sealed partial class GeminiInputProcessor(
     IOptions<GeminiOptions> options,
     Client client,
     ILogger<GeminiInputProcessor> logger)
-    : IInputProcessor<Input.Text>, IInputProcessor<Input.Audio>, IInputProcessor<Input.Image>
+    : IRequestHandler<Input.Text, ProcessingResult>,
+      IRequestHandler<Input.Audio, ProcessingResult>,
+      IRequestHandler<Input.Image, ProcessingResult>
 {
     private const string ProcessingFailureMessage = "Failed to process your request. Please try again later.";
     private const string ExtractionInstruction = "Extract financial transaction details and execute the corresponding function call.";
 
-    public Task<ProcessingResult> Process(Input.Text input, CancellationToken ct)
+    public Task<ProcessingResult> Handle(Input.Text request, CancellationToken ct)
     {
-        LogExecuteEntry(input);
+        LogExecuteEntry(request);
 
         var content = new Content
         {
             Role = "user",
-            Parts = [new Part { Text = input.Content }]
+            Parts = [new Part { Text = request.Content }]
         };
 
         return ProcessCore(content, ct);
     }
 
-    public Task<ProcessingResult> Process(Input.Audio input, CancellationToken ct)
+    public Task<ProcessingResult> Handle(Input.Audio request, CancellationToken ct)
     {
-        LogExecuteEntry(input);
+        LogExecuteEntry(request);
 
-        return ProcessCore(CreateAudioContent(input), ct);
+        return ProcessCore(CreateAudioContent(request), ct);
     }
 
-    public Task<ProcessingResult> Process(Input.Image input, CancellationToken ct)
+    public Task<ProcessingResult> Handle(Input.Image request, CancellationToken ct)
     {
-        LogExecuteEntry(input);
+        LogExecuteEntry(request);
 
-        return ProcessCore(CreateImageContent(input), ct);
+        return ProcessCore(CreateImageContent(request), ct);
     }
 
     private async Task<ProcessingResult> ProcessCore(Content content, CancellationToken ct)

@@ -4,6 +4,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Google.GenAI;
 using Google.GenAI.Types;
+using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.InputProcessing.Gemini.Configuration;
@@ -18,11 +19,11 @@ namespace MyFinanceTracker.InputProcessing.Gemini.Tests;
 public class GeminiInputProcessorTests
 {
     [Fact]
-    public async Task Process_Text_SendsTextWithSystemInstructionAndTools()
+    public async Task Handle_Text_SendsTextWithSystemInstructionAndTools()
     {
         using var fixture = new Fixture();
 
-        await fixture.Processor.Process(new Input.Text("coffee 5"), CancellationToken.None);
+        await fixture.Processor.Handle(new Input.Text("coffee 5"), CancellationToken.None);
 
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var root = request.RootElement;
@@ -38,12 +39,12 @@ public class GeminiInputProcessorTests
     }
 
     [Fact]
-    public async Task Process_Audio_SendsBytesAndDefaultPrompt()
+    public async Task Handle_Audio_SendsBytesAndDefaultPrompt()
     {
         using var fixture = new Fixture();
         byte[] bytes = [1, 2, 3, 4];
 
-        await fixture.Processor.Process(new Input.Audio(bytes, "audio/ogg"), CancellationToken.None);
+        await fixture.Processor.Handle(new Input.Audio(bytes, "audio/ogg"), CancellationToken.None);
 
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
@@ -58,7 +59,7 @@ public class GeminiInputProcessorTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Process_FunctionCalls_ExecutesInOrderAndReturnsActions(bool audio)
+    public async Task Handle_FunctionCalls_ExecutesInOrderAndReturnsActions(bool audio)
     {
         using var fixture = new Fixture("""
             {"candidates":[{"content":{"parts":[
@@ -78,7 +79,7 @@ public class GeminiInputProcessorTests
             return Task.FromResult(name == "first" ? first : second);
         });
 
-        var result = await fixture.Process(audio, cancellation.Token);
+        var result = await fixture.Handle(audio, cancellation.Token);
 
         result.Should().BeOfType<ProcessingResult.Completed>().Which.Actions
             .Should().Equal(first, second);
@@ -88,13 +89,13 @@ public class GeminiInputProcessorTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Process_TextResponse_ReturnsInvalidInput(bool audio)
+    public async Task Handle_TextResponse_ReturnsInvalidInput(bool audio)
     {
         using var fixture = new Fixture("""
             {"candidates":[{"content":{"parts":[{"text":"Please specify a category."}]}}]}
             """);
 
-        var result = await fixture.Process(audio);
+        var result = await fixture.Handle(audio);
 
         result.Should().Be(new ProcessingResult.InvalidInput("Please specify a category."));
         fixture.Executor.ReceivedCalls().Should().BeEmpty();
@@ -103,11 +104,11 @@ public class GeminiInputProcessorTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Process_EmptyResponse_ReturnsRequestFailureMessage(bool audio)
+    public async Task Handle_EmptyResponse_ReturnsRequestFailureMessage(bool audio)
     {
         using var fixture = new Fixture();
 
-        var result = await fixture.Process(audio);
+        var result = await fixture.Handle(audio);
 
         result.Should().Be(new ProcessingResult.SystemError(
             "Failed to process your request. Please try again later."));
@@ -118,7 +119,7 @@ public class GeminiInputProcessorTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public async Task Process_PromptFailureIncludingCancellation_HandlesCancellationOrSystemError(bool audio, bool cancelled)
+    public async Task Handle_PromptFailureIncludingCancellation_HandlesCancellationOrSystemError(bool audio, bool cancelled)
     {
         using var fixture = new Fixture();
         using var cancellation = new CancellationTokenSource();
@@ -132,12 +133,12 @@ public class GeminiInputProcessorTests
 
         if (cancelled)
         {
-            var act = () => fixture.Process(audio, cancellation.Token);
+            var act = () => fixture.Handle(audio, cancellation.Token);
             await act.Should().ThrowAsync<OperationCanceledException>();
         }
         else
         {
-            var result = await fixture.Process(audio, cancellation.Token);
+            var result = await fixture.Handle(audio, cancellation.Token);
             var error = result.Should().BeOfType<ProcessingResult.SystemError>().Which;
             error.Message.Should().Be("Failed to process your request. Please try again later.");
         }
@@ -146,14 +147,14 @@ public class GeminiInputProcessorTests
     }
 
     [Fact]
-    public async Task Process_ImageWithoutCaption_SendsBytesAndDefaultPrompt()
+    public async Task Handle_ImageWithoutCaption_SendsBytesAndDefaultPrompt()
     {
         // Arrange
         using var fixture = new Fixture();
         byte[] bytes = [1, 2, 3, 4];
 
         // Act
-        await fixture.Processor.Process(new Input.Image(bytes, "image/jpeg"), CancellationToken.None);
+        await fixture.Processor.Handle(new Input.Image(bytes, "image/jpeg"), CancellationToken.None);
 
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
@@ -167,14 +168,14 @@ public class GeminiInputProcessorTests
     }
 
     [Fact]
-    public async Task Process_ImageWithCaption_IncludesCaptionInTextPart()
+    public async Task Handle_ImageWithCaption_IncludesCaptionInTextPart()
     {
         // Arrange
         using var fixture = new Fixture();
         byte[] bytes = [1, 2, 3, 4];
 
         // Act
-        await fixture.Processor.Process(new Input.Image(bytes, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
+        await fixture.Processor.Handle(new Input.Image(bytes, "image/jpeg", "Groceries yesterday"), CancellationToken.None);
 
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
@@ -185,6 +186,23 @@ public class GeminiInputProcessorTests
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
             "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
+    }
+
+    [Fact]
+    public async Task Handle_PolymorphicInputDispatchedViaSender_CallsExpectedHandler()
+    {
+        // Arrange
+        var sender = Substitute.For<ISender>();
+        Input input = new Input.Text("coffee 5");
+        var expected = new ProcessingResult.InvalidInput("Please specify a category.");
+        sender.Send(input, Arg.Any<CancellationToken>()).Returns(expected);
+
+        // Act
+        var result = await sender.Send(input, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(expected);
+        await sender.Received(1).Send(input, Arg.Any<CancellationToken>());
     }
 
     private sealed class Fixture : IDisposable
@@ -213,12 +231,12 @@ public class GeminiInputProcessorTests
                 NullLogger<GeminiInputProcessor>.Instance);
         }
 
-        public async Task<ProcessingResult> Process(bool audio, CancellationToken ct = default)
+        public async Task<ProcessingResult> Handle(bool audio, CancellationToken ct = default)
         {
             if (!audio)
-                return await Processor.Process(new Input.Text("coffee 5"), ct);
+                return await Processor.Handle(new Input.Text("coffee 5"), ct);
 
-            return await Processor.Process(new Input.Audio([1, 2, 3], "audio/ogg"), ct);
+            return await Processor.Handle(new Input.Audio([1, 2, 3], "audio/ogg"), ct);
         }
 
         public void Dispose() => client.Dispose();
