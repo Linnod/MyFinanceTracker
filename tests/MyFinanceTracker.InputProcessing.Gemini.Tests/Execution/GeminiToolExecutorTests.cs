@@ -375,4 +375,62 @@ public class GeminiToolExecutorTests
             Arg.Is<UpdateTransactionRequest>(r => r.Id == txId),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenDeleteTransactionsCallWithInvalidId_ShouldReturnValidationErrorWithoutSendingRequest()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.DeleteTransactions,
+            Args = new Dictionary<string, object>
+            {
+                ["ids"] = new[] { "abc", "def" },
+                ["recognizedInput"] = "Delete transactions abc, def"
+            }
+        };
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Response.Should().BeOfType<DeleteTransactionsResponse.ValidationError>();
+        var validation = (DeleteTransactionsResponse.ValidationError)response.Response;
+        validation.Errors.Should().HaveCount(2);
+        validation.Errors.Should().AllSatisfy(e => e.ErrorCode.Should().Be(ValidationErrorCode.Transaction.InvalidId));
+        validation.Errors.Select(e => e.AttemptedValue).Should().Equal("abc", "def");
+        response.RawInput.Should().Be("Delete transactions abc, def");
+
+        await sender.DidNotReceive().Send(Arg.Any<DeleteTransactionsRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateTransactionCallWithInvalidId_ShouldReturnValidationErrorWithoutSendingRequest()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = "invalid-guid",
+                ["amount"] = 50m,
+                ["recognizedInput"] = "update invalid id"
+            }
+        };
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Response.Should().BeOfType<UpdateTransactionResponse.ValidationError>();
+        var validation = (UpdateTransactionResponse.ValidationError)response.Response;
+        validation.Errors.Should().ContainSingle();
+        var error = validation.Errors.Single();
+        error.ErrorCode.Should().Be(ValidationErrorCode.Transaction.InvalidId);
+        error.AttemptedValue.Should().Be("invalid-guid");
+        response.RawInput.Should().Be("update invalid id");
+
+        await sender.DidNotReceive().Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>());
+    }
 }

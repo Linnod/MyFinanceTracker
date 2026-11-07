@@ -80,7 +80,27 @@ internal sealed partial class GeminiToolExecutor(
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForDeletingTransactions);
 
-        var request = new DeleteTransactionsRequest(typedArgs.Ids);
+        var parsedGuids = new List<Guid>();
+        var validationErrors = new List<ValidationErrorItem>();
+
+        foreach (var idStr in typedArgs.Ids)
+        {
+            if (Guid.TryParse(idStr, out var parsedGuid))
+            {
+                parsedGuids.Add(parsedGuid);
+            }
+            else
+            {
+                validationErrors.Add(new ValidationErrorItem(ValidationErrorCode.Transaction.InvalidId, idStr));
+            }
+        }
+
+        if (validationErrors.Count > 0)
+        {
+            return new ActionResult(rawInput, new DeleteTransactionsResponse.ValidationError(validationErrors));
+        }
+
+        var request = new DeleteTransactionsRequest(parsedGuids);
         var response = await sender.Send(request, ct);
 
         return new ActionResult(rawInput, response);
@@ -96,8 +116,21 @@ internal sealed partial class GeminiToolExecutor(
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForUpdatingTransaction);
 
+        Guid parsedId = Guid.Empty;
+        if (!string.IsNullOrWhiteSpace(typedArgs.Id))
+        {
+            if (!Guid.TryParse(typedArgs.Id, out parsedId))
+            {
+                return new ActionResult(
+                    rawInput,
+                    new UpdateTransactionResponse.ValidationError([
+                        new ValidationErrorItem(ValidationErrorCode.Transaction.InvalidId, typedArgs.Id)
+                    ]));
+            }
+        }
+
         var request = new UpdateTransactionRequest(
-            Id: typedArgs.Id ?? Guid.Empty,
+            Id: parsedId,
             Type: typedArgs.Type,
             Amount: typedArgs.Amount,
             CategoryAlias: typedArgs.CategoryAlias,
