@@ -13,7 +13,7 @@ using MyFinanceTracker.UseCases.Transaction.Get;
 namespace MyFinanceTracker.InputProcessing.Gemini.Execution;
 
 internal sealed partial class GeminiToolExecutor(
-    IMediator mediator,
+    ISender sender,
     TimeProvider timeProvider,
     ILogger<GeminiToolExecutor> logger) : IGeminiToolExecutor
 {
@@ -62,7 +62,7 @@ internal sealed partial class GeminiToolExecutor(
         )).ToList();
 
         var request = new CreateTransactionsRequest(items);
-        var response = await mediator.Send(request, ct);
+        var response = await sender.Send(request, ct);
 
         return response switch
         {
@@ -94,7 +94,7 @@ internal sealed partial class GeminiToolExecutor(
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForDeletingTransactions);
 
         var request = new DeleteTransactionsRequest(typedArgs.Ids);
-        var response = await mediator.Send(request, ct);
+        var response = await sender.Send(request, ct);
 
         return response switch
         {
@@ -157,7 +157,7 @@ internal sealed partial class GeminiToolExecutor(
             typedArgs.CategoryAliases,
             typedArgs.Type);
 
-        var response = await mediator.Send(request, ct);
+        var response = await sender.Send(request, ct);
 
         return response switch
         {
@@ -194,7 +194,7 @@ internal sealed partial class GeminiToolExecutor(
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForListingCategories);
 
-        var response = await mediator.Send(new ListCategoriesRequest(), ct);
+        var response = await sender.Send(new ListCategoriesRequest(), ct);
 
         return response switch
         {

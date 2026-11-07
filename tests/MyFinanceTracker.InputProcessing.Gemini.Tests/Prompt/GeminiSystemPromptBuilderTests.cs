@@ -10,12 +10,12 @@ namespace MyFinanceTracker.InputProcessing.Gemini.Tests.Prompt;
 
 public class GeminiSystemPromptBuilderTests
 {
-    private readonly IMediator mediator = Substitute.For<IMediator>();
+    private readonly ISender sender = Substitute.For<ISender>();
     private readonly GeminiSystemPromptBuilder builder;
 
     public GeminiSystemPromptBuilderTests()
     {
-        builder = new GeminiSystemPromptBuilder(mediator, TimeProvider.System);
+        builder = new GeminiSystemPromptBuilder(sender, TimeProvider.System);
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class GeminiSystemPromptBuilderTests
             new("cat_2", "Salary", ["paycheck"])
         };
 
-        mediator.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ListCategoriesResponse.Success(categories));
 
         // Act
@@ -44,7 +44,7 @@ public class GeminiSystemPromptBuilderTests
     async Task BuildSystemInstruction_ShouldIncludeNoteRules()
     {
         // Arrange
-        mediator.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
+        sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ListCategoriesResponse.Success([]));
 
         // Act

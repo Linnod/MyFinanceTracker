@@ -1,6 +1,8 @@
+using MediatR;
+
 namespace MyFinanceTracker.InputProcessing;
 
-public abstract record Input
+public abstract record Input : IRequest<ProcessingResult>
 {
     private Input() { }
 

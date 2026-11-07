@@ -5,13 +5,13 @@ using MyFinanceTracker.UseCases.Category.List;
 namespace MyFinanceTracker.InputProcessing.Gemini.Prompt;
 
 internal sealed class GeminiSystemPromptBuilder(
-    IMediator mediator,
+    ISender sender,
     TimeProvider timeProvider) : IGeminiSystemPromptBuilder
 {
     public async Task<string> BuildSystemInstruction(CancellationToken ct)
     {
         var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
-        var categoriesResponse = await mediator.Send(new ListCategoriesRequest(), ct);
+        var categoriesResponse = await sender.Send(new ListCategoriesRequest(), ct);
 
         var categoriesInfo = categoriesResponse switch
         {
