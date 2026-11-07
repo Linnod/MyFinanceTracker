@@ -69,15 +69,22 @@
 
 ## Workflow & Agent Rules
 
-### 1. Two-Step Development Workflow
+### 1. Critical Thinking & Architectural Review
+- **No Sycophancy:** Never agree with suggestions just to be polite. If an idea or approach is flawed, state it directly.
+- **Role During Design & Planning:** Act as a pragmatic, critically minded tech lead.
+- **Challenge Bad Patterns:** If a proposed design involves hacks/workarounds, over-engineering, hidden edge cases/bugs, or violates KISS/YAGNI, explicitly call out the risks and trade-offs.
+- **Constructive Alternatives:** Always propose a simpler, cleaner, or more idiomatic alternative aligned with .NET and Clean Architecture principles.
+- **User's Final Call:** If the user acknowledges the risks and explicitly chooses a specific trade-off, proceed with implementation without unnecessary pushback.
+
+### 2. Two-Step Development Workflow
 1. **Implementation first:** Implement the feature or changes first and present the solution to the user for review.
 2. **Tests after approval:** Write unit and integration tests only **after** the implementation has been reviewed and approved by the user.
 
-### 2. Git Discipline & Approvals
+### 3. Git Discipline & Approvals
 - **No automatic commits:** Never commit changes automatically without explicit user instruction.
 - **Review before commit:** Before creating any commit, stop, summarize the changes, and confirm with the user.
 
-### 3. Verification & Code Quality
+### 4. Verification & Code Quality
 - **Verification:** Run `dotnet build` and `dotnet test` to verify changes before reporting completion.
 - **Complete Implementations:** Never leave incomplete code, `// TODO: implement later`, or placeholder `throw new NotImplementedException()`.
 - **Preserve Documentation:** Do not delete existing comments or docstrings unless directly asked.
