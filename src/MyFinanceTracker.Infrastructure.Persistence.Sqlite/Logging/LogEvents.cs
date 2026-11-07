@@ -27,6 +27,7 @@ internal static class LogEvents
         public const int SyncStopped = SubBase + 6;
         public const int RetryScheduled = SubBase + 7;
         public const int MovedToDeadLetter = SubBase + 8;
+        public const int NotificationPublishFailed = SubBase + 9;
     }
 
     public static class Initializer

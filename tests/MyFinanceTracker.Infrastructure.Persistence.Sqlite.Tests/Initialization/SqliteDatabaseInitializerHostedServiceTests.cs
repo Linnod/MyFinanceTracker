@@ -68,6 +68,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             categoryRepository,
             TimeProvider.System,
             Microsoft.Extensions.Options.Options.Create(new SqlitePersistenceOptions()),
+            Substitute.For<IOutboxNotificationPublisher>(),
             outboxLogger);
 
     private SqliteDatabaseInitializerHostedService CreateInitializer(OutboxProcessor? processor = null) =>

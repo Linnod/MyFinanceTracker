@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Sync;
@@ -8,6 +9,7 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Sync;
 internal sealed partial class OutboxSyncBackgroundService(
     OutboxProcessor outboxProcessor,
     IOptions<SqlitePersistenceOptions> options,
+    IOutboxNotificationPublisher notificationPublisher,
     ILogger<OutboxSyncBackgroundService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -31,6 +33,7 @@ internal sealed partial class OutboxSyncBackgroundService(
                 catch (Exception ex)
                 {
                     LogSyncFailed(ex);
+                    await notificationPublisher.Publish(new OutboxSyncNotification.SyncFailed(ex.Message), stoppingToken);
                 }
             }
         }

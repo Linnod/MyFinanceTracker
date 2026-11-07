@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 
@@ -107,5 +108,40 @@ public class TelegramResponseFormatterTests
         // Assert
         formatted.Length.Should().BeLessThanOrEqualTo(4096);
         formatted.Should().Contain("more transaction(s) hidden");
+    }
+
+    [Fact]
+    public void FormatNotification_MessageMovedToDeadLetter_FormatsHtmlAndEncodesSpecialCharacters()
+    {
+        // arrange
+        var notification = new OutboxSyncNotification.MessageMovedToDeadLetter(
+            42,
+            "CreateTransaction",
+            "<error & details>");
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatNotification(notification);
+
+        // assert
+        formatted.Should().Contain("🚨 <b>Outbox Message Moved to Dead Letter</b>");
+        formatted.Should().Contain("ID: 42");
+        formatted.Should().Contain("Operation: CreateTransaction");
+        formatted.Should().Contain("&lt;error &amp; details&gt;");
+        formatted.Should().NotContain("<error & details>");
+    }
+
+    [Fact]
+    public void FormatNotification_SyncFailed_FormatsHtmlAndEncodesSpecialCharacters()
+    {
+        // arrange
+        var notification = new OutboxSyncNotification.SyncFailed("<sync failed & details>");
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatNotification(notification);
+
+        // assert
+        formatted.Should().Contain("🚨 <b>Outbox Sync Failed</b>");
+        formatted.Should().Contain("&lt;sync failed &amp; details&gt;");
+        formatted.Should().NotContain("<sync failed & details>");
     }
 }

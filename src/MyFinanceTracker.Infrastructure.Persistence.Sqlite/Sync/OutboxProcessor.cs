@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Common;
+using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
@@ -20,6 +21,7 @@ internal sealed partial class OutboxProcessor(
     ICategoryRepository categoryRepository,
     TimeProvider timeProvider,
     IOptions<SqlitePersistenceOptions> options,
+    IOutboxNotificationPublisher notificationPublisher,
     ILogger<OutboxProcessor> logger) : IDisposable
 {
     private readonly SemaphoreSlim semaphore = new(1, 1);
@@ -122,6 +124,13 @@ internal sealed partial class OutboxProcessor(
         await dbContext.SaveChangesAsync(ct);
 
         LogMovedToDeadLetter(ex, message);
+
+        await notificationPublisher.Publish(
+            new OutboxSyncNotification.MessageMovedToDeadLetter(
+                message.Id,
+                message.OperationType.ToString(),
+                ex.Message),
+            ct);
     }
 
     private async Task ProcessAdd(OutboxMessageEntity message, CancellationToken ct)

@@ -17,4 +17,11 @@ internal static class LogEvents
         public const int MessageSendFailed = SubBase + 5;
         public const int InputBuildFailed = SubBase + 6;
     }
+
+    public static class Notifications
+    {
+        private const int SubBase = Base + 1_000;
+
+        public const int NotificationSendFailed = SubBase + 1;
+    }
 }

@@ -27,6 +27,7 @@ public static class DependencyInjection
         });
 
         services.AddSingleton<ITransactionRepository, SqliteTransactionRepository>();
+        services.AddSingleton<IOutboxNotificationPublisher, OutboxNotificationPublisher>();
         services.AddSingleton<OutboxProcessor>();
         services.AddHostedService<SqliteDatabaseInitializerHostedService>();
         services.AddHostedService<OutboxSyncBackgroundService>();

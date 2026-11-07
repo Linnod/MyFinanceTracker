@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
@@ -11,6 +12,23 @@ internal static class TelegramResponseFormatter
 {
     private const int MaxDisplayedTransactions = 25;
     private const int MaxMessageLength = 3800;
+
+    public static string FormatNotification(OutboxSyncNotification notification) => notification switch
+    {
+        OutboxSyncNotification.MessageMovedToDeadLetter deadLetter => $"""
+            🚨 <b>Outbox Message Moved to Dead Letter</b>
+            ID: {deadLetter.OriginalOutboxMessageId}
+            Operation: {WebUtility.HtmlEncode(deadLetter.OperationType)}
+            Error: {WebUtility.HtmlEncode(deadLetter.ErrorMessage)}
+            """,
+
+        OutboxSyncNotification.SyncFailed syncFailed => $"""
+            🚨 <b>Outbox Sync Failed</b>
+            {WebUtility.HtmlEncode(syncFailed.ErrorMessage)}
+            """,
+
+        _ => throw new UnreachableException($"Unknown notification type: {notification.GetType()}")
+    };
 
     public static string FormatResponse(ProcessingResult response) => response switch
     {

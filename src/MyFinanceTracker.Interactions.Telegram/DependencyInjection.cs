@@ -1,6 +1,8 @@
+using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.Common.Notifications;
 using Telegram.Bot;
 
 namespace MyFinanceTracker.Interactions.Telegram;
@@ -24,7 +26,9 @@ public static class DependencyInjection
 
         services.AddHostedService<TelegramInteractionWorker>();
 
+        services.AddTransient<INotificationHandler<OutboxSyncNotification.MessageMovedToDeadLetter>, TelegramNotificationHandler>();
+        services.AddTransient<INotificationHandler<OutboxSyncNotification.SyncFailed>, TelegramNotificationHandler>();
+
         return services;
     }
 }
-

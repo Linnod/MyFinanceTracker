@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
@@ -24,6 +25,7 @@ public sealed class OutboxProcessorTests : IDisposable
     private readonly ITransactionRepository remoteRepository;
     private readonly ICategoryRepository categoryRepository;
     private readonly TimeProvider timeProvider;
+    private readonly IOutboxNotificationPublisher notificationPublisher;
     private readonly ILogger<OutboxProcessor> logger;
 
     private readonly Category foodCategory = new("food", "Food", ["groceries"]);
@@ -45,6 +47,7 @@ public sealed class OutboxProcessorTests : IDisposable
         remoteRepository = Substitute.For<ITransactionRepository>();
         categoryRepository = Substitute.For<ICategoryRepository>();
         timeProvider = TimeProvider.System;
+        notificationPublisher = Substitute.For<IOutboxNotificationPublisher>();
         logger = Substitute.For<ILogger<OutboxProcessor>>();
 
         categoryRepository.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -67,6 +70,7 @@ public sealed class OutboxProcessorTests : IDisposable
             categoryRepository,
             timeProvider,
             Options.Create(new SqlitePersistenceOptions { MaxRetryAttempts = maxRetries }),
+            notificationPublisher,
             logger);
 
     [Fact]
@@ -360,6 +364,73 @@ public sealed class OutboxProcessorTests : IDisposable
         deadLetters[0].OriginalOutboxMessageId.Should().Be(30);
         deadLetters[0].ErrorMessage.Should().Contain("Failed to deserialize message payload");
         deadLetters[0].ErrorMessage.Should().Contain("JsonException");
+    }
+
+    [Fact]
+    public async Task ProcessPendingMessages_MessageMovedToDeadLetter_PublishesMessageMovedToDeadLetterNotification()
+    {
+        // arrange
+        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateOnly(2026, 11, 1), "Fail");
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.OutboxMessages.Add(new OutboxMessageEntity
+            {
+                Id = 42,
+                OperationType = OutboxOperationType.Add,
+                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                RetryCount = 2
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        remoteRepository.AddRange(Arg.Any<IReadOnlyCollection<Transaction>>(), Arg.Any<CancellationToken>())
+            .Throws(new InvalidOperationException("Permanent remote error"));
+
+        using var processor = CreateProcessor(maxRetries: 3);
+
+        // act
+        await processor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert
+        await notificationPublisher.Received(1).Publish(
+            Arg.Is<OutboxSyncNotification.MessageMovedToDeadLetter>(n =>
+                n.OriginalOutboxMessageId == 42 &&
+                n.OperationType == "Add" &&
+                n.ErrorMessage == "Permanent remote error"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessPendingMessages_RetryAttemptBelowMax_DoesNotPublishNotification()
+    {
+        // arrange
+        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateOnly(2026, 11, 1), "Test");
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.OutboxMessages.Add(new OutboxMessageEntity
+            {
+                Id = 1,
+                OperationType = OutboxOperationType.Add,
+                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                RetryCount = 0
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        remoteRepository.AddRange(Arg.Any<IReadOnlyCollection<Transaction>>(), Arg.Any<CancellationToken>())
+            .Throws(new HttpRequestException("Temporary network error"));
+
+        using var processor = CreateProcessor(maxRetries: 3);
+
+        // act
+        await processor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert
+        await notificationPublisher.DidNotReceiveWithAnyArgs().Publish(default!, default);
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<SqliteDbContext> options) : IDbContextFactory<SqliteDbContext>
