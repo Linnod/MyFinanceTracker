@@ -21,5 +21,6 @@ public static class ValidationErrorCode
         public const string AmountRequired = nameof(AmountRequired);
         public const string AmountMustBePositive = nameof(AmountMustBePositive);
         public const string NothingToUpdate = nameof(NothingToUpdate);
+        public const string InvalidPagination = nameof(InvalidPagination);
     }
 }

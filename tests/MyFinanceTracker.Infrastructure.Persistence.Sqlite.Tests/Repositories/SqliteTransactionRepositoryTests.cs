@@ -172,17 +172,17 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             FromDate: new DateTime(2026, 11, 2, 0, 0, 0),
             ToDate: new DateTime(2026, 11, 6, 23, 59, 59));
         var dateResults = await repository.Get(dateFilter, CancellationToken.None);
-        dateResults.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id, tx4.Id]);
+        dateResults.Items.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id, tx4.Id]);
 
         // Act & Assert 2: Filter by Type
         var typeFilter = new TransactionFilter(Type: TransactionType.Income);
         var typeResults = await repository.Get(typeFilter, CancellationToken.None);
-        typeResults.Select(t => t.Id).Should().BeEquivalentTo([tx4.Id]);
+        typeResults.Items.Select(t => t.Id).Should().BeEquivalentTo([tx4.Id]);
 
         // Act & Assert 3: Filter by Categories
         var categoryFilter = new TransactionFilter(Categories: [foodCategory]);
         var categoryResults = await repository.Get(categoryFilter, CancellationToken.None);
-        categoryResults.Select(t => t.Id).Should().BeEquivalentTo([tx1.Id, tx2.Id, tx5.Id]);
+        categoryResults.Items.Select(t => t.Id).Should().BeEquivalentTo([tx1.Id, tx2.Id, tx5.Id]);
 
         // Act & Assert 4: Filter combined
         var combinedFilter = new TransactionFilter(
@@ -192,8 +192,8 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             Type: TransactionType.Expense);
         var combinedResults = await repository.Get(combinedFilter, CancellationToken.None);
 
-        combinedResults.Should().HaveCount(1);
-        var singleResult = combinedResults[0];
+        combinedResults.Items.Should().HaveCount(1);
+        var singleResult = combinedResults.Items[0];
         singleResult.Id.Should().Be(tx2.Id);
         singleResult.Amount.Should().Be(75m);
         singleResult.Category.Should().Be(foodCategory);
@@ -202,7 +202,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         // Act & Assert 5: Filter by multiple categories
         var multiCategoryFilter = new TransactionFilter(Categories: [foodCategory, transportCategory]);
         var multiCategoryResults = await repository.Get(multiCategoryFilter, CancellationToken.None);
-        multiCategoryResults.Select(t => t.Id).Should().BeEquivalentTo([tx1.Id, tx2.Id, tx3.Id, tx5.Id]);
+        multiCategoryResults.Items.Select(t => t.Id).Should().BeEquivalentTo([tx1.Id, tx2.Id, tx3.Id, tx5.Id]);
     }
 
     [Fact]
@@ -227,7 +227,90 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         var results = await repository.Get(filter, CancellationToken.None);
 
         // assert
-        results.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id]);
+        results.Items.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id]);
+    }
+
+    [Fact]
+    public async Task Get_WithPagination_ReturnsCorrectPageAndTotalCount()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, new DateTime(2026, 11, 1, 10, 0, 0), "1");
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 20m, new DateTime(2026, 11, 2, 10, 0, 0), "2");
+        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 30m, new DateTime(2026, 11, 3, 10, 0, 0), "3");
+        var tx4 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 40m, new DateTime(2026, 11, 4, 10, 0, 0), "4");
+        var tx5 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateTime(2026, 11, 5, 10, 0, 0), "5");
+
+        await repository.AddRange([tx1, tx2, tx3, tx4, tx5], CancellationToken.None);
+
+        var filter = new TransactionFilter(Skip: 1, Take: 2);
+
+        // act
+        var results = await repository.Get(filter, CancellationToken.None);
+
+        // assert: ordered by Date desc, so 5, 4, 3, 2, 1. Skip 1, Take 2 => [tx4, tx3]
+        results.TotalCount.Should().Be(5);
+        results.Items.Should().HaveCount(2);
+        results.Items[0].Id.Should().Be(tx4.Id);
+        results.Items[1].Id.Should().Be(tx3.Id);
+    }
+
+    [Fact]
+    public async Task Get_WithTakeZero_ReturnsEmptyItemsAndTotalCount()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, new DateTime(2026, 11, 1, 10, 0, 0), "1");
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 20m, new DateTime(2026, 11, 2, 10, 0, 0), "2");
+
+        await repository.AddRange([tx1, tx2], CancellationToken.None);
+
+        var filter = new TransactionFilter(Skip: 0, Take: 0);
+
+        // act
+        var results = await repository.Get(filter, CancellationToken.None);
+
+        // assert
+        results.TotalCount.Should().Be(2);
+        results.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Get_WithSkipBeyondCount_ReturnsEmptyItemsAndTotalCount()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, new DateTime(2026, 11, 1, 10, 0, 0), "1");
+
+        await repository.AddRange([tx1], CancellationToken.None);
+
+        var filter = new TransactionFilter(Skip: 10, Take: 5);
+
+        // act
+        var results = await repository.Get(filter, CancellationToken.None);
+
+        // assert
+        results.TotalCount.Should().Be(1);
+        results.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAll_ReturnsAllTransactionsOrderedByDateDescending()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, new DateTime(2026, 11, 1, 10, 0, 0), "1");
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 20m, new DateTime(2026, 11, 2, 10, 0, 0), "2");
+
+        await repository.AddRange([tx1, tx2], CancellationToken.None);
+
+        // act
+        var results = await repository.GetAll(CancellationToken.None);
+
+        // assert: ordered by Date desc
+        results.Should().HaveCount(2);
+        results[0].Id.Should().Be(tx2.Id);
+        results[1].Id.Should().Be(tx1.Id);
     }
 
     [Fact]

@@ -51,7 +51,7 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
     private async Task SyncTransactions(CancellationToken ct)
     {
         LogFetchingTransactions();
-        var remoteTransactions = await transactionRepository.Get(new TransactionFilter(), ct);
+        var remoteTransactions = await transactionRepository.GetAll(ct);
 
         LogSyncingTransactions(remoteTransactions.Count);
         await using (var dbContext = await dbContextFactory.CreateDbContextAsync(ct))

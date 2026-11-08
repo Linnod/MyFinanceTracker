@@ -7,7 +7,9 @@ public record GetTransactionsRequest(
     DateTime FromDate,
     DateTime ToDate,
     IReadOnlyList<string>? CategoryAliases = null,
-    TransactionType? Type = null
+    TransactionType? Type = null,
+    int? Skip = null,
+    int? Take = null
 ) : IRequest<GetTransactionsResponse>
 {
     public override string ToString()
@@ -26,6 +28,16 @@ public record GetTransactionsRequest(
         if (Type.HasValue)
         {
             parts.Add($"Type: {Type.Value}");
+        }
+
+        if (Skip.HasValue)
+        {
+            parts.Add($"Skip: {Skip.Value}");
+        }
+
+        if (Take.HasValue)
+        {
+            parts.Add($"Take: {Take.Value}");
         }
 
         return string.Join(" | ", parts);

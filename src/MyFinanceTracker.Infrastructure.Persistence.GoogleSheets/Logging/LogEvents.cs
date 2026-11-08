@@ -29,5 +29,6 @@ internal static class LogEvents
         public const int GettingTransactions = SubBase + 3;
         public const int GettingTransactionById = SubBase + 4;
         public const int UpdatingTransaction = SubBase + 5;
+        public const int GettingAllTransactions = SubBase + 6;
     }
 }

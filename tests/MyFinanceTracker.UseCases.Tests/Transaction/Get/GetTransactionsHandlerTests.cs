@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.UseCases.Transaction.Get;
@@ -52,7 +53,7 @@ public class GetTransactionsHandlerTests
                     f.Categories.First() == category &&
                     f.Type == TransactionType.Expense),
                 Arg.Any<CancellationToken>())
-            .Returns(transactions);
+            .Returns(new PagedResult<Domain.Entities.Transaction>(transactions, transactions.Length));
 
         // act
         var result = await sut.Handle(
@@ -71,7 +72,7 @@ public class GetTransactionsHandlerTests
         success.FromDate.Should().Be(fromDate);
         success.ToDate.Should().Be(toDate);
         success.CategoryNames.Should().Equal("Food");
-        success.Transactions.Should().BeEquivalentTo(transactions);
+        success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
         await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
     }
@@ -111,7 +112,7 @@ public class GetTransactionsHandlerTests
                     f.Categories != null &&
                     f.Categories.Count == 2),
                 Arg.Any<CancellationToken>())
-            .Returns(transactions);
+            .Returns(new PagedResult<Domain.Entities.Transaction>(transactions, transactions.Length));
 
         // act - note "food" and "groceries" map to same category A
         var result = await sut.Handle(
@@ -127,7 +128,7 @@ public class GetTransactionsHandlerTests
             .Subject;
 
         success.CategoryNames.Should().BeEquivalentTo(["Food", "Entertainment"]);
-        success.Transactions.Should().BeEquivalentTo(transactions);
+        success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
         await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
         await categoryRepository.Received(1).Resolve("groceries", Arg.Any<CancellationToken>());
@@ -160,7 +161,7 @@ public class GetTransactionsHandlerTests
                     f.Categories == null &&
                     f.Type == null),
                 Arg.Any<CancellationToken>())
-            .Returns(transactions);
+            .Returns(new PagedResult<Domain.Entities.Transaction>(transactions, transactions.Length));
 
         // act
         var result = await sut.Handle(
@@ -178,7 +179,7 @@ public class GetTransactionsHandlerTests
         success.FromDate.Should().Be(fromDate);
         success.ToDate.Should().Be(toDate);
         success.CategoryNames.Should().BeEmpty();
-        success.Transactions.Should().BeEquivalentTo(transactions);
+        success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
         await categoryRepository.DidNotReceive().Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await categoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
@@ -214,5 +215,49 @@ public class GetTransactionsHandlerTests
 
         await transactionRepository.DidNotReceive()
             .Get(Arg.Any<TransactionFilter>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WithPagination_PassesSkipAndTakeToFilterAndReturnsPagedResult()
+    {
+        // arrange
+        var fromDate = new DateTime(2026, 1, 1);
+        var toDate = new DateTime(2026, 1, 31);
+        var category = new Domain.Entities.Category("food_id", "Food", ["food"]);
+
+        categoryRepository
+            .Resolve("food", Arg.Any<CancellationToken>())
+            .Returns(category);
+
+        var transactions = new[]
+        {
+            new Domain.Entities.Transaction(Guid.NewGuid(), TransactionType.Expense, category, 100m, fromDate, "Lunch")
+        };
+
+        transactionRepository
+            .Get(
+                Arg.Is<TransactionFilter>(f =>
+                    f.Skip == 5 &&
+                    f.Take == 10),
+                Arg.Any<CancellationToken>())
+            .Returns(new PagedResult<Domain.Entities.Transaction>(transactions, 15));
+
+        // act
+        var result = await sut.Handle(
+            new GetTransactionsRequest(
+                FromDate: fromDate,
+                ToDate: toDate,
+                CategoryAliases: ["food"],
+                Skip: 5,
+                Take: 10),
+            CancellationToken.None);
+
+        // assert
+        var success = result.Should()
+            .BeOfType<GetTransactionsResponse.Success>()
+            .Subject;
+
+        success.Transactions.Items.Should().BeEquivalentTo(transactions);
+        success.Transactions.TotalCount.Should().Be(15);
     }
 }

@@ -1,3 +1,5 @@
+using MyFinanceTracker.Domain.Common;
+
 namespace MyFinanceTracker.UseCases.Transaction.Get;
 
 public abstract record GetTransactionsResponse : UseCaseResponse
@@ -8,11 +10,11 @@ public abstract record GetTransactionsResponse : UseCaseResponse
         DateTime FromDate,
         DateTime ToDate,
         IReadOnlyList<string> CategoryNames,
-        IReadOnlyList<Domain.Entities.Transaction> Transactions
+        PagedResult<Domain.Entities.Transaction> Transactions
     ) : GetTransactionsResponse
     {
         public override string ToString() =>
-            $"Got {Transactions.Count} transaction(s) from {FromDate:dd.MM.yyyy HH:mm:ss} to {ToDate:dd.MM.yyyy HH:mm:ss}";
+            $"Got {Transactions.Items.Count} of {Transactions.TotalCount} transaction(s) from {FromDate:dd.MM.yyyy HH:mm:ss} to {ToDate:dd.MM.yyyy HH:mm:ss}";
     }
 
     public sealed record ValidationError(

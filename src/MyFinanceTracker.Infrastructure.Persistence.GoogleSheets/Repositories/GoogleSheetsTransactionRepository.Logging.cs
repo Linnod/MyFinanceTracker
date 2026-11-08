@@ -37,4 +37,10 @@ internal partial class GoogleSheetsTransactionRepository
         Level = LogLevel.Debug,
         Message = "Preparing to update transaction {Id} in Google Sheets")]
     partial void LogUpdatingTransaction(Guid id);
+
+    [LoggerMessage(
+        EventId = GettingAllTransactions,
+        Level = LogLevel.Debug,
+        Message = "Preparing to get all transactions from Google Sheets")]
+    partial void LogGettingAllTransactions();
 }

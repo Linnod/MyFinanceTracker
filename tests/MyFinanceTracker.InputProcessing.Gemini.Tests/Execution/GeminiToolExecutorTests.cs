@@ -2,6 +2,7 @@ using FluentAssertions;
 using Google.GenAI.Types;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Gemini.Execution;
@@ -205,7 +206,7 @@ public class GeminiToolExecutorTests
                 fromDate,
                 toDate,
                 ["Food", "Entertainment"],
-                transactions));
+                new PagedResult<Transaction>(transactions, transactions.Count)));
 
         // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
@@ -216,7 +217,7 @@ public class GeminiToolExecutorTests
         listed.FromDate.Should().Be(fromDate);
         listed.ToDate.Should().Be(toDate);
         listed.CategoryNames.Should().Equal("Food", "Entertainment");
-        listed.Transactions.Should().BeEquivalentTo(transactions);
+        listed.Transactions.Items.Should().BeEquivalentTo(transactions);
         response.RawInput.Should().Be("View expenses in food and entertainment");
 
         await sender.Received(1).Send(
@@ -253,7 +254,7 @@ public class GeminiToolExecutorTests
                 fromDate,
                 toDate,
                 [],
-                []));
+                new PagedResult<Transaction>([], 0)));
 
         // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);

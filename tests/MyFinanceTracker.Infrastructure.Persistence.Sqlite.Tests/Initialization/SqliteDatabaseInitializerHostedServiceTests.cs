@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
@@ -123,7 +124,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             new DateTime(2026, 11, 5, 10, 0, 0),
             "Monthly salary");
 
-        transactionRepository.Get(Arg.Any<TransactionFilter>(), Arg.Any<CancellationToken>())
+        transactionRepository.GetAll(Arg.Any<CancellationToken>())
             .Returns([remoteTransaction]);
 
         var processor = CreateOutboxProcessor();

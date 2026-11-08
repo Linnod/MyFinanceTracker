@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
@@ -166,7 +167,37 @@ internal sealed partial class SqliteTransactionRepository(
         await dbContext.SaveChangesAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Transaction>> Get(TransactionFilter filter, CancellationToken ct)
+    public async Task<IReadOnlyList<Transaction>> GetAll(CancellationToken ct)
+    {
+        LogGettingAllTransactions();
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var entities = await dbContext.Transactions
+            .AsNoTracking()
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.Id)
+            .ToListAsync(ct);
+
+        var transactions = new List<Transaction>(entities.Count);
+        foreach (var entity in entities)
+        {
+            var category = await categoryRepository.Resolve(entity.CategoryId, ct)
+                ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
+
+            transactions.Add(new Transaction(
+                entity.Id,
+                entity.Type,
+                category,
+                entity.Amount,
+                entity.Date,
+                entity.Note));
+        }
+
+        return transactions;
+    }
+
+    public async Task<PagedResult<Transaction>> Get(TransactionFilter filter, CancellationToken ct)
     {
         LogGettingTransactions(filter);
 
@@ -195,6 +226,24 @@ internal sealed partial class SqliteTransactionRepository(
             query = query.Where(t => categoryIds.Contains(t.CategoryId));
         }
 
+        var totalCount = await query.CountAsync(ct);
+        if (totalCount == 0 || filter.Take == 0)
+        {
+            return new PagedResult<Transaction>([], totalCount);
+        }
+
+        query = query.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
+
+        if (filter.Skip.HasValue)
+        {
+            query = query.Skip(filter.Skip.Value);
+        }
+
+        if (filter.Take.HasValue)
+        {
+            query = query.Take(filter.Take.Value);
+        }
+
         var entities = await query.ToListAsync(ct);
 
         var transactions = new List<Transaction>(entities.Count);
@@ -212,6 +261,6 @@ internal sealed partial class SqliteTransactionRepository(
                 entity.Note));
         }
 
-        return transactions;
+        return new PagedResult<Transaction>(transactions, totalCount);
     }
 }

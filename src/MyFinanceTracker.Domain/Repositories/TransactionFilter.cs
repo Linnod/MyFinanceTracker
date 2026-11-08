@@ -6,7 +6,9 @@ public sealed record TransactionFilter(
     DateTime? FromDate = null,
     DateTime? ToDate = null,
     IReadOnlyCollection<Category>? Categories = null,
-    TransactionType? Type = null)
+    TransactionType? Type = null,
+    int? Skip = null,
+    int? Take = null)
 {
     public override string ToString()
     {
@@ -30,6 +32,16 @@ public sealed record TransactionFilter(
         if (Type.HasValue)
         {
             parts.Add($"Type: {Type.Value}");
+        }
+
+        if (Skip.HasValue)
+        {
+            parts.Add($"Skip: {Skip.Value}");
+        }
+
+        if (Take.HasValue)
+        {
+            parts.Add($"Take: {Take.Value}");
         }
 
         return parts.Count > 0

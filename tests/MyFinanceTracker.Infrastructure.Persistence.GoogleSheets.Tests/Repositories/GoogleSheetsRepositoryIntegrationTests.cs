@@ -126,11 +126,11 @@ public class GoogleSheetsRepositoryIntegrationTests
         var result = await sut.Get(new TransactionFilter(targetDate, targetDate, [foodCategory]), CancellationToken.None);
 
         // assert
-        result.Should().HaveCount(1);
-        result[0].Amount.Should().Be(25.5m);
-        result[0].Category.Should().Be(foodCategory);
-        result[0].Date.Should().Be(targetDate);
-        result[0].Note.Should().Be("Lunch");
+        result.Items.Should().HaveCount(1);
+        result.Items[0].Amount.Should().Be(25.5m);
+        result.Items[0].Category.Should().Be(foodCategory);
+        result.Items[0].Date.Should().Be(targetDate);
+        result.Items[0].Note.Should().Be("Lunch");
     }
 
     [Fact]
@@ -175,9 +175,9 @@ public class GoogleSheetsRepositoryIntegrationTests
         var result = await sut.Get(filter, CancellationToken.None);
 
         // assert
-        result.Should().HaveCount(2);
-        result.Should().Contain(t => t.Note == "Lunch" && t.Category == foodCategory && t.Amount == 20m);
-        result.Should().Contain(t => t.Note == "Cinema" && t.Category == entertainmentCategory && t.Amount == 50m);
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().Contain(t => t.Note == "Lunch" && t.Category == foodCategory && t.Amount == 20m);
+        result.Items.Should().Contain(t => t.Note == "Cinema" && t.Category == entertainmentCategory && t.Amount == 50m);
     }
 
     [Fact]
@@ -524,5 +524,88 @@ public class GoogleSheetsRepositoryIntegrationTests
             .WithMessage($"*{nonExistentId}*");
 
         await clientMock.DidNotReceiveWithAnyArgs().UpdateRow(default!, default!, default);
+    }
+
+    [Fact]
+    public async Task GetAll_ShouldReturnAllTransactionsFromSheet()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory]);
+
+        var txId1 = Guid.NewGuid();
+        var txId2 = Guid.NewGuid();
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([txId1.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"])),
+                new(2, new([txId2.ToString(), "2026-11-02", "Expense", "Food", "-20", "Lunch"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        // act
+        var results = await sut.GetAll(CancellationToken.None);
+
+        // assert
+        results.Should().HaveCount(2);
+        results.Select(t => t.Id).Should().BeEquivalentTo([txId1, txId2]);
+    }
+
+    [Fact]
+    public async Task Get_WithSkipAndTake_ReturnsPagedResultAndTotalCount()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetMapper(options);
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var categoryRepoMock = Substitute.For<ICategoryRepository>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsTransactionRepository>>();
+
+        categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory]);
+
+        var txId1 = Guid.NewGuid();
+        var txId2 = Guid.NewGuid();
+        var txId3 = Guid.NewGuid();
+
+        clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
+                new(1, new([txId1.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"])),
+                new(2, new([txId2.ToString(), "2026-11-02", "Expense", "Food", "-20", "Lunch"])),
+                new(3, new([txId3.ToString(), "2026-11-03", "Expense", "Food", "-30", "Dinner"]))
+            ]);
+
+        var sut = new GoogleSheetsTransactionRepository(
+            options,
+            mapper,
+            clientMock,
+            categoryRepoMock,
+            loggerMock);
+
+        var filter = new TransactionFilter(Skip: 1, Take: 1);
+
+        // act
+        var result = await sut.Get(filter, CancellationToken.None);
+
+        // assert
+        result.TotalCount.Should().Be(3);
+        result.Items.Should().HaveCount(1);
+        result.Items[0].Id.Should().Be(txId2);
     }
 }

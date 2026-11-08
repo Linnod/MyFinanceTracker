@@ -50,7 +50,7 @@ internal static class ConsoleCommands
                     break;
 
                 case GetTransactionsResponse.Success listed:
-                    var totalListedAmount = listed.Transactions.Sum(t =>
+                    var totalListedAmount = listed.Transactions.Items.Sum(t =>
                         t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
 
                     var balanceSign = totalListedAmount > 0 ? "+" : "";
@@ -63,13 +63,13 @@ internal static class ConsoleCommands
                     System.Console.WriteLine(
                         $"📋 Transactions{categoriesPart} {datePart} (Total: {balanceSign}{totalListedAmount:0.00})");
 
-                    if (listed.Transactions.Count == 0)
+                    if (listed.Transactions.Items.Count == 0)
                     {
                         System.Console.WriteLine("  • No transactions.");
                         break;
                     }
 
-                    foreach (var t in listed.Transactions)
+                    foreach (var t in listed.Transactions.Items)
                     {
                         var sign = t.Type == TransactionType.Expense ? "-" : "+";
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";

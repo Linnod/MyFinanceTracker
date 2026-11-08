@@ -46,9 +46,11 @@ internal sealed class GetTransactionsHandler(
             request.FromDate,
             request.ToDate,
             resolvedCategories,
-            request.Type);
+            request.Type,
+            request.Skip,
+            request.Take);
 
-        var transactions = await transactionRepository.Get(filter, ct);
+        var pagedResult = await transactionRepository.Get(filter, ct);
 
         var categoryNames = resolvedCategories is not null
             ? resolvedCategories.Select(c => c.Name).ToList()
@@ -58,6 +60,6 @@ internal sealed class GetTransactionsHandler(
             request.FromDate,
             request.ToDate,
             categoryNames,
-            transactions);
+            pagedResult);
     }
 }

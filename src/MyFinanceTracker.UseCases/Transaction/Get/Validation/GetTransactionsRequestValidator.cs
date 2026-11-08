@@ -29,5 +29,19 @@ internal sealed class GetTransactionsRequestValidator : AbstractValidator<GetTra
                 .NotEmpty()
                 .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
         });
+
+        When(x => x.Skip.HasValue, () =>
+        {
+            RuleFor(x => x.Skip!.Value)
+                .GreaterThanOrEqualTo(0)
+                .WithErrorCode(ValidationErrorCode.Transaction.InvalidPagination);
+        });
+
+        When(x => x.Take.HasValue, () =>
+        {
+            RuleFor(x => x.Take!.Value)
+                .GreaterThanOrEqualTo(0)
+                .WithErrorCode(ValidationErrorCode.Transaction.InvalidPagination);
+        });
     }
 }

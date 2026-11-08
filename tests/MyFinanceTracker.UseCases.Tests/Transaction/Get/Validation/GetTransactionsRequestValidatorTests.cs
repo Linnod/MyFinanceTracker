@@ -127,4 +127,57 @@ public class GetTransactionsRequestValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.CategoryAliases)
             .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
     }
+
+    [Fact]
+    public void Validate_WhenSkipIsNegative_ReturnsInvalidPagination()
+    {
+        // arrange
+        var request = new GetTransactionsRequest(
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(2026, 1, 27),
+            Skip: -1);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldHaveValidationErrorFor(x => x.Skip!.Value)
+            .WithErrorCode(ValidationErrorCode.Transaction.InvalidPagination);
+    }
+
+    [Fact]
+    public void Validate_WhenTakeIsNegative_ReturnsInvalidPagination()
+    {
+        // arrange
+        var request = new GetTransactionsRequest(
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(2026, 1, 27),
+            Take: -1);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldHaveValidationErrorFor(x => x.Take!.Value)
+            .WithErrorCode(ValidationErrorCode.Transaction.InvalidPagination);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(5, 10)]
+    public void Validate_WhenSkipAndTakeAreNonNegative_ReturnsNoErrors(int skip, int take)
+    {
+        // arrange
+        var request = new GetTransactionsRequest(
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(2026, 1, 27),
+            Skip: skip,
+            Take: take);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
 }

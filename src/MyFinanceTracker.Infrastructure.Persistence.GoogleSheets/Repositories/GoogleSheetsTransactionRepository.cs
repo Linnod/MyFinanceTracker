@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
@@ -111,14 +112,21 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         }
     }
 
-    public async Task<IReadOnlyList<Transaction>> Get(
+    public async Task<IReadOnlyList<Transaction>> GetAll(CancellationToken ct)
+    {
+        LogGettingAllTransactions();
+
+        var validRows = await LoadValidRows(ct);
+        return [.. validRows.Select(s => s.Transaction)];
+    }
+
+    public async Task<PagedResult<Transaction>> Get(
         TransactionFilter filter,
         CancellationToken ct)
     {
         LogGettingTransactions(filter);
 
-        var validRows = await LoadValidRows(ct);
-        var query = validRows.Select(s => s.Transaction);
+        var query = (await GetAll(ct)).AsEnumerable();
 
         if (filter.FromDate.HasValue)
         {
@@ -132,8 +140,8 @@ internal sealed partial class GoogleSheetsTransactionRepository(
 
         if (filter.Categories is { Count: > 0 })
         {
-            var categoryNames = filter.Categories.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            query = query.Where(t => categoryNames.Contains(t.Category.Name));
+            var categoryIds = filter.Categories.Select(c => c.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            query = query.Where(t => categoryIds.Contains(t.Category.Id));
         }
 
         if (filter.Type.HasValue)
@@ -141,7 +149,12 @@ internal sealed partial class GoogleSheetsTransactionRepository(
             query = query.Where(t => t.Type == filter.Type.Value);
         }
 
-        return [.. query];
+        var ordered = query.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).ToList();
+        var totalCount = ordered.Count;
+
+        return new PagedResult<Transaction>(
+            [.. ordered.Skip(filter.Skip ?? 0).Take(filter.Take ?? totalCount)],
+            totalCount);
     }
 
     private async Task<IReadOnlyList<RowMappingResult.Success>> LoadValidRows(CancellationToken ct)

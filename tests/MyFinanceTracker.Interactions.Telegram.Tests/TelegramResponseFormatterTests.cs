@@ -1,5 +1,6 @@
 using FluentAssertions;
 using MyFinanceTracker.Common.Notifications;
+using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
@@ -152,7 +153,7 @@ public class TelegramResponseFormatterTests
                 new DateTime(2026, 11, 1, 0, 0, 0),
                 new DateTime(2026, 11, 2, 0, 0, 0),
                 [],
-                transactions));
+                new PagedResult<Transaction>(transactions, transactions.Count)));
 
         var result = new ProcessingResult.Completed([action]);
 
@@ -182,7 +183,7 @@ public class TelegramResponseFormatterTests
                 new DateTime(2026, 11, 8, 11, 0, 0),
                 new DateTime(2026, 11, 8, 12, 0, 0),
                 [],
-                transactions));
+                new PagedResult<Transaction>(transactions, transactions.Count)));
 
         var result = new ProcessingResult.Completed([action]);
 
@@ -214,7 +215,7 @@ public class TelegramResponseFormatterTests
                 new DateTime(2026, 11, 1, 0, 0, 0),
                 new DateTime(2026, 11, 30, 0, 0, 0),
                 [],
-                transactions));
+                new PagedResult<Transaction>(transactions, transactions.Count)));
 
         var result = new ProcessingResult.Completed([action]);
 
@@ -249,7 +250,7 @@ public class TelegramResponseFormatterTests
                 new DateTime(2026, 11, 1, 0, 0, 0),
                 new DateTime(2026, 11, 30, 0, 0, 0),
                 [],
-                transactions));
+                new PagedResult<Transaction>(transactions, transactions.Count)));
 
         var result = new ProcessingResult.Completed([action]);
 

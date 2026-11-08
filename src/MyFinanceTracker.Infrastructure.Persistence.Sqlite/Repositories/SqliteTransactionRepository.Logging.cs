@@ -37,4 +37,10 @@ internal partial class SqliteTransactionRepository
         Level = LogLevel.Debug,
         Message = "Updating transaction {Id} in SQLite")]
     partial void LogUpdatingTransaction(Guid id);
+
+    [LoggerMessage(
+        EventId = GettingAllTransactions,
+        Level = LogLevel.Debug,
+        Message = "Getting all transactions from SQLite")]
+    partial void LogGettingAllTransactions();
 }

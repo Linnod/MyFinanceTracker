@@ -104,7 +104,7 @@ internal static class TelegramResponseFormatter
                 break;
 
             case GetTransactionsResponse.Success listed:
-                var totalListedAmount = listed.Transactions.Sum(t =>
+                var totalListedAmount = listed.Transactions.Items.Sum(t =>
                     t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
                 var balanceSign = totalListedAmount > 0 ? "+" : string.Empty;
 
@@ -118,7 +118,7 @@ internal static class TelegramResponseFormatter
                 sb.AppendLine($"Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
                 sb.AppendLine();
 
-                if (listed.Transactions.Count == 0)
+                if (listed.Transactions.Items.Count == 0)
                 {
                     sb.AppendLine("No transactions found.");
                     break;
@@ -126,7 +126,7 @@ internal static class TelegramResponseFormatter
 
                 AppendTransactions(
                     sb,
-                    listed.Transactions,
+                    listed.Transactions.Items,
                     "<i>...and {0} more transaction(s) hidden. Please narrow down the date range or category to view more.</i>");
                 break;
 
