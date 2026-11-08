@@ -15,7 +15,14 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
     private static readonly string[] SupportedDateFormats =
     [
         WriteDateFormat,
-        "yyyy-MM-dd"
+        "yyyy-MM-dd H:mm:ss",
+        "yyyy-MM-dd HH:mm",
+        "yyyy-MM-dd H:mm",
+        "yyyy-MM-dd",
+        "dd.MM.yyyy HH:mm:ss",
+        "dd.MM.yyyy H:mm:ss",
+        "dd.MM.yyyy",
+        "d.M.yyyy"
     ];
 
     private static class Columns
