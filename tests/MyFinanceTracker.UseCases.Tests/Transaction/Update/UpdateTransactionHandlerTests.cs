@@ -52,7 +52,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             "Lunch");
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
@@ -69,7 +69,7 @@ public class UpdateTransactionHandlerTests
         success.Transaction.Type.Should().Be(TransactionType.Expense);
         success.Transaction.Category.Should().Be(foodCategory);
         success.Transaction.Amount.Should().Be(125.75m);
-        success.Transaction.Date.Should().Be(new DateOnly(2026, 11, 1));
+        success.Transaction.Date.Should().Be(new DateTime(2026, 11, 1));
         success.Transaction.Note.Should().Be("Lunch");
 
         await transactionRepository.Received(1).Update(
@@ -78,7 +78,7 @@ public class UpdateTransactionHandlerTests
                 t.Type == TransactionType.Expense &&
                 t.Category == foodCategory &&
                 t.Amount == 125.75m &&
-                t.Date == new DateOnly(2026, 11, 1) &&
+                t.Date == new DateTime(2026, 11, 1) &&
                 t.Note == "Lunch"),
             Arg.Any<CancellationToken>());
     }
@@ -93,7 +93,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             null);
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
@@ -126,7 +126,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             null);
 
         var archivedCategory = new Domain.Entities.Category("archived_id", "Archived Category", ["archived"], isArchived: true);
@@ -161,7 +161,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             null);
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
@@ -194,7 +194,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             "Old Note");
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
@@ -224,7 +224,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             "Old Note");
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
@@ -254,7 +254,7 @@ public class UpdateTransactionHandlerTests
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             "Keep This Note");
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())

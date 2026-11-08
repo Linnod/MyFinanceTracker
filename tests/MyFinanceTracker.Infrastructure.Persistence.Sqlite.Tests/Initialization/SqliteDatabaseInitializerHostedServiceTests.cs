@@ -92,7 +92,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
                 Type = TransactionType.Expense,
                 CategoryId = "food",
                 Amount = 99m,
-                Date = new DateOnly(2026, 10, 1),
+                Date = new DateTime(2026, 10, 1, 10, 0, 0),
                 Note = "Stale local transaction"
             });
 
@@ -101,7 +101,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
                 TransactionType.Expense,
                 "food",
                 45m,
-                new DateOnly(2026, 11, 1),
+                new DateTime(2026, 11, 1, 10, 0, 0),
                 "Pending outbox item");
 
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
@@ -120,7 +120,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             TransactionType.Income,
             salaryCategory,
             5000m,
-            new DateOnly(2026, 11, 5),
+            new DateTime(2026, 11, 5, 10, 0, 0),
             "Monthly salary");
 
         transactionRepository.Get(Arg.Any<TransactionFilter>(), Arg.Any<CancellationToken>())
@@ -163,7 +163,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             TransactionType.Expense,
             "food",
             20m,
-            new DateOnly(2026, 11, 3),
+            new DateTime(2026, 11, 3, 10, 0, 0),
             "Coffee");
 
         await using (var seedContext = new SqliteDbContext(options))
@@ -202,7 +202,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             TransactionType.Expense,
             "food",
             20m,
-            new DateOnly(2026, 11, 3),
+            new DateTime(2026, 11, 3, 10, 0, 0),
             "Coffee");
 
         await using (var seedContext = new SqliteDbContext(options))

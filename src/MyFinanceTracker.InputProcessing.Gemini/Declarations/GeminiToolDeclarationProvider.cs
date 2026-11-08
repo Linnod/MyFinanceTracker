@@ -44,7 +44,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["date"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Date in YYYY-MM-DD format."
+                                Description = "Date and time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss)."
                             },
                             ["note"] = new Schema
                             {
@@ -117,7 +117,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["date"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Optional new date in YYYY-MM-DD format."
+                                Description = "Optional new date and time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss)."
                             },
                             ["note"] = new Schema
                             {
@@ -150,12 +150,12 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             ["fromDate"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Start date in YYYY-MM-DD format (inclusive). If querying a single day, set equal to toDate."
+                                Description = "Start date and time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss, inclusive). For a full day, use YYYY-MM-DDT00:00:00."
                             },
                             ["toDate"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "End date in YYYY-MM-DD format (inclusive). If querying a single day, set equal to fromDate."
+                                Description = "End date and time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss, inclusive). For a full day, use YYYY-MM-DDT23:59:59."
                             },
                             ["categoryAliases"] = new Schema
                             {

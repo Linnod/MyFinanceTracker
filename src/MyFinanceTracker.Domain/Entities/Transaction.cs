@@ -1,4 +1,4 @@
-﻿using MyFinanceTracker.Domain.Exceptions;
+using MyFinanceTracker.Domain.Exceptions;
 
 namespace MyFinanceTracker.Domain.Entities;
 
@@ -8,7 +8,7 @@ public record Transaction
     public TransactionType Type { get; }
     public Category Category { get; }
     public decimal Amount { get; }
-    public DateOnly Date { get; }
+    public DateTime Date { get; }
     public string? Note { get; }
 
     public Transaction(
@@ -16,7 +16,7 @@ public record Transaction
         TransactionType type,
         Category category,
         decimal amount,
-        DateOnly date,
+        DateTime date,
         string? note)
     {
         if (id == Guid.Empty)

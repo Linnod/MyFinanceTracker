@@ -25,7 +25,7 @@ public class CreateTransactionsRequestValidatorTests
                 TransactionType.Expense,
                 100m,
                 "food",
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27),
                 "Lunch")
         ]);
 
@@ -62,7 +62,7 @@ public class CreateTransactionsRequestValidatorTests
             TransactionType.Expense,
             amount,
             "food",
-            new DateOnly(2026, 1, 27),
+            new DateTime(2026, 1, 27),
             "Lunch")
         ]);
 
@@ -87,7 +87,7 @@ public class CreateTransactionsRequestValidatorTests
                 TransactionType.Expense,
                 100m,
                 categoryAlias!,
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27),
                 "Lunch")
         ]);
 
@@ -115,7 +115,7 @@ public class CreateTransactionsRequestValidatorTests
                 TransactionType.Expense,
                 100m,
                 "food",
-                new DateOnly(year, 1, 1),
+                new DateTime(year, 1, 1),
                 "Lunch")
         ]);
 

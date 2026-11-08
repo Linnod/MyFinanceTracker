@@ -96,7 +96,7 @@ public sealed class OutboxProcessorTests : IDisposable
             TransactionType.Expense,
             "food",
             150m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1),
             "Groceries");
 
         var txDto2 = new TransactionOutboxDto(
@@ -104,7 +104,7 @@ public sealed class OutboxProcessorTests : IDisposable
             TransactionType.Income,
             "transport",
             50m,
-            new DateOnly(2026, 11, 2),
+            new DateTime(2026, 11, 2),
             null);
 
         var payload = new AddTransactionsOutboxPayload([txDto1, txDto2]);
@@ -179,8 +179,8 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingMessages_ShouldIncrementRetryCountAndStopBatch_WhenRemoteThrows_AndAttemptsBelowMax()
     {
         // Arrange - Seed 2 messages. First fails, second shouldn't be processed this tick.
-        var txDto1 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateOnly(2026, 11, 1), "Test1");
-        var txDto2 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 200m, new DateOnly(2026, 11, 2), "Test2");
+        var txDto1 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateTime(2026, 11, 1), "Test1");
+        var txDto2 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 200m, new DateTime(2026, 11, 2), "Test2");
 
         await using (var seedContext = new SqliteDbContext(options))
         {
@@ -221,8 +221,8 @@ public sealed class OutboxProcessorTests : IDisposable
     {
         // Arrange - Message 1 has reached RetryCount = 2 (max = 3). Next failure sends it to DLQ.
         // Message 2 is valid and should be processed successfully in the same run!
-        var txDto1 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateOnly(2026, 11, 1), "FailedItem");
-        var txDto2 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 200m, new DateOnly(2026, 11, 2), "ValidItem");
+        var txDto1 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateTime(2026, 11, 1), "FailedItem");
+        var txDto2 = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 200m, new DateTime(2026, 11, 2), "ValidItem");
 
         await using (var seedContext = new SqliteDbContext(options))
         {
@@ -272,7 +272,7 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingMessages_ShouldMoveToDeadLetter_WhenCategoryNotFound()
     {
         // Arrange - Seed message with non-existent category
-        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "non_existent_category", 50m, new DateOnly(2026, 11, 1), null);
+        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "non_existent_category", 50m, new DateTime(2026, 11, 1), null);
 
         await using (var seedContext = new SqliteDbContext(options))
         {
@@ -303,7 +303,7 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingMessages_ShouldRethrowOperationCanceled_AndNotIncrementRetryCount_WhenCancelled()
     {
         // Arrange
-        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 50m, new DateOnly(2026, 11, 1), null);
+        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 50m, new DateTime(2026, 11, 1), null);
 
         await using (var seedContext = new SqliteDbContext(options))
         {
@@ -370,7 +370,7 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingMessages_MessageMovedToDeadLetter_PublishesMessageMovedToDeadLetterNotification()
     {
         // arrange
-        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateOnly(2026, 11, 1), "Fail");
+        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateTime(2026, 11, 1), "Fail");
 
         await using (var seedContext = new SqliteDbContext(options))
         {
@@ -406,7 +406,7 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingMessages_RetryAttemptBelowMax_DoesNotPublishNotification()
     {
         // arrange
-        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateOnly(2026, 11, 1), "Test");
+        var txDto = new TransactionOutboxDto(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateTime(2026, 11, 1), "Test");
 
         await using (var seedContext = new SqliteDbContext(options))
         {
@@ -442,7 +442,7 @@ public sealed class OutboxProcessorTests : IDisposable
             TransactionType.Income,
             "food",
             200m,
-            new DateOnly(2026, 11, 4),
+            new DateTime(2026, 11, 4),
             "Updated note");
 
         var payload = new UpdateTransactionOutboxPayload(txDto);
@@ -470,7 +470,7 @@ public sealed class OutboxProcessorTests : IDisposable
                 t.Type == TransactionType.Income &&
                 t.Category.Id == "food" &&
                 t.Amount == 200m &&
-                t.Date == new DateOnly(2026, 11, 4) &&
+                t.Date == new DateTime(2026, 11, 4) &&
                 t.Note == "Updated note"),
             Arg.Any<CancellationToken>());
 
@@ -488,7 +488,7 @@ public sealed class OutboxProcessorTests : IDisposable
             TransactionType.Expense,
             "unknown_category",
             75m,
-            new DateOnly(2026, 11, 4),
+            new DateTime(2026, 11, 4),
             null);
 
         var payload = new UpdateTransactionOutboxPayload(txDto);

@@ -35,7 +35,7 @@ public class CreateTransactionsHandlerTests
             TransactionType.Expense,
             100m,
             "food",
-            new DateOnly(2026, 1, 27),
+            new DateTime(2026, 1, 27, 10, 0, 0),
             "Lunch")
         ]);
 
@@ -56,7 +56,7 @@ public class CreateTransactionsHandlerTests
         transaction.Category.Should().Be(category);
         transaction.Type.Should().Be(TransactionType.Expense);
         transaction.Amount.Should().Be(100m);
-        transaction.Date.Should().Be(new DateOnly(2026, 1, 27));
+        transaction.Date.Should().Be(new DateTime(2026, 1, 27, 10, 0, 0));
         transaction.Note.Should().Be("Lunch");
 
         await categoryRepository.Received(1)
@@ -81,7 +81,7 @@ public class CreateTransactionsHandlerTests
                 TransactionType.Expense,
                 100m,
                 string.Empty,
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27, 10, 0, 0),
             "Lunch")
         ]);
 
@@ -119,7 +119,7 @@ public class CreateTransactionsHandlerTests
                 TransactionType.Income,
                 100m,
                 string.Empty,
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27, 10, 0, 0),
                 "Salary")
         ]);
 
@@ -161,7 +161,7 @@ public class CreateTransactionsHandlerTests
             TransactionType.Expense,
             100m,
             "fod",
-            new DateOnly(2026, 1, 27),
+            new DateTime(2026, 1, 27, 10, 0, 0),
             "Lunch")
         ]);
 
@@ -205,7 +205,7 @@ public class CreateTransactionsHandlerTests
                 TransactionType.Expense,
                 100m,
                 "food",
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27, 10, 0, 0),
                 "Lunch")
         ]);
 
@@ -250,14 +250,14 @@ public class CreateTransactionsHandlerTests
                 TransactionType.Expense,
                 100m,
                 "food",
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27, 10, 0, 0),
                 "Valid"),
 
             new CreateTransactionItem(
                 TransactionType.Expense,
                 200m,
                 "unknown-category",
-                new DateOnly(2026, 1, 27),
+                new DateTime(2026, 1, 27, 10, 0, 0),
                 "Invalid")
         ]);
 

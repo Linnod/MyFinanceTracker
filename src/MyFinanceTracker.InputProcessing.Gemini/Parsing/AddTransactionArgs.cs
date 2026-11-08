@@ -6,7 +6,7 @@ internal sealed record AddTransactionArgs(
     TransactionType Type,
     IReadOnlyList<decimal>? Amounts,
     string? CategoryAlias,
-    DateOnly? Date,
+    DateTime? Date,
     string? Note,
     string RecognizedInput
 )

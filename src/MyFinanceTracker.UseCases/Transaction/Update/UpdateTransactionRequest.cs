@@ -8,6 +8,6 @@ public sealed record UpdateTransactionRequest(
     TransactionType? Type = null,
     decimal? Amount = null,
     string? CategoryAlias = null,
-    DateOnly? Date = null,
+    DateTime? Date = null,
     string? Note = null,
     bool ClearNote = false) : IRequest<UpdateTransactionResponse>;

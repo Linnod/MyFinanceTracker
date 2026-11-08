@@ -43,7 +43,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             categoryRepoMock,
             loggerMock);
 
-        var date = new DateOnly(2026, 11, 2);
+        var date = new DateTime(2026, 11, 2, 12, 0, 0);
         var transaction = new Transaction(
             Guid.NewGuid(),
             TransactionType.Expense,
@@ -104,7 +104,7 @@ public class GoogleSheetsRepositoryIntegrationTests
         categoryRepoMock.GetAll(Arg.Any<CancellationToken>())
             .Returns([foodCategory, entertainmentCategory]);
 
-        var targetDate = new DateOnly(2026, 11, 2);
+        var targetDate = new DateTime(2026, 11, 2, 0, 0, 0);
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
             .Returns(
@@ -166,8 +166,8 @@ public class GoogleSheetsRepositoryIntegrationTests
             loggerMock);
 
         var filter = new TransactionFilter(
-            FromDate: new DateOnly(2026, 11, 2),
-            ToDate: new DateOnly(2026, 11, 4),
+            FromDate: new DateTime(2026, 11, 2, 0, 0, 0),
+            ToDate: new DateTime(2026, 11, 4, 23, 59, 59),
             Categories: [foodCategory, entertainmentCategory],
             Type: TransactionType.Expense);
 
@@ -209,7 +209,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             loggerMock);
 
         // act
-        var act = () => sut.Get(new TransactionFilter(new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 2), [foodCategory]), CancellationToken.None);
+        var act = () => sut.Get(new TransactionFilter(new DateTime(2026, 11, 2, 0, 0, 0), new DateTime(2026, 11, 2, 23, 59, 59), [foodCategory]), CancellationToken.None);
 
         // assert
         var ex = await act.Should().ThrowAsync<GoogleSheetsPersistenceException>();
@@ -359,13 +359,13 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns([foodCategory]);
 
         var targetId = Guid.NewGuid();
-        var date = new DateOnly(2026, 11, 2);
+        var date = new DateTime(2026, 11, 2, 12, 0, 0);
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([targetId.ToString(), "2026-11-02", "Expense", "Food", "-50.5", "Lunch"]))
+                new(1, new([targetId.ToString(), "2026-11-02 12:00:00", "Expense", "Food", "-50.5", "Lunch"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -458,7 +458,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             TransactionType.Income,
             transportCategory,
             350.50m,
-            new DateOnly(2026, 11, 3),
+            new DateTime(2026, 11, 3, 10, 0, 0),
             "Bonus reimbursement");
 
         // act
@@ -470,7 +470,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             Arg.Is<GoogleSheetRow>(row =>
                 row.Index == 2 &&
                 row.Values.Values[0] == targetId.ToString() &&
-                row.Values.Values[1] == "2026-11-03" &&
+                row.Values.Values[1] == "2026-11-03 10:00:00" &&
                 row.Values.Values[2] == "Income" &&
                 row.Values.Values[3] == "Transport" &&
                 row.Values.Values[4] == "350.5" &&
@@ -513,7 +513,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             TransactionType.Expense,
             foodCategory,
             25m,
-            new DateOnly(2026, 11, 2),
+            new DateTime(2026, 11, 2, 10, 0, 0),
             null);
 
         // act

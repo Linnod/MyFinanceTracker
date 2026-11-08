@@ -53,8 +53,7 @@ internal sealed partial class GeminiToolExecutor(
         }
 
         var rawInput = GetRecognizedInput(typedArgs.RecognizedInput, DefaultRawInputForAddingTransaction);
-        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
-        var date = typedArgs.Date ?? today;
+        var date = typedArgs.Date ?? timeProvider.GetLocalNow().DateTime;
 
         var items = typedArgs.Amounts.Select(amount => new CreateTransactionItem(
             TransactionType: typedArgs.Type,

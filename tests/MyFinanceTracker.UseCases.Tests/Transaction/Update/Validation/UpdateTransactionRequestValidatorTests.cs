@@ -68,7 +68,7 @@ public class UpdateTransactionRequestValidatorTests
             ? FinancialRules.MinAllowedYear - 1
             : FinancialRules.MaxAllowedYear + 1;
 
-        var request = new UpdateTransactionRequest(Guid.NewGuid(), Date: new DateOnly(year, 1, 1));
+        var request = new UpdateTransactionRequest(Guid.NewGuid(), Date: new DateTime(year, 1, 1));
 
         // act
         var result = sut.TestValidate(request);

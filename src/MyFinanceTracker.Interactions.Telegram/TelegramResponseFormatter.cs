@@ -108,9 +108,7 @@ internal static class TelegramResponseFormatter
                     t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
                 var balanceSign = totalListedAmount > 0 ? "+" : string.Empty;
 
-                var datePart = listed.FromDate == listed.ToDate
-                    ? $"for <code>{listed.FromDate:dd.MM.yyyy}</code>"
-                    : $"from <code>{listed.FromDate:dd.MM.yyyy}</code> to <code>{listed.ToDate:dd.MM.yyyy}</code>";
+                var datePart = FormatDateRange(listed.FromDate, listed.ToDate);
 
                 var header = listed.CategoryNames.Count > 0
                     ? $"<b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
@@ -203,7 +201,7 @@ internal static class TelegramResponseFormatter
                 itemSb.AppendLine(WebUtility.HtmlEncode(t.Note));
             }
 
-            itemSb.AppendLine($"{t.Date:dd.MM.yyyy}");
+            itemSb.AppendLine($"{t.Date:dd.MM.yyyy HH:mm:ss}");
             itemSb.Append($"<code>{t.Id}</code>");
 
             var itemText = itemSb.ToString();
@@ -261,4 +259,7 @@ internal static class TelegramResponseFormatter
         ValidationErrorCode.Transaction.NothingToUpdate => "At least one field must be provided to update the transaction.",
         _ => err.ErrorCode
     };
+
+    private static string FormatDateRange(DateTime from, DateTime to) =>
+        $"from {from:dd.MM.yyyy HH:mm:ss} to {to:dd.MM.yyyy HH:mm:ss}";
 }

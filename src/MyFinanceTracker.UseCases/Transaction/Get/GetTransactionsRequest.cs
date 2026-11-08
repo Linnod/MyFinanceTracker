@@ -4,8 +4,8 @@ using MyFinanceTracker.Domain.Entities;
 namespace MyFinanceTracker.UseCases.Transaction.Get;
 
 public record GetTransactionsRequest(
-    DateOnly FromDate,
-    DateOnly ToDate,
+    DateTime FromDate,
+    DateTime ToDate,
     IReadOnlyList<string>? CategoryAliases = null,
     TransactionType? Type = null
 ) : IRequest<GetTransactionsResponse>
@@ -14,8 +14,8 @@ public record GetTransactionsRequest(
     {
         var parts = new List<string>
         {
-            $"From: {FromDate:dd.MM.yyyy}",
-            $"To: {ToDate:dd.MM.yyyy}"
+            $"From: {FromDate:dd.MM.yyyy HH:mm:ss}",
+            $"To: {ToDate:dd.MM.yyyy HH:mm:ss}"
         };
 
         if (CategoryAliases is { Count: > 0 })

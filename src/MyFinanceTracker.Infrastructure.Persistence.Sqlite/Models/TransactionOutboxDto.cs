@@ -7,5 +7,5 @@ internal sealed record TransactionOutboxDto(
     TransactionType Type,
     string CategoryId,
     decimal Amount,
-    DateOnly Date,
+    DateTime Date,
     string? Note);

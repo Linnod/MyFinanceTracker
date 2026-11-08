@@ -6,6 +6,6 @@ public record CreateTransactionItem(
     TransactionType TransactionType,
     decimal Amount,
     string CategoryAlias,
-    DateOnly Date,
+    DateTime Date,
     string? Note = null
 );

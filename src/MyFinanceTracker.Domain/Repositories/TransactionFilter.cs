@@ -3,8 +3,8 @@ using MyFinanceTracker.Domain.Entities;
 namespace MyFinanceTracker.Domain.Repositories;
 
 public sealed record TransactionFilter(
-    DateOnly? FromDate = null,
-    DateOnly? ToDate = null,
+    DateTime? FromDate = null,
+    DateTime? ToDate = null,
     IReadOnlyCollection<Category>? Categories = null,
     TransactionType? Type = null)
 {
@@ -14,12 +14,12 @@ public sealed record TransactionFilter(
 
         if (FromDate.HasValue)
         {
-            parts.Add($"From: {FromDate.Value:dd.MM.yyyy}");
+            parts.Add($"From: {FromDate.Value:dd.MM.yyyy HH:mm:ss}");
         }
 
         if (ToDate.HasValue)
         {
-            parts.Add($"To: {ToDate.Value:dd.MM.yyyy}");
+            parts.Add($"To: {ToDate.Value:dd.MM.yyyy HH:mm:ss}");
         }
 
         if (Categories is { Count: > 0 })

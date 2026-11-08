@@ -16,7 +16,7 @@ public class TransactionTests
         var type = TransactionType.Income;
         var category = new Category("salary", "Salary", ["salary"]);
         var amount = 1500.00m;
-        var date = new DateOnly(2026, 5, 10);
+        var date = new DateTime(2026, 5, 10, 14, 30, 45);
         var note = "Monthly salary";
 
         // act
@@ -39,7 +39,7 @@ public class TransactionTests
         var category = CreateTestCategory();
 
         // act
-        Transaction act() => new(id, TransactionType.Expense, category, 10m, new DateOnly(2026, 5, 10), null);
+        Transaction act() => new(id, TransactionType.Expense, category, 10m, new DateTime(2026, 5, 10, 10, 0, 0), null);
 
         // assert
         var exception = Assert.Throws<DomainException>((Func<Transaction>)act);
@@ -53,7 +53,7 @@ public class TransactionTests
         var id = Guid.NewGuid();
 
         // act
-        Transaction act() => new(id, TransactionType.Expense, null!, 10m, new DateOnly(2026, 5, 10), null);
+        Transaction act() => new(id, TransactionType.Expense, null!, 10m, new DateTime(2026, 5, 10, 10, 0, 0), null);
 
         // assert
         var exception = Assert.Throws<DomainException>(act);
@@ -76,7 +76,7 @@ public class TransactionTests
             TransactionType.Expense,
             category,
             invalidAmount,
-            new DateOnly(2026, 5, 10),
+            new DateTime(2026, 5, 10, 10, 0, 0),
             null);
 
         // assert
@@ -92,7 +92,7 @@ public class TransactionTests
         // arrange
         var id = Guid.NewGuid();
         var category = CreateTestCategory();
-        var invalidDate = new DateOnly(invalidYear, 1, 1);
+        var invalidDate = new DateTime(invalidYear, 1, 1, 0, 0, 0);
         var expectedMessage = $"Transaction date year must be between {FinancialRules.MinAllowedYear} and {FinancialRules.MaxAllowedYear}.";
 
         // act

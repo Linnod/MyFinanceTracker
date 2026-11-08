@@ -5,14 +5,14 @@ public abstract record GetTransactionsResponse : UseCaseResponse
     private GetTransactionsResponse() { }
 
     public sealed record Success(
-        DateOnly FromDate,
-        DateOnly ToDate,
+        DateTime FromDate,
+        DateTime ToDate,
         IReadOnlyList<string> CategoryNames,
         IReadOnlyList<Domain.Entities.Transaction> Transactions
     ) : GetTransactionsResponse
     {
         public override string ToString() =>
-            $"Got {Transactions.Count} transaction(s) from {FromDate:dd.MM.yyyy} to {ToDate:dd.MM.yyyy}";
+            $"Got {Transactions.Count} transaction(s) from {FromDate:dd.MM.yyyy HH:mm:ss} to {ToDate:dd.MM.yyyy HH:mm:ss}";
     }
 
     public sealed record ValidationError(

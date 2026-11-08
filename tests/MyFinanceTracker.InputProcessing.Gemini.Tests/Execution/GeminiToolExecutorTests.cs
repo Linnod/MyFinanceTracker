@@ -17,21 +17,22 @@ namespace MyFinanceTracker.InputProcessing.Gemini.Tests.Execution;
 
 public class GeminiToolExecutorTests
 {
-    private readonly ILogger<GeminiToolExecutor> loggerMock;
+    private static readonly DateTimeOffset FixedNow = new(2026, 8, 8, 12, 0, 0, TimeSpan.Zero);
+    private readonly ILogger<GeminiToolExecutor> loggerMock = Substitute.For<ILogger<GeminiToolExecutor>>();
     private readonly ISender sender = Substitute.For<ISender>();
-    private readonly TimeProvider timeProvider = TimeProvider.System;
+    private readonly TimeProvider timeProvider = new FixedTimeProvider(FixedNow);
     private readonly GeminiToolExecutor executor;
 
     public GeminiToolExecutorTests()
     {
-        loggerMock = Substitute.For<ILogger<GeminiToolExecutor>>();
         executor = new GeminiToolExecutor(sender, timeProvider, loggerMock);
     }
 
     [Fact]
     async Task ExecuteToolCall_WhenAddTransactionCall_ShouldSendCreateTransactionRequest()
     {
-        // Arrange
+        // arrange
+        var transactionDate = new DateTime(2026, 8, 8, 14, 30, 0);
         var functionCall = new FunctionCall
         {
             Name = GeminiToolDeclarationProvider.ToolNames.AddTransaction,
@@ -40,7 +41,7 @@ public class GeminiToolExecutorTests
                 ["type"] = "expense",
                 ["amounts"] = new[] { 100m },
                 ["categoryAlias"] = "food",
-                ["date"] = "2026-08-08"
+                ["date"] = "2026-08-08T14:30:00"
             }
         };
 
@@ -52,7 +53,7 @@ public class GeminiToolExecutorTests
                 type: TransactionType.Expense,
                 category: category,
                 amount: 100m,
-                date: new DateOnly(2026, 8, 8),
+                date: transactionDate,
                 note: null
             )
         };
@@ -60,10 +61,10 @@ public class GeminiToolExecutorTests
         sender.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new CreateTransactionsResponse.Success(createdTransactions));
 
-        // Act
+        // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
-        // Assert
+        // assert
         response.Response.Should().BeOfType<CreateTransactionsResponse.Success>();
 
         var result = (CreateTransactionsResponse.Success)response.Response;
@@ -76,7 +77,7 @@ public class GeminiToolExecutorTests
                 r.Items[0].TransactionType == TransactionType.Expense &&
                 r.Items[0].CategoryAlias == "food" &&
                 r.Items[0].Amount == 100m &&
-                r.Items[0].Date == new DateOnly(2026, 8, 8)),
+                r.Items[0].Date == transactionDate),
             Arg.Any<CancellationToken>()
         );
     }
@@ -84,8 +85,8 @@ public class GeminiToolExecutorTests
     [Fact]
     async Task ExecuteToolCall_WhenAddTransactionCallWithoutDate_ShouldDefaultToCurrentDate()
     {
-        // Arrange
-        var today = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
+        // arrange
+        var expectedNow = timeProvider.GetLocalNow().DateTime;
         var functionCall = new FunctionCall
         {
             Name = GeminiToolDeclarationProvider.ToolNames.AddTransaction,
@@ -106,7 +107,7 @@ public class GeminiToolExecutorTests
                 type: TransactionType.Expense,
                 category: category,
                 amount: 50m,
-                date: today,
+                date: expectedNow,
                 note: null
             )
         };
@@ -114,16 +115,16 @@ public class GeminiToolExecutorTests
         sender.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new CreateTransactionsResponse.Success(createdTransactions));
 
-        // Act
+        // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
-        // Assert
+        // assert
         response.Response.Should().BeOfType<CreateTransactionsResponse.Success>();
 
         await sender.Received(1).Send(
             Arg.Is<CreateTransactionsRequest>(r =>
                 r.Items.Count == 1 &&
-                r.Items[0].Date == today),
+                r.Items[0].Date == expectedNow),
             Arg.Any<CancellationToken>()
         );
     }
@@ -131,7 +132,7 @@ public class GeminiToolExecutorTests
     [Fact]
     async Task ExecuteToolCall_WhenAddTransactionCallWithoutAmounts_ShouldSendRequestWithEmptyItemsAndReturnInvalidInput()
     {
-        // Arrange
+        // arrange
         var functionCall = new FunctionCall
         {
             Name = GeminiToolDeclarationProvider.ToolNames.AddTransaction,
@@ -151,10 +152,10 @@ public class GeminiToolExecutorTests
         sender.Send(Arg.Any<CreateTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new CreateTransactionsResponse.ValidationError(errors));
 
-        // Act
+        // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
-        // Assert
+        // assert
         response.Response.Should().BeOfType<CreateTransactionsResponse.ValidationError>();
         var result = (CreateTransactionsResponse.ValidationError)response.Response;
         result.Errors.Should().BeEquivalentTo(errors);
@@ -169,14 +170,17 @@ public class GeminiToolExecutorTests
     [Fact]
     async Task ExecuteToolCall_WhenGetTransactionsCall_ShouldSendGetTransactionsRequest()
     {
-        // Arrange
+        // arrange
+        var fromDate = new DateTime(2026, 8, 1, 0, 0, 0);
+        var toDate = new DateTime(2026, 8, 10, 23, 59, 59);
+
         var functionCall = new FunctionCall
         {
             Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
             Args = new Dictionary<string, object>
             {
-                ["fromDate"] = "2026-08-01",
-                ["toDate"] = "2026-08-10",
+                ["fromDate"] = "2026-08-01T00:00:00",
+                ["toDate"] = "2026-08-10T23:59:59",
                 ["categoryAliases"] = new[] { "food", "entertainment" },
                 ["type"] = "expense",
                 ["recognizedInput"] = "View expenses in food and entertainment"
@@ -191,34 +195,34 @@ public class GeminiToolExecutorTests
                 type: TransactionType.Expense,
                 category: category,
                 amount: 50m,
-                date: new DateOnly(2026, 8, 5),
+                date: new DateTime(2026, 8, 5, 12, 0, 0),
                 note: "Lunch"
             )
         };
 
         sender.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new GetTransactionsResponse.Success(
-                new DateOnly(2026, 8, 1),
-                new DateOnly(2026, 8, 10),
+                fromDate,
+                toDate,
                 ["Food", "Entertainment"],
                 transactions));
 
-        // Act
+        // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
-        // Assert
+        // assert
         response.Response.Should().BeOfType<GetTransactionsResponse.Success>();
         var listed = (GetTransactionsResponse.Success)response.Response;
-        listed.FromDate.Should().Be(new DateOnly(2026, 8, 1));
-        listed.ToDate.Should().Be(new DateOnly(2026, 8, 10));
+        listed.FromDate.Should().Be(fromDate);
+        listed.ToDate.Should().Be(toDate);
         listed.CategoryNames.Should().Equal("Food", "Entertainment");
         listed.Transactions.Should().BeEquivalentTo(transactions);
         response.RawInput.Should().Be("View expenses in food and entertainment");
 
         await sender.Received(1).Send(
             Arg.Is<GetTransactionsRequest>(r =>
-                r.FromDate == new DateOnly(2026, 8, 1) &&
-                r.ToDate == new DateOnly(2026, 8, 10) &&
+                r.FromDate == fromDate &&
+                r.ToDate == toDate &&
                 r.CategoryAliases != null &&
                 r.CategoryAliases.SequenceEqual(new[] { "food", "entertainment" }) &&
                 r.Type == TransactionType.Expense),
@@ -227,9 +231,48 @@ public class GeminiToolExecutorTests
     }
 
     [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionsCallWithTimeWindow_ShouldPreserveExactHoursAndMinutes()
+    {
+        // arrange
+        var fromDate = new DateTime(2026, 8, 8, 10, 15, 0);
+        var toDate = new DateTime(2026, 8, 8, 11, 15, 0);
+
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
+            Args = new Dictionary<string, object>
+            {
+                ["fromDate"] = "2026-08-08T10:15:00",
+                ["toDate"] = "2026-08-08T11:15:00",
+                ["recognizedInput"] = "Show transactions in the last hour"
+            }
+        };
+
+        sender.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new GetTransactionsResponse.Success(
+                fromDate,
+                toDate,
+                [],
+                []));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Response.Should().BeOfType<GetTransactionsResponse.Success>();
+
+        await sender.Received(1).Send(
+            Arg.Is<GetTransactionsRequest>(r =>
+                r.FromDate == fromDate &&
+                r.ToDate == toDate),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
     async Task ExecuteToolCall_WhenGetTransactionsCallHasMissingDates_ShouldReturnInvalidInput()
     {
-        // Arrange
+        // arrange
         var functionCall = new FunctionCall
         {
             Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
@@ -239,10 +282,10 @@ public class GeminiToolExecutorTests
             }
         };
 
-        // Act
+        // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
-        // Assert
+        // assert
         response.Response.Should().BeOfType<GetTransactionsResponse.ValidationError>();
         var invalid = (GetTransactionsResponse.ValidationError)response.Response;
         invalid.Errors.Should().Contain(e => e.ErrorCode == ValidationErrorCode.Transaction.FromDateRequired);
@@ -254,7 +297,7 @@ public class GeminiToolExecutorTests
     [Fact]
     async Task ExecuteToolCall_WhenDeleteTransactionsCall_ShouldSendDeleteTransactionsRequest()
     {
-        // Arrange
+        // arrange
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
 
@@ -271,10 +314,10 @@ public class GeminiToolExecutorTests
         sender.Send(Arg.Any<DeleteTransactionsRequest>(), Arg.Any<CancellationToken>())
             .Returns(new DeleteTransactionsResponse.Success(2));
 
-        // Act
+        // act
         var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
 
-        // Assert
+        // assert
         response.Response.Should().BeOfType<DeleteTransactionsResponse.Success>();
         var deleted = (DeleteTransactionsResponse.Success)response.Response;
         deleted.DeletedCount.Should().Be(2);
@@ -312,7 +355,7 @@ public class GeminiToolExecutorTests
             TransactionType.Expense,
             category,
             75.50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1, 12, 0, 0),
             "Lunch");
 
         sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
@@ -336,6 +379,48 @@ public class GeminiToolExecutorTests
                 r.Date == null &&
                 r.Note == null &&
                 !r.ClearNote),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateTransactionCallWithDate_ShouldSendUpdateTransactionRequestWithParsedDateTime()
+    {
+        // arrange
+        var txId = Guid.NewGuid();
+        var newDate = new DateTime(2026, 11, 2, 15, 45, 0);
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = txId.ToString(),
+                ["date"] = "2026-11-02T15:45:00",
+                ["recognizedInput"] = "change date"
+            }
+        };
+
+        var category = new Category("food", "Food", ["food"]);
+        var updatedTransaction = new Transaction(
+            txId,
+            TransactionType.Expense,
+            category,
+            50m,
+            newDate,
+            null);
+
+        sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new UpdateTransactionResponse.Success(updatedTransaction));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Response.Should().BeOfType<UpdateTransactionResponse.Success>();
+
+        await sender.Received(1).Send(
+            Arg.Is<UpdateTransactionRequest>(r =>
+                r.Id == txId &&
+                r.Date == newDate),
             Arg.Any<CancellationToken>());
     }
 
@@ -432,5 +517,10 @@ public class GeminiToolExecutorTests
         response.RawInput.Should().Be("update invalid id");
 
         await sender.DidNotReceive().Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 }

@@ -23,7 +23,7 @@ public class GoogleSheetMapperTests
             TransactionType.Expense,
             foodCategory,
             123.45m,
-            new DateOnly(2026, 11, 2),
+            new DateTime(2026, 11, 2, 18, 30, 45),
             "Dinner"
         );
 
@@ -33,7 +33,7 @@ public class GoogleSheetMapperTests
         // assert
         result.Values.Should().Equal(
             id.ToString(),
-            "2026-11-02",
+            "2026-11-02 18:30:45",
             "Expense",
             "Food",
             "-123.45",
@@ -52,7 +52,7 @@ public class GoogleSheetMapperTests
             TransactionType.Income,
             salaryCategory,
             5000m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1, 9, 0, 0),
             null
         );
 
@@ -62,7 +62,7 @@ public class GoogleSheetMapperTests
         // assert
         result.Values.Should().Equal(
             id.ToString(),
-            "2026-11-01",
+            "2026-11-01 09:00:00",
             "Income",
             "Salary",
             "5000",
@@ -88,12 +88,16 @@ public class GoogleSheetMapperTests
     }
 
     [Theory]
-    [InlineData("2026-11-02")]
-    [InlineData("02.11.2026")]
-    [InlineData("2.11.2026")]
-    [InlineData("02/11/2026")]
-    [InlineData("2026.11.02")]
-    public void MapToDomain_ShouldSupportVariousDateFormats(string dateString)
+    [InlineData("2026-11-02 14:30:45", 2026, 11, 2, 14, 30, 45)]
+    [InlineData("2026-11-02", 2026, 11, 2, 0, 0, 0)]
+    public void MapToDomain_ShouldSupportVariousDateFormats(
+        string dateString,
+        int year,
+        int month,
+        int day,
+        int hour,
+        int minute,
+        int second)
     {
         // arrange
         var sut = CreateMapper(".");
@@ -113,7 +117,7 @@ public class GoogleSheetMapperTests
         // assert
         result.Should().BeOfType<RowMappingResult.Success>();
         var success = (RowMappingResult.Success)result;
-        success.Transaction.Date.Should().Be(new DateOnly(2026, 11, 2));
+        success.Transaction.Date.Should().Be(new DateTime(year, month, day, hour, minute, second));
         success.Transaction.Amount.Should().Be(50.25m);
         success.Transaction.Category.Should().Be(foodCategory);
         success.Transaction.Note.Should().Be("Lunch");
@@ -127,7 +131,7 @@ public class GoogleSheetMapperTests
         var id = Guid.NewGuid();
         var row = new GoogleSheetRow(3, new GoogleSheetRowValues([
             id.ToString(),
-            "2026-11-02",
+            "2026-11-02 12:00:00",
             "Income",
             "salary", // lower case
             "2500",
@@ -149,8 +153,8 @@ public class GoogleSheetMapperTests
     {
         // arrange
         var sut = CreateMapper(".");
-        var missingIdRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["", "2026-11-02", "Expense", "Food", "-10"]));
-        var invalidIdRow = new GoogleSheetRow(5, new GoogleSheetRowValues(["not-a-guid", "2026-11-02", "Expense", "Food", "-10"]));
+        var missingIdRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["", "2026-11-02 12:00:00", "Expense", "Food", "-10"]));
+        var invalidIdRow = new GoogleSheetRow(5, new GoogleSheetRowValues(["not-a-guid", "2026-11-02 12:00:00", "Expense", "Food", "-10"]));
 
         // act
         var missingResult = sut.MapToDomain(missingIdRow, [foodCategory]);
@@ -185,7 +189,7 @@ public class GoogleSheetMapperTests
         // arrange
         var sut = CreateMapper(".");
         var id = Guid.NewGuid();
-        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "2026-11-02", "UnknownType", "Food", "-10"]));
+        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "UnknownType", "Food", "-10"]));
 
         // act
         var result = sut.MapToDomain(row, [foodCategory]);
@@ -201,7 +205,7 @@ public class GoogleSheetMapperTests
         // arrange
         var sut = CreateMapper(".");
         var id = Guid.NewGuid();
-        var row = new GoogleSheetRow(4, new GoogleSheetRowValues([id.ToString(), "2026-11-02", "Expense", "NonExistent", "-10"]));
+        var row = new GoogleSheetRow(4, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "Expense", "NonExistent", "-10"]));
 
         // act
         var result = sut.MapToDomain(row, [foodCategory]);
@@ -221,7 +225,7 @@ public class GoogleSheetMapperTests
         // arrange
         var sut = CreateMapper(".");
         var id = Guid.NewGuid();
-        var row = new GoogleSheetRow(1, new GoogleSheetRowValues([id.ToString(), "2026-11-02", "Expense", "Food", amountStr]));
+        var row = new GoogleSheetRow(1, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "Expense", "Food", amountStr]));
 
         // act
         var result = sut.MapToDomain(row, [foodCategory]);
@@ -239,14 +243,14 @@ public class GoogleSheetMapperTests
         var id = Guid.NewGuid();
         var validRow = new GoogleSheetRow(1, new GoogleSheetRowValues([
             id.ToString(),
-            "2026-11-02",
+            "2026-11-02 12:00:00",
             "Expense",
             "Food",
             "-1100,25"
         ]));
         var invalidRow = new GoogleSheetRow(2, new GoogleSheetRowValues([
             id.ToString(),
-            "2026-11-02",
+            "2026-11-02 12:00:00",
             "Expense",
             "Food",
             "-1100.25"

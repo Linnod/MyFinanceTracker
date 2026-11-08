@@ -36,7 +36,7 @@ public class SqliteDbContextTests : IDisposable
             Type = TransactionType.Expense,
             CategoryId = "groceries",
             Amount = 42.50m,
-            Date = new DateOnly(2026, 11, 5),
+            Date = new DateTime(2026, 11, 5, 12, 30, 0),
             Note = "Supermarket"
         };
 
@@ -53,7 +53,7 @@ public class SqliteDbContextTests : IDisposable
         retrieved.Type.Should().Be(TransactionType.Expense);
         retrieved.CategoryId.Should().Be("groceries");
         retrieved.Amount.Should().Be(42.50m);
-        retrieved.Date.Should().Be(new DateOnly(2026, 11, 5));
+        retrieved.Date.Should().Be(new DateTime(2026, 11, 5, 12, 30, 0));
         retrieved.Note.Should().Be("Supermarket");
     }
 

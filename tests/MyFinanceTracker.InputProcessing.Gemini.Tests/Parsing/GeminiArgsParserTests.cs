@@ -10,7 +10,7 @@ public class GeminiArgsParserTests
 {
     private record TestArgs(
         string? CategoryAlias,
-        DateOnly? Date,
+        DateTime? Date,
         IReadOnlyList<decimal>? Amounts,
         TransactionType? Type,
         string? RecognizedInput);
@@ -18,37 +18,37 @@ public class GeminiArgsParserTests
     [Fact]
     void BindArgs_WhenArgsIsNull_ShouldReturnNull()
     {
-        // Arrange
+        // arrange
         IDictionary<string, object>? args = null;
 
-        // Act
+        // act
         var result = args.BindArgs<TestArgs>();
 
-        // Assert
+        // assert
         result.Should().BeNull();
     }
 
     [Fact]
     void BindArgs_WhenArgsIsEmpty_ShouldReturnNull()
     {
-        // Arrange
+        // arrange
         var args = new Dictionary<string, object>();
 
-        // Act
+        // act
         var result = args.BindArgs<TestArgs>();
 
-        // Assert
+        // assert
         result.Should().BeNull();
     }
 
     [Fact]
     public void BindArgs_WhenJsonElementsProvided_ShouldBindToDtoCorrectly()
     {
-        // Arrange
+        // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
             "categoryAlias": "groceries",
-            "date": "2026-08-08",
+            "date": "2026-08-08T14:30:00",
             "amounts": [100.5, 50],
             "type": "expense",
             "recognizedInput": "Расход 150.5 € в категорию Еда"
@@ -64,22 +64,74 @@ public class GeminiArgsParserTests
             ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
         };
 
-        // Act
+        // act
         var result = args.BindArgs<TestArgs>();
 
-        // Assert
+        // assert
         result.Should().NotBeNull();
         result!.CategoryAlias.Should().Be("groceries");
-        result.Date.Should().Be(new DateOnly(2026, 8, 8));
+        result.Date.Should().Be(new DateTime(2026, 8, 8, 14, 30, 0));
         result.Amounts.Should().Equal(100.5m, 50m);
         result.Type.Should().Be(TransactionType.Expense);
         result.RecognizedInput.Should().Be("Расход 150.5 € в категорию Еда");
     }
 
+    [Theory]
+    [InlineData("2026-08-08T14:30:00", 2026, 8, 8, 14, 30, 0)]
+    [InlineData("2026-08-08 14:30:00", 2026, 8, 8, 14, 30, 0)]
+    [InlineData("2026-08-08T14:30", 2026, 8, 8, 14, 30, 0)]
+    [InlineData("2026-08-08", 2026, 8, 8, 0, 0, 0)]
+    void BindArgs_FlexibleDateTimeFormats_ShouldBindCorrectly(string dateStr, int year, int month, int day, int hour, int minute, int second)
+    {
+        // arrange
+        using var jsonDoc = JsonDocument.Parse($$"""
+        {
+            "date": "{{dateStr}}"
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["date"] = jsonDoc.RootElement.GetProperty("date")
+        };
+
+        // act
+        var result = args.BindArgs<TestArgs>();
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Date.Should().Be(new DateTime(year, month, day, hour, minute, second));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-a-date")]
+    [InlineData("08/11/2026")]
+    void BindArgs_WhenInvalidDateFormatProvided_ShouldReturnNull(string invalidDate)
+    {
+        // arrange
+        using var jsonDoc = JsonDocument.Parse($$"""
+        {
+            "date": "{{invalidDate}}"
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["date"] = jsonDoc.RootElement.GetProperty("date")
+        };
+
+        // act
+        var result = args.BindArgs<TestArgs>();
+
+        // assert
+        result.Should().BeNull();
+    }
+
     [Fact]
     void BindArgs_WhenNumbersArePassedAsStrings_ShouldBindNumbersCorrectly()
     {
-        // Arrange
+        // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
             "amounts": ["100.5", "50"]
@@ -91,10 +143,10 @@ public class GeminiArgsParserTests
             ["amounts"] = jsonDoc.RootElement.GetProperty("amounts")
         };
 
-        // Act
+        // act
         var result = args.BindArgs<TestArgs>();
 
-        // Assert
+        // assert
         result.Should().NotBeNull();
         result!.Amounts.Should().Equal(100.5m, 50m);
     }
@@ -102,7 +154,7 @@ public class GeminiArgsParserTests
     [Fact]
     void BindArgs_WhenAddTransactionArgsHasMissingOrNullAmounts_ShouldDefaultAmountsToEmptyList()
     {
-        // Arrange
+        // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
             "type": "expense",
@@ -118,10 +170,10 @@ public class GeminiArgsParserTests
             ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
         };
 
-        // Act
+        // act
         var result = args.BindArgs<AddTransactionArgs>();
 
-        // Assert
+        // assert
         result.Should().NotBeNull();
         result!.Amounts.Should().NotBeNull();
         result.Amounts.Should().BeEmpty();

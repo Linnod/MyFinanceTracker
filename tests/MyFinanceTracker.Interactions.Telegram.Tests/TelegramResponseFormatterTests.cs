@@ -23,7 +23,7 @@ public class TelegramResponseFormatterTests
             TransactionType.Expense,
             TestCategory,
             16.59m,
-            new DateOnly(2026, 11, 7),
+            new DateTime(2026, 11, 7, 14, 30, 0),
             "Carrefour");
 
         var action = new ActionResult("groceries 16.59 Carrefour", new CreateTransactionsResponse.Success([transaction]));
@@ -39,7 +39,7 @@ public class TelegramResponseFormatterTests
             <b>-16.59</b>
             <b>Groceries</b>
             Carrefour
-            07.11.2026
+            07.11.2026 14:30:00
             <code>{id}</code>
             """;
 
@@ -56,7 +56,7 @@ public class TelegramResponseFormatterTests
             TransactionType.Income,
             TestCategory,
             100m,
-            new DateOnly(2026, 11, 7),
+            new DateTime(2026, 11, 7, 10, 0, 0),
             null);
 
         var action = new ActionResult("salary 100", new CreateTransactionsResponse.Success([transaction]));
@@ -71,7 +71,7 @@ public class TelegramResponseFormatterTests
 
             <b>+100.00</b>
             <b>Groceries</b>
-            07.11.2026
+            07.11.2026 10:00:00
             <code>{id}</code>
             """;
 
@@ -87,7 +87,7 @@ public class TelegramResponseFormatterTests
             TransactionType.Expense,
             TestCategory,
             10m,
-            new DateOnly(2026, 11, 7),
+            new DateTime(2026, 11, 7, 11, 0, 0),
             "Coffee");
 
         var t2 = new Transaction(
@@ -95,7 +95,7 @@ public class TelegramResponseFormatterTests
             TransactionType.Expense,
             TestCategory,
             20m,
-            new DateOnly(2026, 11, 7),
+            new DateTime(2026, 11, 7, 12, 0, 0),
             null);
 
         var action = new ActionResult("coffee 10, groceries 20", new CreateTransactionsResponse.Success([t1, t2]));
@@ -121,7 +121,7 @@ public class TelegramResponseFormatterTests
             TransactionType.Expense,
             category,
             15m,
-            new DateOnly(2026, 11, 7),
+            new DateTime(2026, 11, 7, 13, 0, 0),
             "<script>alert('xss')</script> & more");
 
         var action = new ActionResult("hack 15", new CreateTransactionsResponse.Success([transaction]));
@@ -142,15 +142,15 @@ public class TelegramResponseFormatterTests
         // arrange
         var transactions = new List<Transaction>
         {
-            new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 100m, new DateOnly(2026, 11, 1), "Milk"),
-            new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 200m, new DateOnly(2026, 11, 2), "Bread"),
+            new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 100m, new DateTime(2026, 11, 1, 9, 0, 0), "Milk"),
+            new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 200m, new DateTime(2026, 11, 2, 10, 0, 0), "Bread"),
         };
 
         var action = new ActionResult(
             "get transactions",
             new GetTransactionsResponse.Success(
-                new DateOnly(2026, 11, 1),
-                new DateOnly(2026, 11, 2),
+                new DateTime(2026, 11, 1, 0, 0, 0),
+                new DateTime(2026, 11, 2, 0, 0, 0),
                 [],
                 transactions));
 
@@ -168,6 +168,33 @@ public class TelegramResponseFormatterTests
     }
 
     [Fact]
+    public void FormatResponse_Listed_WithTimeWindow_ShowsHoursMinutesSecondsInHeader()
+    {
+        // arrange
+        var transactions = new List<Transaction>
+        {
+            new(Guid.NewGuid(), TransactionType.Expense, TestCategory, 15m, new DateTime(2026, 11, 8, 11, 30, 0), "Coffee")
+        };
+
+        var action = new ActionResult(
+            "get transactions for last hour",
+            new GetTransactionsResponse.Success(
+                new DateTime(2026, 11, 8, 11, 0, 0),
+                new DateTime(2026, 11, 8, 12, 0, 0),
+                [],
+                transactions));
+
+        var result = new ProcessingResult.Completed([action]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        formatted.Should().Contain("from 08.11.2026 11:00:00 to 08.11.2026 12:00:00");
+        formatted.Should().Contain("11:30:00");
+    }
+
+    [Fact]
     public void FormatResponse_Listed_WithMoreThanMax_CapsDisplayedAndPreservesTotal()
     {
         // arrange: 50 transactions
@@ -177,15 +204,15 @@ public class TelegramResponseFormatterTests
                 TransactionType.Expense,
                 TestCategory,
                 10m,
-                new DateOnly(2026, 11, 1),
+                new DateTime(2026, 11, 1, 10, 0, 0),
                 $"Item {i}"))
             .ToList();
 
         var action = new ActionResult(
             "get transactions",
             new GetTransactionsResponse.Success(
-                new DateOnly(2026, 11, 1),
-                new DateOnly(2026, 11, 30),
+                new DateTime(2026, 11, 1, 0, 0, 0),
+                new DateTime(2026, 11, 30, 0, 0, 0),
                 [],
                 transactions));
 
@@ -212,15 +239,15 @@ public class TelegramResponseFormatterTests
                 TransactionType.Expense,
                 TestCategory,
                 50m,
-                new DateOnly(2026, 11, 1),
+                new DateTime(2026, 11, 1, 10, 0, 0),
                 longNote))
             .ToList();
 
         var action = new ActionResult(
             "get transactions",
             new GetTransactionsResponse.Success(
-                new DateOnly(2026, 11, 1),
-                new DateOnly(2026, 11, 30),
+                new DateTime(2026, 11, 1, 0, 0, 0),
+                new DateTime(2026, 11, 30, 0, 0, 0),
                 [],
                 transactions));
 
@@ -279,7 +306,7 @@ public class TelegramResponseFormatterTests
             TransactionType.Expense,
             TestCategory,
             25.50m,
-            new DateOnly(2026, 11, 7),
+            new DateTime(2026, 11, 7, 15, 0, 0),
             "Supermarket");
 
         var action = new ActionResult("update 25.50", new UpdateTransactionResponse.Success(transaction));
@@ -295,7 +322,7 @@ public class TelegramResponseFormatterTests
             <b>-25.50</b>
             <b>Groceries</b>
             Supermarket
-            07.11.2026
+            07.11.2026 15:00:00
             <code>{id}</code>
             """;
 

@@ -10,15 +10,12 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 {
     private const NumberStyles AmountNumberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
 
-    private const string WriteDateFormat = "yyyy-MM-dd";
+    private const string WriteDateFormat = "yyyy-MM-dd HH:mm:ss";
 
     private static readonly string[] SupportedDateFormats =
     [
         WriteDateFormat,
-        "dd.MM.yyyy",
-        "d.M.yyyy",
-        "dd/MM/yyyy",
-        "yyyy.MM.dd"
+        "yyyy-MM-dd"
     ];
 
     private static class Columns
@@ -96,7 +93,7 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
             return new RowMappingResult.Failure(rowNumber, "Missing required 'Date' value.");
         }
 
-        if (!DateOnly.TryParseExact(dateString, SupportedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        if (!DateTime.TryParseExact(dateString, SupportedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
             return new RowMappingResult.Failure(rowNumber, $"Invalid Date: '{dateString}'.");
         }

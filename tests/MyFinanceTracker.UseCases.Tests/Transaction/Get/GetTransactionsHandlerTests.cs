@@ -24,8 +24,8 @@ public class GetTransactionsHandlerTests
     {
         // arrange
         var category = new Domain.Entities.Category("A", "Food", ["food"]);
-        var fromDate = new DateOnly(2026, 1, 20);
-        var toDate = new DateOnly(2026, 1, 27);
+        var fromDate = new DateTime(2026, 1, 20);
+        var toDate = new DateTime(2026, 1, 27);
 
         var transactions = new[]
         {
@@ -82,8 +82,8 @@ public class GetTransactionsHandlerTests
         // arrange
         var food = new Domain.Entities.Category("A", "Food", ["food", "groceries"]);
         var ent = new Domain.Entities.Category("B", "Entertainment", ["ent", "cinema"]);
-        var fromDate = new DateOnly(2026, 1, 20);
-        var toDate = new DateOnly(2026, 1, 27);
+        var fromDate = new DateTime(2026, 1, 20);
+        var toDate = new DateTime(2026, 1, 27);
 
         categoryRepository
             .Resolve("food", Arg.Any<CancellationToken>())
@@ -138,8 +138,8 @@ public class GetTransactionsHandlerTests
     public async Task Handle_NoCategories_DoesNotCallCategoryRepositoryAndReturnsSuccess()
     {
         // arrange
-        var fromDate = new DateOnly(2026, 1, 1);
-        var toDate = new DateOnly(2026, 1, 31);
+        var fromDate = new DateTime(2026, 1, 1);
+        var toDate = new DateTime(2026, 1, 31);
 
         var transactions = new[]
         {
@@ -195,8 +195,8 @@ public class GetTransactionsHandlerTests
         // act
         var result = await sut.Handle(
             new GetTransactionsRequest(
-                FromDate: new DateOnly(2026, 1, 1),
-                ToDate: new DateOnly(2026, 1, 27),
+                FromDate: new DateTime(2026, 1, 1),
+                ToDate: new DateTime(2026, 1, 27),
                 CategoryAliases: ["fod"]),
             CancellationToken.None);
 

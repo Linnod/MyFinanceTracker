@@ -72,7 +72,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Expense,
             foodCategory,
             120.50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1, 14, 30, 0),
             "Supermarket");
 
         var tx2 = new Transaction(
@@ -80,7 +80,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Income,
             salaryCategory,
             3000.00m,
-            new DateOnly(2026, 11, 2),
+            new DateTime(2026, 11, 2, 9, 15, 0),
             null);
 
         // Act
@@ -96,14 +96,14 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         transactions[0].Type.Should().Be(TransactionType.Expense);
         transactions[0].CategoryId.Should().Be("food");
         transactions[0].Amount.Should().Be(120.50m);
-        transactions[0].Date.Should().Be(new DateOnly(2026, 11, 1));
+        transactions[0].Date.Should().Be(new DateTime(2026, 11, 1, 14, 30, 0));
         transactions[0].Note.Should().Be("Supermarket");
 
         transactions[1].Id.Should().Be(tx2.Id);
         transactions[1].Type.Should().Be(TransactionType.Income);
         transactions[1].CategoryId.Should().Be("salary");
         transactions[1].Amount.Should().Be(3000.00m);
-        transactions[1].Date.Should().Be(new DateOnly(2026, 11, 2));
+        transactions[1].Date.Should().Be(new DateTime(2026, 11, 2, 9, 15, 0));
         transactions[1].Note.Should().BeNull();
 
         // Assert - Verify OutboxMessages table
@@ -123,7 +123,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Expense,
             "food",
             120.50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1, 14, 30, 0),
             "Supermarket"));
 
         payload.Transactions[1].Should().BeEquivalentTo(new TransactionOutboxDto(
@@ -131,7 +131,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Income,
             "salary",
             3000.00m,
-            new DateOnly(2026, 11, 2),
+            new DateTime(2026, 11, 2, 9, 15, 0),
             null));
     }
 
@@ -159,18 +159,18 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         // Arrange
         var repository = CreateRepository();
 
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), "Lunch");
-        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 75m, new DateOnly(2026, 11, 5), "Dinner");
-        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateOnly(2026, 11, 5), "Bus ticket");
-        var tx4 = new Transaction(Guid.NewGuid(), TransactionType.Income, salaryCategory, 2500m, new DateOnly(2026, 11, 5), "Paycheck");
-        var tx5 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 100m, new DateOnly(2026, 11, 10), "Groceries");
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateTime(2026, 11, 1, 12, 0, 0), "Lunch");
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 75m, new DateTime(2026, 11, 5, 18, 0, 0), "Dinner");
+        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateTime(2026, 11, 5, 8, 30, 0), "Bus ticket");
+        var tx4 = new Transaction(Guid.NewGuid(), TransactionType.Income, salaryCategory, 2500m, new DateTime(2026, 11, 5, 9, 0, 0), "Paycheck");
+        var tx5 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 100m, new DateTime(2026, 11, 10, 15, 0, 0), "Groceries");
 
         await repository.AddRange([tx1, tx2, tx3, tx4, tx5], CancellationToken.None);
 
         // Act & Assert 1: Filter by Date Range
         var dateFilter = new TransactionFilter(
-            FromDate: new DateOnly(2026, 11, 2),
-            ToDate: new DateOnly(2026, 11, 6));
+            FromDate: new DateTime(2026, 11, 2, 0, 0, 0),
+            ToDate: new DateTime(2026, 11, 6, 23, 59, 59));
         var dateResults = await repository.Get(dateFilter, CancellationToken.None);
         dateResults.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id, tx4.Id]);
 
@@ -186,8 +186,8 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
 
         // Act & Assert 4: Filter combined
         var combinedFilter = new TransactionFilter(
-            FromDate: new DateOnly(2026, 11, 5),
-            ToDate: new DateOnly(2026, 11, 5),
+            FromDate: new DateTime(2026, 11, 5, 0, 0, 0),
+            ToDate: new DateTime(2026, 11, 5, 23, 59, 59),
             Categories: [foodCategory],
             Type: TransactionType.Expense);
         var combinedResults = await repository.Get(combinedFilter, CancellationToken.None);
@@ -206,14 +206,39 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task Get_FilteredByExactTimeWindow_ReturnsOnlyTransactionsWithinHour()
+    {
+        // arrange
+        var repository = CreateRepository();
+        var baseDate = new DateTime(2026, 11, 8, 12, 0, 0);
+
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, baseDate.AddMinutes(-90), "90 mins ago");
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 20m, baseDate.AddMinutes(-45), "45 mins ago");
+        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 30m, baseDate.AddMinutes(-10), "10 mins ago");
+        var tx4 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 40m, baseDate.AddMinutes(10), "10 mins in future");
+
+        await repository.AddRange([tx1, tx2, tx3, tx4], CancellationToken.None);
+
+        var filter = new TransactionFilter(
+            FromDate: baseDate.AddHours(-1),
+            ToDate: baseDate);
+
+        // act
+        var results = await repository.Get(filter, CancellationToken.None);
+
+        // assert
+        results.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id]);
+    }
+
+    [Fact]
     public async Task DeleteRange_ShouldRemoveTransactionsAndCreateOutboxMessage_WhenAllIdsExist()
     {
         // Arrange
         var repository = CreateRepository();
 
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), null);
-        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 75m, new DateOnly(2026, 11, 2), null);
-        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateOnly(2026, 11, 3), null);
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateTime(2026, 11, 1, 10, 0, 0), null);
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 75m, new DateTime(2026, 11, 2, 11, 0, 0), null);
+        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateTime(2026, 11, 3, 12, 0, 0), null);
 
         await repository.AddRange([tx1, tx2, tx3], CancellationToken.None);
 
@@ -255,8 +280,8 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         // Arrange
         var repository = CreateRepository();
 
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), null);
-        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateOnly(2026, 11, 2), null);
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateTime(2026, 11, 1, 10, 0, 0), null);
+        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, transportCategory, 30m, new DateTime(2026, 11, 2, 11, 0, 0), null);
 
         await repository.AddRange([tx1, tx2], CancellationToken.None);
 
@@ -294,7 +319,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     {
         // Arrange
         var repository = CreateRepository();
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateOnly(2026, 11, 1), null);
+        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 50m, new DateTime(2026, 11, 1, 10, 0, 0), null);
 
         await repository.AddRange([tx1], CancellationToken.None);
 
@@ -330,7 +355,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Expense,
             foodCategory,
             45.50m,
-            new DateOnly(2026, 11, 3),
+            new DateTime(2026, 11, 3, 16, 20, 0),
             "Coffee and cake");
 
         await repository.AddRange([tx], CancellationToken.None);
@@ -344,7 +369,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         result.Type.Should().Be(TransactionType.Expense);
         result.Category.Should().Be(foodCategory);
         result.Amount.Should().Be(45.50m);
-        result.Date.Should().Be(new DateOnly(2026, 11, 3));
+        result.Date.Should().Be(new DateTime(2026, 11, 3, 16, 20, 0));
         result.Note.Should().Be("Coffee and cake");
     }
 
@@ -377,7 +402,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
                 Type = TransactionType.Expense,
                 CategoryId = "unresolvable_cat",
                 Amount = 50m,
-                Date = new DateOnly(2026, 11, 1),
+                Date = new DateTime(2026, 11, 1, 10, 0, 0),
                 Note = "Test"
             });
             await seedContext.SaveChangesAsync();
@@ -401,7 +426,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Expense,
             foodCategory,
             100m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1, 10, 0, 0),
             "Original note");
 
         await repository.AddRange([tx], CancellationToken.None);
@@ -417,7 +442,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Income,
             salaryCategory,
             2500.50m,
-            new DateOnly(2026, 11, 5),
+            new DateTime(2026, 11, 5, 15, 30, 0),
             "Updated note");
 
         // act
@@ -430,7 +455,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         entity!.Type.Should().Be(TransactionType.Income);
         entity.CategoryId.Should().Be("salary");
         entity.Amount.Should().Be(2500.50m);
-        entity.Date.Should().Be(new DateOnly(2026, 11, 5));
+        entity.Date.Should().Be(new DateTime(2026, 11, 5, 15, 30, 0));
         entity.Note.Should().Be("Updated note");
 
         var outboxMessages = await assertContext.OutboxMessages.ToListAsync();
@@ -447,7 +472,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Income,
             "salary",
             2500.50m,
-            new DateOnly(2026, 11, 5),
+            new DateTime(2026, 11, 5, 15, 30, 0),
             "Updated note"));
     }
 
@@ -461,7 +486,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
             TransactionType.Expense,
             foodCategory,
             50m,
-            new DateOnly(2026, 11, 1),
+            new DateTime(2026, 11, 1, 10, 0, 0),
             null);
 
         // act

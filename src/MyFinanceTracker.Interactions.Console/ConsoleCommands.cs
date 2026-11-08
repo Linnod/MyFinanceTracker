@@ -29,7 +29,7 @@ internal static class ConsoleCommands
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
                         System.Console.WriteLine(
-                            $"  • {t.Id} | {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
+                            $"  • {t.Id} | {t.Date:dd.MM.yyyy HH:mm:ss} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
                     }
                     break;
 
@@ -41,7 +41,7 @@ internal static class ConsoleCommands
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
                         System.Console.WriteLine(
-                            $"  • {t.Id} | {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
+                            $"  • {t.Id} | {t.Date:dd.MM.yyyy HH:mm:ss} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
                     }
                     break;
 
@@ -54,10 +54,7 @@ internal static class ConsoleCommands
                         t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
 
                     var balanceSign = totalListedAmount > 0 ? "+" : "";
-
-                    var datePart = listed.FromDate == listed.ToDate
-                        ? $"for {listed.FromDate:dd.MM.yyyy}"
-                        : $"from {listed.FromDate:dd.MM.yyyy} to {listed.ToDate:dd.MM.yyyy}";
+                    var datePart = FormatDateRange(listed.FromDate, listed.ToDate);
 
                     var categoriesPart = listed.CategoryNames.Count > 0
                         ? $" in '{string.Join(", ", listed.CategoryNames)}'"
@@ -78,7 +75,7 @@ internal static class ConsoleCommands
                         var note = string.IsNullOrWhiteSpace(t.Note) ? string.Empty : $" | {t.Note}";
 
                         System.Console.WriteLine(
-                            $"  • {t.Id} | {t.Date:dd.MM.yyyy} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
+                            $"  • {t.Id} | {t.Date:dd.MM.yyyy HH:mm:ss} | {t.Category.Name} | {sign}{t.Amount:0.00}{note}");
                     }
                     break;
 
@@ -148,6 +145,7 @@ internal static class ConsoleCommands
         System.Console.WriteLine(message);
         System.Console.ResetColor();
     }
+
     private static string FormatValidationError(ValidationErrorItem err) => err.ErrorCode switch
     {
         ValidationErrorCode.Transaction.CategoryRequired => "Category is required.",
@@ -175,4 +173,7 @@ internal static class ConsoleCommands
         ValidationErrorCode.Transaction.NothingToUpdate => "At least one field must be provided to update the transaction.",
         _ => err.ErrorCode
     };
+
+    private static string FormatDateRange(DateTime from, DateTime to) =>
+        $"from {from:dd.MM.yyyy HH:mm:ss} to {to:dd.MM.yyyy HH:mm:ss}";
 }

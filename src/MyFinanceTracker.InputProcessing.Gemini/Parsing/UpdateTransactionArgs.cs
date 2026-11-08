@@ -7,7 +7,7 @@ internal sealed record UpdateTransactionArgs(
     TransactionType? Type,
     decimal? Amount,
     string? CategoryAlias,
-    DateOnly? Date,
+    DateTime? Date,
     string? Note,
     bool? ClearNote,
     string RecognizedInput);

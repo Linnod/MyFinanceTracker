@@ -20,8 +20,8 @@ public class GetTransactionsRequestValidatorTests
     {
         // arrange
         var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(2026, 1, 1),
-            ToDate: new DateOnly(2026, 1, 27),
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(2026, 1, 27),
             CategoryAliases: ["food", "taxi"],
             Type: TransactionType.Expense);
 
@@ -37,8 +37,8 @@ public class GetTransactionsRequestValidatorTests
     {
         // arrange
         var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(2026, 1, 1),
-            ToDate: new DateOnly(2026, 1, 27),
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(2026, 1, 27),
             CategoryAliases: null,
             Type: null);
 
@@ -60,8 +60,8 @@ public class GetTransactionsRequestValidatorTests
             : FinancialRules.MaxAllowedYear + 1;
 
         var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(year, 1, 1),
-            ToDate: new DateOnly(2026, 1, 27));
+            FromDate: new DateTime(year, 1, 1),
+            ToDate: new DateTime(2026, 1, 27));
 
         // act
         var result = sut.TestValidate(request);
@@ -82,8 +82,8 @@ public class GetTransactionsRequestValidatorTests
             : FinancialRules.MaxAllowedYear + 1;
 
         var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(2026, 1, 1),
-            ToDate: new DateOnly(year, 1, 1));
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(year, 1, 1));
 
         // act
         var result = sut.TestValidate(request);
@@ -98,8 +98,8 @@ public class GetTransactionsRequestValidatorTests
     {
         // arrange
         var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(2026, 2, 1),
-            ToDate: new DateOnly(2026, 1, 1));
+            FromDate: new DateTime(2026, 2, 1),
+            ToDate: new DateTime(2026, 1, 1));
 
         // act
         var result = sut.TestValidate(request);
@@ -116,8 +116,8 @@ public class GetTransactionsRequestValidatorTests
     {
         // arrange
         var request = new GetTransactionsRequest(
-            FromDate: new DateOnly(2026, 1, 1),
-            ToDate: new DateOnly(2026, 1, 27),
+            FromDate: new DateTime(2026, 1, 1),
+            ToDate: new DateTime(2026, 1, 27),
             CategoryAliases: [alias]);
 
         // act
