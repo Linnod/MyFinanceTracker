@@ -9,7 +9,6 @@
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.csproj" />
     <Project Path="src/MyFinanceTracker.Infrastructure.Persistence.Sqlite/MyFinanceTracker.Infrastructure.Persistence.Sqlite.csproj" />
     <Project Path="src/MyFinanceTracker.InputProcessing/MyFinanceTracker.InputProcessing.csproj" />
-    <Project Path="src/MyFinanceTracker.Interactions.Console/MyFinanceTracker.Interactions.Console.csproj" />
     <Project Path="src/MyFinanceTracker.Interactions.Telegram/MyFinanceTracker.Interactions.Telegram.csproj" />
   </Folder>
 

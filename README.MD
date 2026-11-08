@@ -3,7 +3,7 @@
 [![Build](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci-cd.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blue)]()
 
-Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, and banking screenshots) through Telegram and Console interfaces.
+Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, and banking screenshots) through Telegram bot interface.
 
 ## Features
 
@@ -13,7 +13,7 @@ Personal finance tracker that stores transactions in Google Sheets and supports 
 - Local SQLite persistence with Transactional Outbox pattern
 - Resilient background synchronization to Google Sheets (retry policy & dead-letter queue)
 - Automated category mapping with YAML configuration
-- Telegram Bot & Console interaction modes
+- Telegram Bot interaction mode
 - Clean Architecture + CQRS (MediatR)
 - Structured logging with correlation IDs
 
@@ -24,7 +24,7 @@ flowchart LR
     User["User"]
 
     Interactions["Interactions
-    (Telegram / Console)"]
+    (Telegram)"]
 
     Parser["Input Processing"]
 
@@ -64,7 +64,6 @@ src/
 ├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
 ├── MyFinanceTracker.InputProcessing/
 ├── MyFinanceTracker.InputProcessing.Gemini/
-├── MyFinanceTracker.Interactions.Console/
 ├── MyFinanceTracker.Interactions.Telegram/
 └── MyFinanceTracker.Host/
 
@@ -165,8 +164,7 @@ dotnet run --project src/MyFinanceTracker.Host
     "AllowedUserId": 123456789
   },
   "Interactions": {
-    "EnableConsole": true,
-    "EnableTelegram": false
+    "EnableTelegram": true
   },
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY",
@@ -180,32 +178,12 @@ dotnet run --project src/MyFinanceTracker.Host
 > [!IMPORTANT]
 > Category `id` is a unique identifier (slug), and `name` is used as the category name recorded on the `Transactions` sheet.
 
-### Telegram Mode
-
-```json
-{
-  "Interactions": {
-    "EnableConsole": false,
-    "EnableTelegram": true
-  }
-}
-```
+### Telegram Settings
 
 Make sure that:
 
 - `Telegram:Token` is configured.
 - `Telegram:AllowedUserId` contains your Telegram user ID.
-
-### Console Mode
-
-```json
-{
-  "Interactions": {
-    "EnableConsole": true,
-    "EnableTelegram": false
-  }
-}
-```
 
 ## Docker Deployment
 
@@ -231,7 +209,7 @@ You can also run the application as a background service via Docker Compose:
 
 ## Usage Examples
 
-### Text Commands (Console & Telegram)
+### Text Commands
 
 Natural language input in any language for adding, viewing, updating, and deleting transactions:
 

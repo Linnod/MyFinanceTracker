@@ -4,7 +4,6 @@ public static class LogEventRanges
 {
     public static class Interactions
     {
-        public const int Console = 10_100_000;
         public const int Telegram = 10_200_000;
     }
 
