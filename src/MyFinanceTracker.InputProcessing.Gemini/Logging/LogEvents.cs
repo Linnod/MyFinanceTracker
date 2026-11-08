@@ -8,7 +8,7 @@ internal static class LogEvents
 
     public static class Processor
     {
-        private const int SubBase = Base + 1_000;
+        private const int SubBase = Base + 0;
 
         public const int Entry = SubBase + 1;
         public const int TextResponse = SubBase + 2;
@@ -19,7 +19,7 @@ internal static class LogEvents
 
     public static class Executor
     {
-        private const int SubBase = Base + 2_000;
+        private const int SubBase = Base + 1_000;
 
         public const int ExecutingTool = SubBase + 1;
         public const int ExecutedTool = SubBase + 2;

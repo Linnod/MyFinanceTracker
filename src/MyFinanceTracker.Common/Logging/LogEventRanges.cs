@@ -4,13 +4,12 @@ public static class LogEventRanges
 {
     public static class Interactions
     {
-        public const int Telegram = 10_200_000;
+        public const int Telegram = 10_100_000;
     }
 
     public static class InputProcessing
     {
-        public const int Core = 20_100_000;
-        public const int Gemini = 20_200_000;
+        public const int Gemini = 20_100_000;
     }
 
     public static class UseCases
