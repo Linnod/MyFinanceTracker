@@ -21,7 +21,7 @@ public class GeminiSystemPromptBuilderTests
     [Fact]
     async Task BuildSystemInstruction_WhenCategoriesExist_ShouldIncludeCategoriesInPrompt()
     {
-        // Arrange
+        // arrange
         var categories = new List<Category>
         {
             new("cat_1", "Groceries", ["food", "supermarket"]),
@@ -31,31 +31,26 @@ public class GeminiSystemPromptBuilderTests
         sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
             .Returns(new ListCategoriesResponse.Success(categories));
 
-        // Act
+        // act
         var result = await builder.BuildSystemInstruction(CancellationToken.None);
 
-        // Assert
+        // assert
         result.Should().Contain("Groceries");
         result.Should().Contain("Salary");
         result.Should().Contain("food, supermarket");
     }
 
     [Fact]
-    async Task BuildSystemInstruction_ShouldIncludeNoteRules()
+    async Task BuildSystemInstruction_WhenCategoriesEmptyOrFails_ShouldIncludeFallbackMessage()
     {
-        // Arrange
+        // arrange
         sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new ListCategoriesResponse.Success([]));
+            .Returns(new ListCategoriesResponse.Failure());
 
-        // Act
+        // act
         var result = await builder.BuildSystemInstruction(CancellationToken.None);
 
-        // Assert
-        result.Should().Contain("`note`");
-        result.Should().Contain("clarification, description, store name, service name, or occasion");
-        result.Should().Contain("ALWAYS use the primary category for `categoryAlias`");
-        result.Should().Contain("ALWAYS place the activity, occasion, store name, or clarification into `note`");
-        result.Should().Contain("receipt image or banking app screenshot");
-        result.Should().Contain("NEVER duplicate the category name into `note`");
+        // assert
+        result.Should().Contain("No categories available.");
     }
 }

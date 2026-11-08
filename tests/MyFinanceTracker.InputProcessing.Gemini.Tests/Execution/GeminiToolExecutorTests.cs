@@ -226,7 +226,8 @@ public class GeminiToolExecutorTests
                 r.ToDate == toDate &&
                 r.CategoryAliases != null &&
                 r.CategoryAliases.SequenceEqual(new[] { "food", "entertainment" }) &&
-                r.Type == TransactionType.Expense),
+                r.Type == TransactionType.Expense &&
+                r.Take == null),
             Arg.Any<CancellationToken>()
         );
     }
@@ -266,6 +267,47 @@ public class GeminiToolExecutorTests
             Arg.Is<GetTransactionsRequest>(r =>
                 r.FromDate == fromDate &&
                 r.ToDate == toDate),
+            Arg.Any<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionsCallWithLimit_ShouldSendGetTransactionsRequestWithTake()
+    {
+        // arrange
+        var fromDate = new DateTime(2026, 8, 1, 0, 0, 0);
+        var toDate = new DateTime(2026, 8, 8, 23, 59, 59);
+
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
+            Args = new Dictionary<string, object>
+            {
+                ["fromDate"] = "2026-08-01T00:00:00",
+                ["toDate"] = "2026-08-08T23:59:59",
+                ["limit"] = 5,
+                ["recognizedInput"] = "Show last 5 transactions"
+            }
+        };
+
+        sender.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new GetTransactionsResponse.Success(
+                fromDate,
+                toDate,
+                [],
+                new PagedResult<Transaction>([], 0)));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Response.Should().BeOfType<GetTransactionsResponse.Success>();
+
+        await sender.Received(1).Send(
+            Arg.Is<GetTransactionsRequest>(r =>
+                r.FromDate == fromDate &&
+                r.ToDate == toDate &&
+                r.Take == 5),
             Arg.Any<CancellationToken>()
         );
     }

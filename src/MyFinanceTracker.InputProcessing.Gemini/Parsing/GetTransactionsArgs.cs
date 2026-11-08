@@ -7,5 +7,6 @@ internal sealed record GetTransactionsArgs(
     DateTime? ToDate,
     IReadOnlyList<string>? CategoryAliases,
     TransactionType? Type,
-    string RecognizedInput
+    string RecognizedInput,
+    int? Limit = null
 );

@@ -176,7 +176,8 @@ internal sealed partial class GeminiToolExecutor(
             typedArgs.FromDate.Value,
             typedArgs.ToDate.Value,
             typedArgs.CategoryAliases,
-            typedArgs.Type);
+            typedArgs.Type,
+            Take: typedArgs.Limit);
 
         var response = await sender.Send(request, ct);
 

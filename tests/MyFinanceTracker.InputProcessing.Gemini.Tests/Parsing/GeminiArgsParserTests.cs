@@ -178,4 +178,63 @@ public class GeminiArgsParserTests
         result!.Amounts.Should().NotBeNull();
         result.Amounts.Should().BeEmpty();
     }
+
+    [Fact]
+    void BindArgs_WhenGetTransactionsArgsHasLimit_ShouldBindLimitCorrectly()
+    {
+        // arrange
+        using var jsonDoc = JsonDocument.Parse("""
+        {
+            "fromDate": "2026-08-01T00:00:00",
+            "toDate": "2026-08-10T23:59:59",
+            "recognizedInput": "Show last 5 transactions",
+            "limit": 5
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["fromDate"] = jsonDoc.RootElement.GetProperty("fromDate"),
+            ["toDate"] = jsonDoc.RootElement.GetProperty("toDate"),
+            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput"),
+            ["limit"] = jsonDoc.RootElement.GetProperty("limit")
+        };
+
+        // act
+        var result = args.BindArgs<GetTransactionsArgs>();
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Limit.Should().Be(5);
+        result.FromDate.Should().Be(new DateTime(2026, 8, 1, 0, 0, 0));
+        result.ToDate.Should().Be(new DateTime(2026, 8, 10, 23, 59, 59));
+        result.RecognizedInput.Should().Be("Show last 5 transactions");
+    }
+
+    [Fact]
+    void BindArgs_WhenGetTransactionsArgsHasNoLimit_ShouldDefaultLimitToNull()
+    {
+        // arrange
+        using var jsonDoc = JsonDocument.Parse("""
+        {
+            "fromDate": "2026-08-01T00:00:00",
+            "toDate": "2026-08-10T23:59:59",
+            "recognizedInput": "Show transactions"
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["fromDate"] = jsonDoc.RootElement.GetProperty("fromDate"),
+            ["toDate"] = jsonDoc.RootElement.GetProperty("toDate"),
+            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
+        };
+
+        // act
+        var result = args.BindArgs<GetTransactionsArgs>();
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Limit.Should().BeNull();
+    }
 }

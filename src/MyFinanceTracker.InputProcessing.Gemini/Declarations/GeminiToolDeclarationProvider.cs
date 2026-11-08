@@ -169,6 +169,11 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Description = $"Optional transaction type filter ({TransactionTypesDescription}). Omit to include all types.",
                                 Enum = TransactionTypes
                             },
+                            ["limit"] = new Schema
+                            {
+                                Type = Type.Integer,
+                                Description = "Optional maximum number of recent transactions to return (e.g. for queries like 'show last 5 expenses' or 'top 10 expenses')."
+                            },
                             ["recognizedInput"] = new Schema
                             {
                                 Type = Type.String,
