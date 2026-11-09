@@ -1,52 +1,32 @@
-using System.Diagnostics;
-using MediatR;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.UseCases.Behaviors;
 
 namespace MyFinanceTracker.UseCases.Transaction.Create.Behaviors;
 
 internal sealed partial class CreateTransactionsLoggingBehavior(
     ILogger<CreateTransactionsLoggingBehavior> logger)
-    : IPipelineBehavior<CreateTransactionsRequest, CreateTransactionsResponse>
+    : LoggingBehaviorBase<CreateTransactionsRequest, CreateTransactionsResponse>
 {
-    public async Task<CreateTransactionsResponse> Handle(
-        CreateTransactionsRequest request,
-        RequestHandlerDelegate<CreateTransactionsResponse> next,
-        CancellationToken ct)
-    {
+    protected override void OnStarting(CreateTransactionsRequest request) =>
         LogStarting(request);
-        var sw = Stopwatch.StartNew();
 
-        try
+    protected override void OnResult(CreateTransactionsResponse response)
+    {
+        switch (response)
         {
-            var response = await next();
-            sw.Stop();
+            case CreateTransactionsResponse.Success s:
+                LogSuccess(s);
+                break;
 
-            switch (response)
-            {
-                case CreateTransactionsResponse.Success s:
-                    LogSuccess(s, sw.ElapsedMilliseconds);
-                    break;
-
-                case CreateTransactionsResponse.ValidationError v:
-                    LogValidationError(v, sw.ElapsedMilliseconds);
-                    break;
-
-                case CreateTransactionsResponse.Failure:
-                    LogFailure(sw.ElapsedMilliseconds);
-                    break;
-            }
-
-            return response;
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            sw.Stop();
-            LogCriticalError(ex, sw.ElapsedMilliseconds);
-            return new CreateTransactionsResponse.Failure();
+            case CreateTransactionsResponse.ValidationError v:
+                LogValidationError(v);
+                break;
         }
     }
+
+    protected override void OnCriticalError(Exception ex) =>
+        LogCriticalError(ex);
+
+    protected override CreateTransactionsResponse CreateFailureResponse() =>
+        new CreateTransactionsResponse.Failure();
 }

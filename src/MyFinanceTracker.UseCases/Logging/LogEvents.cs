@@ -15,8 +15,7 @@ public static class LogEvents
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
             public const int ValidationFailed = SubBase + 3;
-            public const int Failure = SubBase + 4;
-            public const int CriticalError = SubBase + 5;
+            public const int CriticalError = SubBase + 4;
         }
 
         public static class Delete
@@ -26,8 +25,7 @@ public static class LogEvents
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
             public const int ValidationFailed = SubBase + 3;
-            public const int Failure = SubBase + 4;
-            public const int CriticalError = SubBase + 5;
+            public const int CriticalError = SubBase + 4;
         }
 
         public static class Get
@@ -37,8 +35,7 @@ public static class LogEvents
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
             public const int ValidationFailed = SubBase + 3;
-            public const int Failure = SubBase + 4;
-            public const int CriticalError = SubBase + 5;
+            public const int CriticalError = SubBase + 4;
         }
 
         public static class Update
@@ -48,8 +45,7 @@ public static class LogEvents
             public const int Starting = SubBase + 1;
             public const int Completed = SubBase + 2;
             public const int ValidationFailed = SubBase + 3;
-            public const int Failure = SubBase + 4;
-            public const int CriticalError = SubBase + 5;
+            public const int CriticalError = SubBase + 4;
         }
     }
 

@@ -16,24 +16,18 @@ internal sealed partial class CreateTransactionsLoggingBehavior
     [LoggerMessage(
         EventId = Completed,
         Level = LogLevel.Information,
-        Message = "Transaction completed: {Response} (Time: {Ms}ms)")]
-    partial void LogSuccess(CreateTransactionsResponse.Success response, long ms);
+        Message = "Transaction completed: {Response}")]
+    partial void LogSuccess(CreateTransactionsResponse.Success response);
 
     [LoggerMessage(
         EventId = ValidationFailed,
         Level = LogLevel.Information,
-        Message = "Transaction validation failed: {Error} (Time: {Ms}ms)")]
-    partial void LogValidationError(CreateTransactionsResponse.ValidationError error, long ms);
-
-    [LoggerMessage(
-        EventId = Failure,
-        Level = LogLevel.Warning,
-        Message = "Transaction processing finished with failure response (Time: {Ms}ms)")]
-    partial void LogFailure(long ms);
+        Message = "Transaction validation failed: {Error}")]
+    partial void LogValidationError(CreateTransactionsResponse.ValidationError error);
 
     [LoggerMessage(
         EventId = CriticalError,
         Level = LogLevel.Error,
-        Message = "Critical system failure during processing after {Ms}ms")]
-    partial void LogCriticalError(Exception ex, long ms);
+        Message = "Critical system failure during processing")]
+    partial void LogCriticalError(Exception ex);
 }

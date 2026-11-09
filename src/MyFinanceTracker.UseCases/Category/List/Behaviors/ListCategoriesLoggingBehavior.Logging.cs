@@ -16,12 +16,12 @@ internal sealed partial class ListCategoriesLoggingBehavior
     [LoggerMessage(
         EventId = Completed,
         Level = LogLevel.Debug,
-        Message = "Categories list retrieved. Count: {Count} (Time: {Ms}ms)")]
-    partial void LogSuccess(int count, long ms);
+        Message = "Categories list retrieved. Count: {Count}")]
+    partial void LogSuccess(int count);
 
     [LoggerMessage(
         EventId = CriticalError,
         Level = LogLevel.Error,
-        Message = "Failed to retrieve categories after {Ms}ms")]
-    partial void LogCriticalError(Exception ex, long ms);
+        Message = "Failed to retrieve categories")]
+    partial void LogCriticalError(Exception ex);
 }

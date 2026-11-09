@@ -1,43 +1,26 @@
-using System.Diagnostics;
-using MediatR;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.UseCases.Behaviors;
 
 namespace MyFinanceTracker.UseCases.Category.List.Behaviors;
 
 internal sealed partial class ListCategoriesLoggingBehavior(
     ILogger<ListCategoriesLoggingBehavior> logger)
-    : IPipelineBehavior<ListCategoriesRequest, ListCategoriesResponse>
+    : LoggingBehaviorBase<ListCategoriesRequest, ListCategoriesResponse>
 {
-    public async Task<ListCategoriesResponse> Handle(
-        ListCategoriesRequest request,
-        RequestHandlerDelegate<ListCategoriesResponse> next,
-        CancellationToken ct)
-    {
+    protected override void OnStarting(ListCategoriesRequest request) =>
         LogStarting(request);
-        var sw = Stopwatch.StartNew();
 
-        try
+    protected override void OnResult(ListCategoriesResponse response)
+    {
+        if (response is ListCategoriesResponse.Success success)
         {
-            var response = await next();
-            sw.Stop();
-
-            if (response is ListCategoriesResponse.Success success)
-            {
-                LogSuccess(success.Categories.Count, sw.ElapsedMilliseconds);
-            }
-
-            return response;
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            sw.Stop();
-            LogCriticalError(ex, sw.ElapsedMilliseconds);
-
-            return new ListCategoriesResponse.Failure();
+            LogSuccess(success.Categories.Count);
         }
     }
+
+    protected override void OnCriticalError(Exception ex) =>
+        LogCriticalError(ex);
+
+    protected override ListCategoriesResponse CreateFailureResponse() =>
+        new ListCategoriesResponse.Failure();
 }

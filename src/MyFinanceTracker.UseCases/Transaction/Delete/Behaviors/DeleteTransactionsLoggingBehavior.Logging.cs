@@ -16,24 +16,18 @@ internal sealed partial class DeleteTransactionsLoggingBehavior
     [LoggerMessage(
         EventId = Completed,
         Level = LogLevel.Information,
-        Message = "Deletion completed: {Response} (Time: {Ms}ms)")]
-    partial void LogSuccess(DeleteTransactionsResponse.Success response, long ms);
+        Message = "Deletion completed: {Response}")]
+    partial void LogSuccess(DeleteTransactionsResponse.Success response);
 
     [LoggerMessage(
         EventId = ValidationFailed,
         Level = LogLevel.Information,
-        Message = "Deletion validation failed: {Error} (Time: {Ms}ms)")]
-    partial void LogValidationError(DeleteTransactionsResponse.ValidationError error, long ms);
-
-    [LoggerMessage(
-        EventId = Failure,
-        Level = LogLevel.Warning,
-        Message = "Deletion finished with failure response (Time: {Ms}ms)")]
-    partial void LogFailure(long ms);
+        Message = "Deletion validation failed: {Error}")]
+    partial void LogValidationError(DeleteTransactionsResponse.ValidationError error);
 
     [LoggerMessage(
         EventId = CriticalError,
         Level = LogLevel.Error,
-        Message = "Critical failure during deletion after {Ms}ms")]
-    partial void LogCriticalError(Exception ex, long ms);
+        Message = "Critical failure during deletion")]
+    partial void LogCriticalError(Exception ex);
 }

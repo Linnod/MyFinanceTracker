@@ -16,24 +16,18 @@ internal sealed partial class UpdateTransactionLoggingBehavior
     [LoggerMessage(
         EventId = Completed,
         Level = LogLevel.Information,
-        Message = "Transaction update completed: {Response} (Time: {Ms}ms)")]
-    partial void LogSuccess(UpdateTransactionResponse.Success response, long ms);
+        Message = "Transaction update completed: {Response}")]
+    partial void LogSuccess(UpdateTransactionResponse.Success response);
 
     [LoggerMessage(
         EventId = ValidationFailed,
         Level = LogLevel.Information,
-        Message = "Transaction update validation failed: {Error} (Time: {Ms}ms)")]
-    partial void LogValidationError(UpdateTransactionResponse.ValidationError error, long ms);
-
-    [LoggerMessage(
-        EventId = Failure,
-        Level = LogLevel.Warning,
-        Message = "Transaction update finished with failure response (Time: {Ms}ms)")]
-    partial void LogFailure(long ms);
+        Message = "Transaction update validation failed: {Error}")]
+    partial void LogValidationError(UpdateTransactionResponse.ValidationError error);
 
     [LoggerMessage(
         EventId = CriticalError,
         Level = LogLevel.Error,
-        Message = "Critical system failure during transaction update after {Ms}ms")]
-    partial void LogCriticalError(Exception ex, long ms);
+        Message = "Critical system failure during transaction update")]
+    partial void LogCriticalError(Exception ex);
 }

@@ -16,24 +16,18 @@ internal sealed partial class GetTransactionsLoggingBehavior
     [LoggerMessage(
         EventId = Completed,
         Level = LogLevel.Information,
-        Message = "Retrieval completed: {Response} (Time: {Ms}ms)")]
-    partial void LogSuccess(GetTransactionsResponse.Success response, long ms);
+        Message = "Retrieval completed: {Response}")]
+    partial void LogSuccess(GetTransactionsResponse.Success response);
 
     [LoggerMessage(
         EventId = ValidationFailed,
         Level = LogLevel.Information,
-        Message = "Retrieval validation failed: {Error} (Time: {Ms}ms)")]
-    partial void LogValidationError(GetTransactionsResponse.ValidationError error, long ms);
-
-    [LoggerMessage(
-        EventId = Failure,
-        Level = LogLevel.Warning,
-        Message = "Retrieval finished with failure response (Time: {Ms}ms)")]
-    partial void LogFailure(long ms);
+        Message = "Retrieval validation failed: {Error}")]
+    partial void LogValidationError(GetTransactionsResponse.ValidationError error);
 
     [LoggerMessage(
         EventId = CriticalError,
         Level = LogLevel.Error,
-        Message = "Critical failure during retrieval after {Ms}ms")]
-    partial void LogCriticalError(Exception ex, long ms);
+        Message = "Critical failure during retrieval")]
+    partial void LogCriticalError(Exception ex);
 }

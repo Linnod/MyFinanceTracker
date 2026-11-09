@@ -1,52 +1,32 @@
-using System.Diagnostics;
-using MediatR;
 using Microsoft.Extensions.Logging;
+using MyFinanceTracker.UseCases.Behaviors;
 
 namespace MyFinanceTracker.UseCases.Transaction.Delete.Behaviors;
 
 internal sealed partial class DeleteTransactionsLoggingBehavior(
     ILogger<DeleteTransactionsLoggingBehavior> logger)
-    : IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>
+    : LoggingBehaviorBase<DeleteTransactionsRequest, DeleteTransactionsResponse>
 {
-    public async Task<DeleteTransactionsResponse> Handle(
-        DeleteTransactionsRequest request,
-        RequestHandlerDelegate<DeleteTransactionsResponse> next,
-        CancellationToken ct)
-    {
+    protected override void OnStarting(DeleteTransactionsRequest request) =>
         LogStarting(request);
-        var sw = Stopwatch.StartNew();
 
-        try
+    protected override void OnResult(DeleteTransactionsResponse response)
+    {
+        switch (response)
         {
-            var response = await next();
-            sw.Stop();
+            case DeleteTransactionsResponse.Success success:
+                LogSuccess(success);
+                break;
 
-            switch (response)
-            {
-                case DeleteTransactionsResponse.Success success:
-                    LogSuccess(success, sw.ElapsedMilliseconds);
-                    break;
-
-                case DeleteTransactionsResponse.ValidationError validationError:
-                    LogValidationError(validationError, sw.ElapsedMilliseconds);
-                    break;
-
-                case DeleteTransactionsResponse.Failure:
-                    LogFailure(sw.ElapsedMilliseconds);
-                    break;
-            }
-
-            return response;
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            sw.Stop();
-            LogCriticalError(ex, sw.ElapsedMilliseconds);
-            return new DeleteTransactionsResponse.Failure();
+            case DeleteTransactionsResponse.ValidationError validationError:
+                LogValidationError(validationError);
+                break;
         }
     }
+
+    protected override void OnCriticalError(Exception ex) =>
+        LogCriticalError(ex);
+
+    protected override DeleteTransactionsResponse CreateFailureResponse() =>
+        new DeleteTransactionsResponse.Failure();
 }
