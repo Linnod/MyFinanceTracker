@@ -2,6 +2,7 @@ using System.Reflection;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using MyFinanceTracker.UseCases.Behaviors;
 using MyFinanceTracker.UseCases.Category.List;
 using MyFinanceTracker.UseCases.Category.List.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Create;
@@ -48,9 +49,8 @@ public static class DependencyInjection
                 IPipelineBehavior<CreateTransactionsRequest, CreateTransactionsResponse>,
                 CreateTransactionsLoggingBehavior>()
             .AddScoped<IValidator<CreateTransactionsRequest>, CreateTransactionsRequestValidator>()
-            .AddTransient<
-                IPipelineBehavior<CreateTransactionsRequest, CreateTransactionsResponse>,
-                CreateTransactionsValidationBehavior>();
+            .AddValidationBehavior<CreateTransactionsRequest, CreateTransactionsResponse>(
+                errors => new CreateTransactionsResponse.ValidationError(errors));
     }
 
     private static IServiceCollection AddTransactionDelete(this IServiceCollection services)
@@ -60,9 +60,8 @@ public static class DependencyInjection
                 IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>,
                 DeleteTransactionsLoggingBehavior>()
             .AddScoped<IValidator<DeleteTransactionsRequest>, DeleteTransactionsRequestValidator>()
-            .AddTransient<
-                IPipelineBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>,
-                DeleteTransactionsValidationBehavior>();
+            .AddValidationBehavior<DeleteTransactionsRequest, DeleteTransactionsResponse>(
+                errors => new DeleteTransactionsResponse.ValidationError(errors));
     }
 
     private static IServiceCollection AddTransactionGet(this IServiceCollection services)
@@ -72,9 +71,8 @@ public static class DependencyInjection
                 IPipelineBehavior<GetTransactionsRequest, GetTransactionsResponse>,
                 GetTransactionsLoggingBehavior>()
             .AddScoped<IValidator<GetTransactionsRequest>, GetTransactionsRequestValidator>()
-            .AddTransient<
-                IPipelineBehavior<GetTransactionsRequest, GetTransactionsResponse>,
-                GetTransactionsValidationBehavior>();
+            .AddValidationBehavior<GetTransactionsRequest, GetTransactionsResponse>(
+                errors => new GetTransactionsResponse.ValidationError(errors));
     }
 
     private static IServiceCollection AddTransactionUpdate(this IServiceCollection services)
@@ -84,9 +82,8 @@ public static class DependencyInjection
                 IPipelineBehavior<UpdateTransactionRequest, UpdateTransactionResponse>,
                 UpdateTransactionLoggingBehavior>()
             .AddScoped<IValidator<UpdateTransactionRequest>, UpdateTransactionRequestValidator>()
-            .AddTransient<
-                IPipelineBehavior<UpdateTransactionRequest, UpdateTransactionResponse>,
-                UpdateTransactionValidationBehavior>();
+            .AddValidationBehavior<UpdateTransactionRequest, UpdateTransactionResponse>(
+                errors => new UpdateTransactionResponse.ValidationError(errors));
     }
 
     private static IServiceCollection AddCategoriesUseCases(this IServiceCollection services)
@@ -100,5 +97,17 @@ public static class DependencyInjection
             .AddTransient<
                 IPipelineBehavior<ListCategoriesRequest, ListCategoriesResponse>,
                 ListCategoriesLoggingBehavior>();
+    }
+
+    private static IServiceCollection AddValidationBehavior<TRequest, TResponse>(
+        this IServiceCollection services,
+        Func<IReadOnlyList<ValidationErrorItem>, TResponse> errorFactory)
+        where TRequest : notnull
+        where TResponse : UseCaseResponse
+    {
+        return services.AddTransient<IPipelineBehavior<TRequest, TResponse>>(sp =>
+            new ValidationBehavior<TRequest, TResponse>(
+                sp.GetRequiredService<IValidator<TRequest>>(),
+                errorFactory));
     }
 }
