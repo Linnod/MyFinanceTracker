@@ -163,9 +163,6 @@ dotnet run --project src/MyFinanceTracker.Host
     "Token": "YOUR_TELEGRAM_BOT_TOKEN",
     "AllowedUserId": 123456789
   },
-  "Interactions": {
-    "EnableTelegram": true
-  },
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY",
     "Model": "YOUR_GEMINI_MODEL"

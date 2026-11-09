@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.Host;
+using MyFinanceTracker.Interactions.Telegram;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml;
@@ -16,7 +16,7 @@ builder.Services
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)
     .AddSqlitePersistence(builder.Configuration)
-    .AddConfiguredInteractions(builder.Configuration);
+    .AddTelegramInteractions(builder.Configuration);
 
 builder.Logging
     .AddSimpleConsole(options =>
