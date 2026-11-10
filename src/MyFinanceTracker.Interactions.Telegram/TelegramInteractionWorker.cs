@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.InputProcessing;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -64,7 +65,7 @@ internal sealed partial class TelegramInteractionWorker(
             await using var scope = scopeFactory.CreateAsyncScope();
             var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
-            var responseText = await ProcessMessage(bot, message, sender, ct);
+            var responseText = await ProcessMessage(bot, message, sender, correlationId, ct);
 
             try
             {
@@ -86,7 +87,8 @@ internal sealed partial class TelegramInteractionWorker(
                 {
                     await bot.SendMessage(
                         chatId: message.Chat.Id,
-                        text: "⚠️ Failed to send response. The message may have been too long or an unexpected error occurred. Please try a narrower query.",
+                        text: $"⚠️ Failed to send response. The message may have been too long or an unexpected error occurred. Please try a narrower query.\n\n<code>Ref: {correlationId}</code>",
+                        parseMode: ParseMode.Html,
                         cancellationToken: ct);
                 }
                 catch
@@ -101,6 +103,7 @@ internal sealed partial class TelegramInteractionWorker(
         ITelegramBotClient bot,
         Message message,
         ISender sender,
+        Guid correlationId,
         CancellationToken ct)
     {
         var buildResult = await message.BuildInput(bot, ct);
@@ -114,7 +117,10 @@ internal sealed partial class TelegramInteractionWorker(
                     LogUpdateReceived(input);
 
                     var response = await sender.Send(input, ct);
-                    return TelegramResponseFormatter.FormatResponse(response);
+                    var text = TelegramResponseFormatter.FormatResponse(response);
+                    return response is ProcessingResult.SystemError
+                        ? $"{text}\n\n<code>Ref: {correlationId}</code>"
+                        : text;
                 }
 
             case TelegramInputBuilderResult.Unsupported:
@@ -122,7 +128,7 @@ internal sealed partial class TelegramInteractionWorker(
 
             case TelegramInputBuilderResult.Failed failed:
                 LogInputBuildFailed(failed.Exception);
-                return "Failed to prepare your input. Please try again.";
+                return $"Failed to prepare your input. Please try again.\n\n<code>Ref: {correlationId}</code>";
 
             default:
                 throw new UnreachableException(
