@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace MyFinanceTracker.InputProcessing.Gemini.Parsing;
 
-internal static class GeminiArgsParser
+internal readonly struct ToolCallArgs(IDictionary<string, object>? value)
 {
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -17,16 +17,16 @@ internal static class GeminiArgsParser
         }
     };
 
-    public static T? BindArgs<T>(this IDictionary<string, object>? args) where T : class
+    public T? To<T>() where T : class
     {
-        if (args == null || args.Count == 0)
+        if (value == null || value.Count == 0)
         {
             return null;
         }
 
         try
         {
-            var jsonNode = JsonSerializer.SerializeToNode(args);
+            var jsonNode = JsonSerializer.SerializeToNode(value);
             return jsonNode?.Deserialize<T>(Options);
         }
         catch (JsonException)
@@ -34,6 +34,8 @@ internal static class GeminiArgsParser
             return null;
         }
     }
+
+    public override string ToString() => value is not null ? JsonSerializer.Serialize(value) : "{}";
 
     private sealed class FlexibleDateTimeConverter : JsonConverter<DateTime>
     {

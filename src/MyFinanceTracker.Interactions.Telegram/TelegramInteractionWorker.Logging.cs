@@ -33,16 +33,16 @@ internal sealed partial class TelegramInteractionWorker
     partial void LogUnauthorized(long? userId);
 
     [LoggerMessage(
-        EventId = InputBuildFailed,
+        EventId = UpdateProcessingFailed,
         Level = LogLevel.Error,
-        Message = "Failed to prepare input from Telegram message")]
-    partial void LogInputBuildFailed(Exception ex);
+        Message = "Failed to process message {MessageId}")]
+    partial void LogUpdateProcessingFailed(Exception ex, int messageId);
 
     [LoggerMessage(
         EventId = MessageSendFailed,
         Level = LogLevel.Error,
-        Message = "Failed to send response to message {MessageId} in chat {ChatId}")]
-    partial void LogMessageSendFailed(Exception ex, long chatId, int messageId);
+        Message = "Failed to send response to message {MessageId}")]
+    partial void LogMessageSendFailed(Exception ex, int messageId);
 
     [LoggerMessage(
         EventId = PollingError,

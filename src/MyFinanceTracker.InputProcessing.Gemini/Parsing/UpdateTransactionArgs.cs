@@ -9,5 +9,4 @@ internal sealed record UpdateTransactionArgs(
     string? CategoryAlias,
     DateTime? Date,
     string? Note,
-    bool? ClearNote,
-    string RecognizedInput);
+    bool? ClearNote);

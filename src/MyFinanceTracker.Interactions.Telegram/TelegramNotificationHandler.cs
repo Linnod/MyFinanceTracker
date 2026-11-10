@@ -22,13 +22,11 @@ internal sealed partial class TelegramNotificationHandler(
 
     private async Task SendNotification(OutboxSyncNotification notification, CancellationToken ct)
     {
-        var text = TelegramResponseFormatter.FormatNotification(notification);
-
         try
         {
             await botClient.SendMessage(
                 chatId: options.Value.AllowedUserId,
-                text: text,
+                text: TelegramResponseFormatter.FormatNotification(notification),
                 parseMode: ParseMode.Html,
                 cancellationToken: ct);
         }
@@ -38,7 +36,7 @@ internal sealed partial class TelegramNotificationHandler(
         }
         catch (Exception ex)
         {
-            LogNotificationSendFailed(ex, options.Value.AllowedUserId);
+            LogNotificationSendFailed(ex);
         }
     }
 }

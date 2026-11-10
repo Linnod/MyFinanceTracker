@@ -8,6 +8,8 @@ using MyFinanceTracker.InputProcessing.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Gemini.Execution;
 using MyFinanceTracker.InputProcessing.Gemini.Prompt;
 
+using MyFinanceTracker.UseCases;
+
 namespace MyFinanceTracker.InputProcessing.Gemini;
 
 internal sealed partial class GeminiInputProcessor(
@@ -131,9 +133,9 @@ internal sealed partial class GeminiInputProcessor(
             Tools = [.. declarationProvider.GetToolDeclarations()]
         };
 
-    private async Task<List<ActionResult>> ExecuteTools(List<FunctionCall> functionCalls, CancellationToken ct)
+    private async Task<List<UseCaseResponse>> ExecuteTools(List<FunctionCall> functionCalls, CancellationToken ct)
     {
-        var results = new List<ActionResult>();
+        var results = new List<UseCaseResponse>();
         foreach (var call in functionCalls)
         {
             results.Add(await toolExecutor.ExecuteToolCall(call, ct));

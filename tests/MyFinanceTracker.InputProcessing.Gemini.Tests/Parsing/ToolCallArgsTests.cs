@@ -6,43 +6,42 @@ using Xunit;
 
 namespace MyFinanceTracker.InputProcessing.Gemini.Tests.Parsing;
 
-public class GeminiArgsParserTests
+public class ToolCallArgsTests
 {
     private record TestArgs(
         string? CategoryAlias,
         DateTime? Date,
         IReadOnlyList<decimal>? Amounts,
-        TransactionType? Type,
-        string? RecognizedInput);
+        TransactionType? Type);
 
     [Fact]
-    void BindArgs_WhenArgsIsNull_ShouldReturnNull()
+    void To_WhenArgsIsNull_ShouldReturnNull()
     {
         // arrange
-        IDictionary<string, object>? args = null;
+        var sut = new ToolCallArgs(null);
 
         // act
-        var result = args.BindArgs<TestArgs>();
+        var result = sut.To<TestArgs>();
 
         // assert
         result.Should().BeNull();
     }
 
     [Fact]
-    void BindArgs_WhenArgsIsEmpty_ShouldReturnNull()
+    void To_WhenArgsIsEmpty_ShouldReturnNull()
     {
         // arrange
-        var args = new Dictionary<string, object>();
+        var sut = new ToolCallArgs(new Dictionary<string, object>());
 
         // act
-        var result = args.BindArgs<TestArgs>();
+        var result = sut.To<TestArgs>();
 
         // assert
         result.Should().BeNull();
     }
 
     [Fact]
-    public void BindArgs_WhenJsonElementsProvided_ShouldBindToDtoCorrectly()
+    public void To_WhenJsonElementsProvided_ShouldBindToDtoCorrectly()
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse("""
@@ -50,8 +49,7 @@ public class GeminiArgsParserTests
             "categoryAlias": "groceries",
             "date": "2026-08-08T14:30:00",
             "amounts": [100.5, 50],
-            "type": "expense",
-            "recognizedInput": "Расход 150.5 € в категорию Еда"
+            "type": "expense"
         }
         """);
 
@@ -60,12 +58,12 @@ public class GeminiArgsParserTests
             ["categoryAlias"] = jsonDoc.RootElement.GetProperty("categoryAlias"),
             ["date"] = jsonDoc.RootElement.GetProperty("date"),
             ["amounts"] = jsonDoc.RootElement.GetProperty("amounts"),
-            ["type"] = jsonDoc.RootElement.GetProperty("type"),
-            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
+            ["type"] = jsonDoc.RootElement.GetProperty("type")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<TestArgs>();
+        var result = sut.To<TestArgs>();
 
         // assert
         result.Should().NotBeNull();
@@ -73,7 +71,6 @@ public class GeminiArgsParserTests
         result.Date.Should().Be(new DateTime(2026, 8, 8, 14, 30, 0));
         result.Amounts.Should().Equal(100.5m, 50m);
         result.Type.Should().Be(TransactionType.Expense);
-        result.RecognizedInput.Should().Be("Расход 150.5 € в категорию Еда");
     }
 
     [Theory]
@@ -81,7 +78,7 @@ public class GeminiArgsParserTests
     [InlineData("2026-08-08 14:30:00", 2026, 8, 8, 14, 30, 0)]
     [InlineData("2026-08-08T14:30", 2026, 8, 8, 14, 30, 0)]
     [InlineData("2026-08-08", 2026, 8, 8, 0, 0, 0)]
-    void BindArgs_FlexibleDateTimeFormats_ShouldBindCorrectly(string dateStr, int year, int month, int day, int hour, int minute, int second)
+    void To_FlexibleDateTimeFormats_ShouldBindCorrectly(string dateStr, int year, int month, int day, int hour, int minute, int second)
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse($$"""
@@ -94,9 +91,10 @@ public class GeminiArgsParserTests
         {
             ["date"] = jsonDoc.RootElement.GetProperty("date")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<TestArgs>();
+        var result = sut.To<TestArgs>();
 
         // assert
         result.Should().NotBeNull();
@@ -107,7 +105,7 @@ public class GeminiArgsParserTests
     [InlineData("")]
     [InlineData("not-a-date")]
     [InlineData("08/11/2026")]
-    void BindArgs_WhenInvalidDateFormatProvided_ShouldReturnNull(string invalidDate)
+    void To_WhenInvalidDateFormatProvided_ShouldReturnNull(string invalidDate)
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse($$"""
@@ -120,16 +118,17 @@ public class GeminiArgsParserTests
         {
             ["date"] = jsonDoc.RootElement.GetProperty("date")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<TestArgs>();
+        var result = sut.To<TestArgs>();
 
         // assert
         result.Should().BeNull();
     }
 
     [Fact]
-    void BindArgs_WhenNumbersArePassedAsStrings_ShouldBindNumbersCorrectly()
+    void To_WhenNumbersArePassedAsStrings_ShouldBindNumbersCorrectly()
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse("""
@@ -142,9 +141,10 @@ public class GeminiArgsParserTests
         {
             ["amounts"] = jsonDoc.RootElement.GetProperty("amounts")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<TestArgs>();
+        var result = sut.To<TestArgs>();
 
         // assert
         result.Should().NotBeNull();
@@ -152,26 +152,25 @@ public class GeminiArgsParserTests
     }
 
     [Fact]
-    void BindArgs_WhenAddTransactionArgsHasMissingOrNullAmounts_ShouldDefaultAmountsToEmptyList()
+    void To_WhenAddTransactionArgsHasMissingOrNullAmounts_ShouldDefaultAmountsToEmptyList()
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
             "type": "expense",
-            "amounts": null,
-            "recognizedInput": "Test input"
+            "amounts": null
         }
         """);
 
         var args = new Dictionary<string, object>
         {
             ["type"] = jsonDoc.RootElement.GetProperty("type"),
-            ["amounts"] = jsonDoc.RootElement.GetProperty("amounts"),
-            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
+            ["amounts"] = jsonDoc.RootElement.GetProperty("amounts")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<AddTransactionArgs>();
+        var result = sut.To<AddTransactionArgs>();
 
         // assert
         result.Should().NotBeNull();
@@ -180,14 +179,13 @@ public class GeminiArgsParserTests
     }
 
     [Fact]
-    void BindArgs_WhenGetTransactionsArgsHasLimit_ShouldBindLimitCorrectly()
+    void To_WhenGetTransactionsArgsHasLimit_ShouldBindLimitCorrectly()
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
             "fromDate": "2026-08-01T00:00:00",
             "toDate": "2026-08-10T23:59:59",
-            "recognizedInput": "Show last 5 transactions",
             "limit": 5
         }
         """);
@@ -196,42 +194,40 @@ public class GeminiArgsParserTests
         {
             ["fromDate"] = jsonDoc.RootElement.GetProperty("fromDate"),
             ["toDate"] = jsonDoc.RootElement.GetProperty("toDate"),
-            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput"),
             ["limit"] = jsonDoc.RootElement.GetProperty("limit")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<GetTransactionsArgs>();
+        var result = sut.To<GetTransactionsArgs>();
 
         // assert
         result.Should().NotBeNull();
         result!.Limit.Should().Be(5);
         result.FromDate.Should().Be(new DateTime(2026, 8, 1, 0, 0, 0));
         result.ToDate.Should().Be(new DateTime(2026, 8, 10, 23, 59, 59));
-        result.RecognizedInput.Should().Be("Show last 5 transactions");
     }
 
     [Fact]
-    void BindArgs_WhenGetTransactionsArgsHasNoLimit_ShouldDefaultLimitToNull()
+    void To_WhenGetTransactionsArgsHasNoLimit_ShouldDefaultLimitToNull()
     {
         // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
             "fromDate": "2026-08-01T00:00:00",
-            "toDate": "2026-08-10T23:59:59",
-            "recognizedInput": "Show transactions"
+            "toDate": "2026-08-10T23:59:59"
         }
         """);
 
         var args = new Dictionary<string, object>
         {
             ["fromDate"] = jsonDoc.RootElement.GetProperty("fromDate"),
-            ["toDate"] = jsonDoc.RootElement.GetProperty("toDate"),
-            ["recognizedInput"] = jsonDoc.RootElement.GetProperty("recognizedInput")
+            ["toDate"] = jsonDoc.RootElement.GetProperty("toDate")
         };
+        var sut = new ToolCallArgs(args);
 
         // act
-        var result = args.BindArgs<GetTransactionsArgs>();
+        var result = sut.To<GetTransactionsArgs>();
 
         // assert
         result.Should().NotBeNull();

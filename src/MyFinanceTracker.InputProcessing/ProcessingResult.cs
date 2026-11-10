@@ -1,3 +1,5 @@
+using MyFinanceTracker.UseCases;
+
 namespace MyFinanceTracker.InputProcessing;
 
 public abstract record ProcessingResult
@@ -5,7 +7,7 @@ public abstract record ProcessingResult
     private ProcessingResult() { }
 
     public sealed record Completed(
-        IReadOnlyList<ActionResult> Actions
+        IReadOnlyList<UseCaseResponse> Actions
     ) : ProcessingResult
     {
         public override string ToString() => $"Completed ({Actions.Count} actions)";

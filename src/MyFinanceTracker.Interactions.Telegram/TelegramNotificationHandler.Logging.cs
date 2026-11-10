@@ -9,6 +9,6 @@ internal sealed partial class TelegramNotificationHandler
     [LoggerMessage(
         EventId = NotificationSendFailed,
         Level = LogLevel.Error,
-        Message = "Failed to send notification to user {UserId}")]
-    partial void LogNotificationSendFailed(Exception ex, long userId);
+        Message = "Failed to send Telegram notification")]
+    partial void LogNotificationSendFailed(Exception ex);
 }

@@ -7,8 +7,7 @@ internal sealed record AddTransactionArgs(
     IReadOnlyList<decimal>? Amounts,
     string? CategoryAlias,
     DateTime? Date,
-    string? Note,
-    string RecognizedInput
+    string? Note
 )
 {
     public IReadOnlyList<decimal> Amounts { get; init; } = Amounts ?? [];

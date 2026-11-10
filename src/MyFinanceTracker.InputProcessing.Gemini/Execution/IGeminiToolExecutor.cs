@@ -1,8 +1,9 @@
 using Google.GenAI.Types;
+using MyFinanceTracker.UseCases;
 
 namespace MyFinanceTracker.InputProcessing.Gemini.Execution;
 
 internal interface IGeminiToolExecutor
 {
-    Task<ActionResult> ExecuteToolCall(FunctionCall functionCall, CancellationToken ct);
+    Task<UseCaseResponse> ExecuteToolCall(FunctionCall functionCall, CancellationToken ct);
 }

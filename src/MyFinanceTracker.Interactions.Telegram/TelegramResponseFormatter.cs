@@ -15,20 +15,20 @@ namespace MyFinanceTracker.Interactions.Telegram;
 
 internal static class TelegramResponseFormatter
 {
-    private const int MaxDisplayedTransactions = 25;
     private const int MaxMessageLength = 3800;
+    private const string OverflowMessageTemplate = "<i>...and {0} more transaction(s) hidden.</i>";
 
     public static string FormatNotification(OutboxSyncNotification notification) => notification switch
     {
         OutboxSyncNotification.MessageMovedToDeadLetter deadLetter => $"""
-            🚨 <b>Outbox Message Moved to Dead Letter</b>
+            <b>Outbox Message Moved to Dead Letter</b>
             ID: {deadLetter.OriginalOutboxMessageId}
             Operation: {WebUtility.HtmlEncode(deadLetter.OperationType)}
             Error: {WebUtility.HtmlEncode(deadLetter.ErrorMessage)}
             """,
 
         OutboxSyncNotification.SyncFailed syncFailed => $"""
-            🚨 <b>Outbox Sync Failed</b>
+            <b>Outbox Sync Failed</b>
             {WebUtility.HtmlEncode(syncFailed.ErrorMessage)}
             """,
 
@@ -39,23 +39,19 @@ internal static class TelegramResponseFormatter
     {
         ProcessingResult.Completed completed => FormatCompleted(completed),
 
-        ProcessingResult.InvalidInput invalid => BuildInvalidInputMessage(invalid),
+        ProcessingResult.InvalidInput invalid => $"""
+            <b>Input Error</b>
+            {WebUtility.HtmlEncode(invalid.Details)}
+            """,
 
         ProcessingResult.SystemError systemError => $"""
-            🔌 <b>System Hiccup</b>
+            <b>System Hiccup</b>
             Something went wrong. We're looking into it.
-            <i>Ref: {WebUtility.HtmlEncode(systemError.Message)}</i>
+            <i>{WebUtility.HtmlEncode(systemError.Message)}</i>
             """,
 
         _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
     };
-
-    public static string FormatResponse(UseCaseResponse response, string? rawInput = null)
-    {
-        var sb = new StringBuilder();
-        AppendUseCaseResponse(sb, response, rawInput);
-        return sb.ToString().TrimEnd();
-    }
 
     private static string FormatCompleted(ProcessingResult.Completed completed)
     {
@@ -63,7 +59,7 @@ internal static class TelegramResponseFormatter
 
         foreach (var action in completed.Actions)
         {
-            AppendUseCaseResponse(sb, action.Response, action.RawInput);
+            AppendUseCaseResponse(sb, action);
             sb.AppendLine();
         }
 
@@ -72,138 +68,115 @@ internal static class TelegramResponseFormatter
 
     private static void AppendUseCaseResponse(
         StringBuilder sb,
-        UseCaseResponse response,
-        string? rawInput = null)
+        UseCaseResponse response)
     {
         switch (response)
         {
-            case CreateTransactionsResponse.Success added:
-                var totalCreatedCount = added.Transactions.Count;
-
-                sb.AppendLine($"<b>Created {totalCreatedCount} transaction(s)</b>");
-                sb.AppendLine();
-
-                AppendTransactions(
-                    sb,
-                    added.Transactions,
-                    "<i>...and {0} more transaction(s) not shown.</i>");
+            case CreateTransactionsResponse.Success created:
+                AppendCreated(sb, created);
                 break;
 
             case UpdateTransactionResponse.Success updated:
-                sb.AppendLine("<b>Updated transaction</b>");
-                sb.AppendLine();
-
-                AppendTransactions(
-                    sb,
-                    [updated.Transaction],
-                    "<i>...and {0} more transaction(s) not shown.</i>");
+                AppendUpdated(sb, updated);
                 break;
 
             case DeleteTransactionsResponse.Success deleted:
-                sb.AppendLine($"Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
+                AppendDeleted(sb, deleted);
                 break;
 
             case GetTransactionsResponse.Success listed:
-                var totalListedAmount = listed.Transactions.Items.Sum(t =>
-                    t.Type == TransactionType.Expense ? -t.Amount : t.Amount);
-                var balanceSign = totalListedAmount > 0 ? "+" : string.Empty;
-
-                var datePart = FormatDateRange(listed.FromDate, listed.ToDate);
-
-                var header = listed.CategoryNames.Count > 0
-                    ? $"<b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
-                    : $"<b>Transactions</b> {datePart}";
-
-                sb.AppendLine(header);
-                sb.AppendLine($"Total: <code>{balanceSign}{totalListedAmount:0.00}</code>");
-                sb.AppendLine();
-
-                if (listed.Transactions.Items.Count == 0)
-                {
-                    sb.AppendLine("No transactions found.");
-                    break;
-                }
-
-                AppendTransactions(
-                    sb,
-                    listed.Transactions.Items,
-                    "<i>...and {0} more transaction(s) hidden. Please narrow down the date range or category to view more.</i>");
+                AppendListed(sb, listed);
                 break;
 
-            case ListCategoriesResponse.Success listedCat:
-                sb.AppendLine($"📋 <b>Available Categories ({listedCat.Categories.Count}):</b>");
-                foreach (var c in listedCat.Categories)
-                {
-                    var aliases = c.Aliases.Count > 0
-                        ? $" (aliases: <code>{WebUtility.HtmlEncode(string.Join(", ", c.Aliases))}</code>)"
-                        : string.Empty;
-
-                    sb.AppendLine(
-                        $"   • <b>{WebUtility.HtmlEncode(c.Name)}</b>{aliases}");
-                }
+            case ListCategoriesResponse.Success categories:
+                AppendCategories(sb, categories);
                 break;
 
             case IValidationErrorResponse validationError:
-                var validationHeader = !string.IsNullOrWhiteSpace(rawInput)
-                    ? $"⚠️ <b>Validation Error(s)</b> for '<b>{WebUtility.HtmlEncode(rawInput)}</b>':"
-                    : "⚠️ <b>Validation Error(s):</b>";
-
-                sb.AppendLine(validationHeader);
-
-                foreach (var err in validationError.Errors)
-                {
-                    sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err))}");
-                }
+                AppendValidationErrors(sb, validationError);
                 break;
 
             case IFailureResponse:
-                var failureMessage = !string.IsNullOrWhiteSpace(rawInput)
-                    ? $"❌ <b>Action Failed</b> for '<b>{WebUtility.HtmlEncode(rawInput)}</b>'"
-                    : "❌ <b>Action Failed</b>";
-
-                sb.AppendLine(failureMessage);
+                AppendFailure(sb);
                 break;
 
             default:
-                sb.AppendLine(
-                    $"• {WebUtility.HtmlEncode(response.ToString())}");
-                break;
+                throw new UnreachableException($"Unknown use case response type: {response.GetType()}");
         }
     }
 
+    private static void AppendCreated(StringBuilder sb, CreateTransactionsResponse.Success created)
+    {
+        sb.AppendLine($"<b>Created {created.Transactions.Count} transaction(s)</b>");
+        sb.AppendLine();
+        AppendTransactions(sb, created.Transactions);
+    }
+
+    private static void AppendUpdated(StringBuilder sb, UpdateTransactionResponse.Success updated)
+    {
+        sb.AppendLine("<b>Updated transaction</b>");
+        sb.AppendLine();
+        AppendTransaction(sb, updated.Transaction);
+    }
+
+    private static void AppendDeleted(StringBuilder sb, DeleteTransactionsResponse.Success deleted) =>
+        sb.AppendLine($"Deleted <b>{deleted.DeletedCount}</b> transaction(s)");
+
+    private static void AppendListed(StringBuilder sb, GetTransactionsResponse.Success listed)
+    {
+        var datePart = FormatDateRange(listed.FromDate, listed.ToDate);
+        var header = listed.CategoryNames.Count > 0
+            ? $"<b>Transactions in '{WebUtility.HtmlEncode(string.Join(", ", listed.CategoryNames))}'</b> {datePart}"
+            : $"<b>Transactions</b> {datePart}";
+
+        sb.AppendLine(header);
+        sb.AppendLine();
+
+        if (listed.Transactions.Items.Count == 0)
+        {
+            sb.AppendLine("No transactions found.");
+            return;
+        }
+
+        AppendTransactions(sb, listed.Transactions.Items);
+    }
+
+    private static void AppendCategories(StringBuilder sb, ListCategoriesResponse.Success categories)
+    {
+        foreach (var c in categories.Categories)
+        {
+            sb.AppendLine($"• <code>{WebUtility.HtmlEncode(c.Name)}</code>");
+        }
+    }
+
+    private static void AppendValidationErrors(StringBuilder sb, IValidationErrorResponse validationError)
+    {
+        sb.AppendLine("<b>Validation Error(s):</b>");
+
+        foreach (var err in validationError.Errors)
+        {
+            sb.AppendLine($"• {WebUtility.HtmlEncode(FormatValidationError(err))}");
+        }
+    }
+
+    private static void AppendFailure(StringBuilder sb) =>
+        sb.AppendLine("<b>Action Failed</b>");
+
     private static void AppendTransactions(
         StringBuilder sb,
-        IReadOnlyList<Transaction> transactions,
-        string overflowTemplate)
+        IReadOnlyList<Transaction> transactions)
     {
         var displayedCount = 0;
 
         foreach (var t in transactions)
         {
-            if (displayedCount >= MaxDisplayedTransactions)
-            {
-                break;
-            }
-
-            var sign = t.Type == TransactionType.Expense ? "-" : "+";
             var itemSb = new StringBuilder();
-
             if (displayedCount > 0)
             {
                 itemSb.AppendLine();
             }
 
-            itemSb.AppendLine($"<b>{sign}{t.Amount:0.00}</b>");
-            itemSb.AppendLine($"<b>{WebUtility.HtmlEncode(t.Category.Name)}</b>");
-
-            if (!string.IsNullOrWhiteSpace(t.Note))
-            {
-                itemSb.AppendLine(WebUtility.HtmlEncode(t.Note));
-            }
-
-            itemSb.AppendLine($"{t.Date:dd.MM.yyyy HH:mm:ss}");
-            itemSb.Append($"<code>{t.Id}</code>");
-
+            AppendTransaction(itemSb, t);
             var itemText = itemSb.ToString();
 
             if (sb.Length + itemText.Length + Environment.NewLine.Length > MaxMessageLength)
@@ -219,17 +192,23 @@ internal static class TelegramResponseFormatter
         if (remaining > 0)
         {
             sb.AppendLine();
-            sb.AppendLine(string.Format(overflowTemplate, remaining));
+            sb.AppendLine(string.Format(OverflowMessageTemplate, remaining));
         }
     }
 
-    private static string BuildInvalidInputMessage(ProcessingResult.InvalidInput invalid)
+    private static void AppendTransaction(StringBuilder sb, Transaction t)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("⚠️ <b>Input Error</b>");
-        sb.AppendLine(WebUtility.HtmlEncode(invalid.Details));
+        var sign = t.Type == TransactionType.Expense ? "-" : "+";
+        sb.AppendLine($"<b>{sign}{t.Amount:0.00}");
+        sb.AppendLine($"{WebUtility.HtmlEncode(t.Category.Name)}</b>");
 
-        return sb.ToString();
+        if (!string.IsNullOrWhiteSpace(t.Note))
+        {
+            sb.AppendLine(WebUtility.HtmlEncode(t.Note));
+        }
+
+        sb.AppendLine($"{t.Date:dd.MM.yyyy HH:mm:ss}");
+        sb.Append($"<code>{t.Id}</code>");
     }
 
     private static string FormatValidationError(ValidationErrorItem err) => err.ErrorCode switch

@@ -15,7 +15,7 @@ internal static class LogEvents
         public const int UpdateReceived = SubBase + 3;
         public const int UnauthorizedAccess = SubBase + 4;
         public const int MessageSendFailed = SubBase + 5;
-        public const int InputBuildFailed = SubBase + 6;
+        public const int UpdateProcessingFailed = SubBase + 6;
         public const int IncomingMessageReceived = SubBase + 7;
     }
 

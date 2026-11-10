@@ -44,10 +44,9 @@ internal sealed class GeminiSystemPromptBuilder(
                - "groceries 10.15" -> one expense, amounts: [10.15]
                - "groceries 10 15" -> two expense amounts, amounts: [10, 15]
                - "groceries 10 and 15" -> two expense amounts, amounts: [10, 15]
-            10. ALWAYS populate `recognizedInput` in EVERY tool call with a short human-readable summary of the action in the user's language (e.g. 'Expense 100 EUR in Food' or 'Income 1500 EUR in Salary'). NEVER leave `recognizedInput` empty or null.
-            11. When the input is an image of a receipt, extract ONLY the final total amount (TOTAL) as a single transaction and infer the category from the merchant/items or user caption (unless the user caption explicitly asks to split specific items). If the image is a banking app screenshot showing multiple distinct transactions, call `add_transaction` for each transaction.
-            12. When the input is an image (receipt or screenshot), use the transaction date and time visible on the image (if only the date is visible without time, set the time to 00:00:00). If the date on the image is missing, unreadable, or not present, use current date and time ({now:yyyy-MM-ddTHH:mm:ss}), unless overridden by the user caption.
-            13. Populate the optional `note` field in `add_transaction` as follows:
+            10. When the input is an image of a receipt, extract ONLY the final total amount (TOTAL) as a single transaction and infer the category from the merchant/items or user caption (unless the user caption explicitly asks to split specific items). If the image is a banking app screenshot showing multiple distinct transactions, call `add_transaction` for each transaction.
+            11. When the input is an image (receipt or screenshot), use the transaction date and time visible on the image (if only the date is visible without time, set the time to 00:00:00). If the date on the image is missing, unreadable, or not present, use current date and time ({now:yyyy-MM-ddTHH:mm:ss}), unless overridden by the user caption.
+            12. Populate the optional `note` field in `add_transaction` as follows:
                 - If the message contains a primary category (e.g. venue, service, or expense type like "cafe", "restaurant", "taxi", "groceries") along with an activity, occasion, store name, brand, or detail (e.g. "board games", "business lunch", "birthday", "Mercadona", "Starbucks"):
                   * ALWAYS use the primary category for `categoryAlias` (e.g. "cafe").
                   * ALWAYS place the activity, occasion, store name, or clarification into `note` (e.g. "board games").

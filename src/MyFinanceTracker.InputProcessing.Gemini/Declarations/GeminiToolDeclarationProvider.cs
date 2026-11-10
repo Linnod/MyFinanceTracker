@@ -50,14 +50,9 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             {
                                 Type = Type.String,
                                 Description = "Optional note or comment describing the transaction."
-                            },
-                            ["recognizedInput"] = new Schema
-                            {
-                                Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this specific action in user's language (e.g. 'Expense 100 EUR in Food')."
                             }
                         },
-                        Required = ["type", "amounts", "categoryAlias", "date", "recognizedInput"]
+                        Required = ["type", "amounts", "categoryAlias", "date"]
                     }
                 },
                 new FunctionDeclaration
@@ -74,14 +69,9 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Type = Type.Array,
                                 Description = "List of transaction IDs (UUID/GUID) to delete.",
                                 Items = new Schema { Type = Type.String }
-                            },
-                            ["recognizedInput"] = new Schema
-                            {
-                                Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this deletion action in user's language (e.g. 'Delete transactions [UUID]')."
                             }
                         },
-                        Required = ["ids", "recognizedInput"]
+                        Required = ["ids"]
                     }
                 },
                 new FunctionDeclaration
@@ -128,14 +118,9 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             {
                                 Type = Type.Boolean,
                                 Description = "Set to true ONLY if user explicitly requested to remove/clear the existing note or comment."
-                            },
-                            ["recognizedInput"] = new Schema
-                            {
-                                Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this update action in user's language (e.g. 'Update transaction [UUID] to 50 EUR')."
                             }
                         },
-                        Required = ["id", "recognizedInput"]
+                        Required = ["id"]
                     }
                 },
                 new FunctionDeclaration
@@ -173,33 +158,15 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                             {
                                 Type = Type.Integer,
                                 Description = "Optional maximum number of recent transactions to return (e.g. for queries like 'show last 5 expenses' or 'top 10 expenses')."
-                            },
-                            ["recognizedInput"] = new Schema
-                            {
-                                Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'View expenses in Food for 2026-08-11')."
                             }
                         },
-                        Required = ["fromDate", "toDate", "recognizedInput"]
+                        Required = ["fromDate", "toDate"]
                     }
                 },
                 new FunctionDeclaration
                 {
                     Name = ToolNames.ListCategories,
-                    Description = "List all available categories and their aliases.",
-                    Parameters = new Schema
-                    {
-                        Type = Type.Object,
-                        Properties = new Dictionary<string, Schema>
-                        {
-                            ["recognizedInput"] = new Schema
-                            {
-                                Type = Type.String,
-                                Description = "ALWAYS REQUIRED. Short human-readable summary of this action in user's language (e.g. 'View category list')."
-                            }
-                        },
-                        Required = ["recognizedInput"]
-                    }
+                    Description = "List all available categories and their aliases."
                 }
             ]
         }
