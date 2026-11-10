@@ -16,6 +16,7 @@ internal static class LogEvents
         public const int UnauthorizedAccess = SubBase + 4;
         public const int MessageSendFailed = SubBase + 5;
         public const int InputBuildFailed = SubBase + 6;
+        public const int IncomingMessageReceived = SubBase + 7;
     }
 
     public static class Notifications

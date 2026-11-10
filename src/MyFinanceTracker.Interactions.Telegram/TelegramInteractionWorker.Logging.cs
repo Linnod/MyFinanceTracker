@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing;
+using Telegram.Bot.Types.Enums;
 
 namespace MyFinanceTracker.Interactions.Telegram;
 
@@ -12,6 +13,12 @@ internal sealed partial class TelegramInteractionWorker
         Level = LogLevel.Information,
         Message = "Telegram interaction worker started")]
     partial void LogStarted();
+
+    [LoggerMessage(
+        EventId = IncomingMessageReceived,
+        Level = LogLevel.Information,
+        Message = "Received Telegram message (Type: {MessageType}, MessageId: {MessageId})")]
+    partial void LogIncomingMessage(MessageType messageType, int messageId);
 
     [LoggerMessage(
         EventId = UpdateReceived,

@@ -59,6 +59,8 @@ internal sealed partial class TelegramInteractionWorker(
                 return;
             }
 
+            LogIncomingMessage(message.Type, message.Id);
+
             await using var scope = scopeFactory.CreateAsyncScope();
             var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
