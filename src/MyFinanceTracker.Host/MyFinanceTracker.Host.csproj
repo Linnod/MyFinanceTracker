@@ -8,6 +8,7 @@
     <ProjectReference Include="..\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>

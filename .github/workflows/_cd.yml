@@ -41,6 +41,8 @@ on:
         required: true
       GOOGLE_CREDENTIALS_JSON:
         required: true
+      APPLICATIONINSIGHTS_CONNECTION_STRING:
+        required: false
 
 jobs:
   deploy:
@@ -92,6 +94,7 @@ jobs:
           SECRET_GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
           SECRET_CATEGORIES: ${{ secrets.CATEGORIES_YAML }}
           SECRET_GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
           CONTAINER_NAME: ${{ inputs.container_name }}
           IMAGE_TAG: ${{ github.sha }}
         run: bash .github/scripts/prepare-deploy-config.sh

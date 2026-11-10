@@ -31,6 +31,10 @@ printf "CONTAINER_NAME=%s\nIMAGE_TAG=%s\nTG_TOKEN=%s\nTG_USER_ID=%s\nGOOGLE_SHEE
   "$SECRET_GEMINI_API_KEY" \
   "$SECRET_GEMINI_MODEL" > .env
 
+if [ -n "${SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING:-}" ]; then
+  printf "APPLICATIONINSIGHTS_CONNECTION_STRING=%s\n" "$SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING" >> .env
+fi
+
 # Prepare deploy directory and configuration files
 mkdir -p deploy
 printf '%s\n' "$SECRET_CATEGORIES" > deploy/categories.yaml
