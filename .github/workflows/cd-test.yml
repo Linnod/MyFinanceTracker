@@ -36,9 +36,9 @@ jobs:
           TARGET_DIR: "~/test"
           PROJECT_NAME: "fintracker-test"
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          host: ${{ secrets.TEST_SERVER_HOST }}
+          username: ${{ secrets.TEST_SERVER_USER }}
+          key: ${{ secrets.TEST_SERVER_SSH_KEY }}
           envs: TARGET_DIR,PROJECT_NAME
           script_path: .github/scripts/destroy-remote.sh
 
@@ -55,9 +55,9 @@ jobs:
       container_name: "fintracker_test_app"
       clean_data: true
     secrets:
-      SERVER_HOST: ${{ secrets.SERVER_HOST }}
-      SERVER_USER: ${{ secrets.SERVER_USER }}
-      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_HOST: ${{ secrets.TEST_SERVER_HOST }}
+      SERVER_USER: ${{ secrets.TEST_SERVER_USER }}
+      SERVER_SSH_KEY: ${{ secrets.TEST_SERVER_SSH_KEY }}
       TG_TOKEN: ${{ secrets.TEST_TG_TOKEN }}
       TG_USER_ID: ${{ secrets.TEST_TG_USER_ID }}
       GOOGLE_SHEET_ID: ${{ secrets.TEST_GOOGLE_SHEET_ID }}
