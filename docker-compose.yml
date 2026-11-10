@@ -7,6 +7,8 @@ services:
       - TZ=Europe/Madrid
       - DOTNET_ENVIRONMENT=Production
       - APPLICATIONINSIGHTS_CONNECTION_STRING=${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
+      - Logging__LogLevel__MyFinanceTracker=${LOG_LEVEL:-Information}
+      - Logging__ApplicationInsights__LogLevel__MyFinanceTracker=${LOG_LEVEL:-Information}
       - Telegram__Token=${TG_TOKEN}
       - Telegram__AllowedUserId=${TG_USER_ID}
       - GoogleSheets__SpreadsheetId=${GOOGLE_SHEET_ID}

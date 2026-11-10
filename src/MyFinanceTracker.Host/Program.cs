@@ -10,10 +10,10 @@ using MyFinanceTracker.InputProcessing.Gemini;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.AddOptionalApplicationInsights();
 
 builder.Services
     .AddSingleton(TimeProvider.System)
+    .AddOptionalApplicationInsights(builder.Configuration)
     .AddYamlCategoryRepository(builder.Configuration)
     .AddGeminiInputProcessor(builder.Configuration)
     .AddUseCases()
@@ -27,9 +27,7 @@ builder.Logging
         options.IncludeScopes = true;
         options.SingleLine = true;
         options.TimestampFormat = "HH:mm:ss ";
-    })
-    .AddFilter("Microsoft", LogLevel.Warning)
-    .AddFilter("System", LogLevel.Warning)
-    .AddFilter("MyFinanceTracker", LogLevel.Information);
+    });
+
 using var host = builder.Build();
 await host.RunAsync();

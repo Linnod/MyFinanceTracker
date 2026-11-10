@@ -20,6 +20,11 @@ on:
         required: false
         default: false
         type: boolean
+      log_level:
+        description: 'Logging level for MyFinanceTracker (e.g. Information or Debug)'
+        required: false
+        default: 'Information'
+        type: string
     secrets:
       SERVER_HOST:
         required: true
@@ -96,6 +101,7 @@ jobs:
           SECRET_GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
           CONTAINER_NAME: ${{ inputs.container_name }}
+          LOG_LEVEL: ${{ inputs.log_level }}
           IMAGE_TAG: ${{ github.sha }}
         run: bash .github/scripts/prepare-deploy-config.sh
 

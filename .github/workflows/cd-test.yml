@@ -54,6 +54,7 @@ jobs:
       project_name: "fintracker-test"
       container_name: "fintracker_test_app"
       clean_data: true
+      log_level: 'Debug'
     secrets:
       SERVER_HOST: ${{ secrets.TEST_SERVER_HOST }}
       SERVER_USER: ${{ secrets.TEST_SERVER_USER }}

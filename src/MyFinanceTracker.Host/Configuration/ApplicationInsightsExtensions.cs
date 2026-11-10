@@ -1,26 +1,24 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MyFinanceTracker.Host.Configuration;
 
 internal static class ApplicationInsightsExtensions
 {
-    public static HostApplicationBuilder AddOptionalApplicationInsights(this HostApplicationBuilder builder)
+    public static IServiceCollection AddOptionalApplicationInsights(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        var connectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+        var connectionString = configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 
         if (!string.IsNullOrWhiteSpace(connectionString))
         {
-            builder.Services.AddApplicationInsightsTelemetryWorkerService(options =>
+            services.AddApplicationInsightsTelemetryWorkerService(options =>
             {
                 options.ConnectionString = connectionString;
             });
-
-            builder.Logging.AddFilter<ApplicationInsightsLoggerProvider>("MyFinanceTracker", LogLevel.Information);
         }
 
-        return builder;
+        return services;
     }
 }
