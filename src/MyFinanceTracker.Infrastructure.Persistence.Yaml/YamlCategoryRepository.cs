@@ -13,10 +13,16 @@ internal sealed class YamlCategoryRepository(ICategoryLoader loader) : ICategory
 
     public Task<Category?> Resolve(string query, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Task.FromResult<Category?>(null);
+        }
+
+        var trimmed = query.Trim();
         var category = categories.FirstOrDefault(c =>
-            c.Id.Equals(query, StringComparison.OrdinalIgnoreCase) ||
-            c.Name.Equals(query, StringComparison.OrdinalIgnoreCase) ||
-            c.Aliases.Any(a => a.Equals(query, StringComparison.OrdinalIgnoreCase)));
+            c.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
+            c.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
+            c.Aliases.Any(a => a.Equals(trimmed, StringComparison.OrdinalIgnoreCase)));
 
         return Task.FromResult(category);
     }

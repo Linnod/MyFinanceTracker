@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MyFinanceTracker.Domain.Repositories;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Parsers;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml;
 
@@ -14,10 +15,12 @@ public static class DependencyInjection
         services.AddOptions<YamlPersistenceOptions>()
             .Bind(configuration.GetSection("YamlPersistence"))
             .ValidateDataAnnotations()
-            .Validate(options => File.Exists(options.FilePath), "Category YAML file not found. Check your environment or volume mounts.")
+            .Validate(options => File.Exists(options.FilePath), "Category file not found.")
             .ValidateOnStart();
-        services.AddSingleton<ICategoryRepository, YamlCategoryRepository>()
-            .AddSingleton<ICategoryLoader, YamlCategoryLoader>();
+
+        services.AddSingleton<ICategoryParser, YamlCategoryParser>()
+            .AddSingleton<ICategoryLoader, YamlCategoryLoader>()
+            .AddSingleton<ICategoryRepository, YamlCategoryRepository>();
 
         return services;
     }

@@ -1,208 +1,89 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders.Exceptions;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Parsers;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Parsers.Exceptions;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.Loaders;
 
-public class YamlCategoryLoaderTests : IDisposable
+public class YamlCategoryLoaderTests
 {
-    private readonly string testFileName = $"categories_{Guid.NewGuid()}.yaml";
+    private readonly ICategoryParser parser = Substitute.For<ICategoryParser>();
 
-    public void Dispose()
+    private YamlCategoryLoader CreateSut(string filePath)
     {
-        if (File.Exists(testFileName))
-        {
-            File.Delete(testFileName);
-        }
-        GC.SuppressFinalize(this);
+        var options = Options.Create(new YamlPersistenceOptions { FilePath = filePath });
+        return new YamlCategoryLoader(options, parser, NullLogger<YamlCategoryLoader>.Instance);
     }
-
-    private YamlCategoryLoader CreateSut()
-    {
-        var options = Options.Create(new YamlPersistenceOptions { FilePath = testFileName });
-        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<YamlCategoryLoader>.Instance;
-        return new YamlCategoryLoader(options, logger);
-    }
-
-    private void WriteYaml(string content) => File.WriteAllText(testFileName, content);
 
     [Fact]
     void Load_ShouldThrowFileNotFound_WhenFileDoesNotExist()
     {
-        var sut = CreateSut();
+        // arrange
+        var nonExistentPath = Path.Combine(Path.GetTempPath(), $"missing_{Guid.NewGuid()}.yaml");
+        var sut = CreateSut(nonExistentPath);
+
+        // act
         var act = () => sut.Load();
 
+        // assert
         act.Should().Throw<CategoryLoaderException>()
             .WithMessage("*Category file not found*");
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData("categories: []")]
-    [InlineData("categories:")]
-    void Load_ShouldThrowNoCategoriesFound_WhenFileIsEmptyOrHasNoCategories(string yaml)
+    [Fact]
+    void Load_ShouldReturnParsedCategories_WhenFileExists()
     {
         // arrange
-        WriteYaml(yaml);
-        var sut = CreateSut();
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, "dummy content");
+            Category[] expected = [new Category("cat1", "Category 1", ["c1"])];
+            parser.Parse("dummy content").Returns(expected);
 
-        // act
-        var act = () => sut.Load();
+            var sut = CreateSut(tempFile);
 
-        // assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage("*is empty or contains no categories*");
+            // act
+            var result = sut.Load();
+
+            // assert
+            result.Should().BeEquivalentTo(expected);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 
     [Fact]
-    void Load_ShouldThrowDuplicateId_WhenIdsAreNotUnique()
-    {
-        // arrange:
-        WriteYaml("""
-            categories:
-              - id: income
-                name: Income
-                aliases: [income]
-              - id: A
-                name: First
-                aliases: [first]
-              - id: A
-                name: Second
-                aliases: [second]
-            """);
-        var sut = CreateSut();
-
-        // act
-        var act = () => sut.Load();
-
-        // assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage("*Duplicate Category ID*A*");
-    }
-
-    [Fact]
-    void Load_ShouldThrowDuplicateName_WhenNamesAreNotUnique()
-    {
-        // arrange:
-        WriteYaml("""
-            categories:
-              - id: income
-                name: Income
-                aliases: [income]
-              - id: food_1
-                name: Products
-                aliases: [first]
-              - id: food_2
-                name: products
-                aliases: [second]
-            """);
-        var sut = CreateSut();
-
-        // act
-        var act = () => sut.Load();
-
-        // assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage("*Duplicate Category Name*Products*");
-    }
-
-    [Fact]
-    void Load_ShouldThrowDuplicateAlias_WhenAliasesAreNotUnique()
-    {
-        // arrange:
-        WriteYaml("""
-            categories:
-              - id: A
-                name: Income
-                aliases: [income]
-              - id: B
-                name: Food
-                aliases: [test]
-              - id: C
-                name: Drinks
-                aliases: [test]
-            """);
-        var sut = CreateSut();
-
-        // act
-        var act = () => sut.Load();
-
-        // assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage("*Duplicate alias*test*");
-    }
-
-    [Fact]
-    void Load_ShouldReturnCategories_WhenYamlIsValid()
+    void Load_ShouldRethrowCategoryParserException_WhenParserThrows()
     {
         // arrange
-        WriteYaml("""
-            categories:
-              - id: INCOME
-                name: Salary
-                aliases: [income]
-              - id: FOOD
-                name: Products
-                aliases: [eat, meal]
-            """);
-        var sut = CreateSut();
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, "invalid content");
+            parser.Parse("invalid content").Throws(CategoryParserException.NoCategoriesFound());
 
-        // act
-        var result = sut.Load();
+            var sut = CreateSut(tempFile);
 
-        // assert
-        result.Should().HaveCount(2);
+            // act
+            var act = () => sut.Load();
 
-        result.Should().ContainSingle(c =>
-            c.Id == "INCOME" &&
-            c.Aliases.Contains("income"));
-
-        result.Should().ContainSingle(c =>
-            c.Id == "FOOD" &&
-            c.Aliases.Contains("eat"));
-    }
-
-    [Fact]
-    void Load_ShouldSetIsArchived_WhenArchivedFlagIsSpecifiedInYaml()
-    {
-        // arrange
-        WriteYaml("""
-            categories:
-              - id: ACTIVE
-                name: Active Category
-                aliases: [active]
-              - id: ARCHIVED
-                name: Archived Category
-                aliases: [archived]
-                archived: true
-            """);
-        var sut = CreateSut();
-
-        // act
-        var result = sut.Load();
-
-        // assert
-        result.Should().HaveCount(2);
-        result.Single(c => c.Id == "ACTIVE").IsArchived.Should().BeFalse();
-        result.Single(c => c.Id == "ARCHIVED").IsArchived.Should().BeTrue();
-    }
-
-    [Fact]
-    void Load_ShouldThrowDeserializationFailed_WhenYamlIsInvalid()
-    {
-        //arrange
-        WriteYaml("invalid: [ [ [ yaml structure");
-        var sut = CreateSut();
-
-        //act
-        var act = () => sut.Load();
-
-        //assert
-        act.Should().Throw<CategoryLoaderException>()
-            .WithMessage("*Failed to deserialize*");
+            // assert
+            act.Should().Throw<CategoryParserException>()
+                .WithMessage("*contains no categories*");
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
     }
 }

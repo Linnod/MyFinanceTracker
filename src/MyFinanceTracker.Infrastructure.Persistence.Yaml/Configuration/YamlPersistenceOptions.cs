@@ -4,7 +4,6 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 
 internal sealed class YamlPersistenceOptions
 {
-    [Required(ErrorMessage = "YAML FilePath is required.")]
-    [MinLength(5, ErrorMessage = "FilePath is too short.")]
+    [Required(ErrorMessage = "FilePath is required.")]
     public string FilePath { get; init; } = string.Empty;
 }

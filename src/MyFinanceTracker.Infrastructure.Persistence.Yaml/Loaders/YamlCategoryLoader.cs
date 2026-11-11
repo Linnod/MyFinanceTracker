@@ -3,114 +3,38 @@ using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders.Exceptions;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using MyFinanceTracker.Infrastructure.Persistence.Yaml.Parsers;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
 
 internal sealed partial class YamlCategoryLoader(
     IOptions<YamlPersistenceOptions> options,
+    ICategoryParser parser,
     ILogger<YamlCategoryLoader> logger) : ICategoryLoader
 {
     private readonly string resolvedPath = options.Value.FilePath;
 
     public IReadOnlyList<Category> Load()
     {
-        LogLoading(resolvedPath);
-
         if (!File.Exists(resolvedPath))
         {
             throw CategoryLoaderException.FileNotFound(resolvedPath);
         }
 
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-
         try
         {
-            using var reader = new StreamReader(resolvedPath);
-            var yamlData = deserializer.Deserialize<YamlCategoryRoot>(reader);
+            var content = File.ReadAllText(resolvedPath);
+            var categories = parser.Parse(content);
 
-            var result = ValidateAndMap(yamlData);
+            var totalAliases = categories.Sum(c => c.Aliases.Count);
+            LogLoaded(categories.Count, totalAliases, resolvedPath);
 
-            var totalAliases = result.Sum(c => c.Aliases.Count);
-            LogLoaded(result.Count, totalAliases, resolvedPath);
-
-            return result;
-        }
-        catch (CategoryLoaderException ex)
-        {
-            LogLoadFailed(resolvedPath, ex);
-            throw;
+            return categories;
         }
         catch (Exception ex)
         {
             LogLoadFailed(resolvedPath, ex);
-            throw CategoryLoaderException.DeserializationFailed(resolvedPath, ex);
+            throw;
         }
-    }
-
-    private IReadOnlyList<Category> ValidateAndMap(YamlCategoryRoot? data)
-    {
-        if (data?.Categories == null || data.Categories.Count == 0)
-        {
-            throw CategoryLoaderException.NoCategoriesFound(resolvedPath);
-        }
-
-        var invalidCategory = data.Categories
-            .FirstOrDefault(c => c.Aliases == null || c.Aliases.Count == 0);
-
-        if (invalidCategory != null)
-        {
-            throw CategoryLoaderException.MissingAliases(invalidCategory.Id);
-        }
-
-        var duplicateId = data.Categories
-            .GroupBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(g => g.Count() > 1);
-
-        if (duplicateId != null)
-        {
-            throw CategoryLoaderException.DuplicateId(duplicateId.Key);
-        }
-
-        var duplicateName = data.Categories
-            .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(g => g.Count() > 1);
-
-        if (duplicateName != null)
-        {
-            throw CategoryLoaderException.DuplicateName(duplicateName.Key);
-        }
-
-        var allAliases = data.Categories
-            .SelectMany(c => c.Aliases)
-            .ToList();
-
-        var duplicateAlias = allAliases
-            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(g => g.Count() > 1);
-
-        if (duplicateAlias != null)
-        {
-            throw CategoryLoaderException.DuplicateAlias(duplicateAlias.Key);
-        }
-
-        return [.. data.Categories
-            .Select(c => new Category(c.Id, c.Name, c.Aliases, c.Archived))];
-    }
-
-    private sealed class YamlCategoryRoot
-    {
-        public List<YamlCategoryItem> Categories { get; set; } = [];
-    }
-
-    private sealed class YamlCategoryItem
-    {
-        public string Id { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public List<string> Aliases { get; set; } = [];
-        public bool Archived { get; set; }
     }
 }

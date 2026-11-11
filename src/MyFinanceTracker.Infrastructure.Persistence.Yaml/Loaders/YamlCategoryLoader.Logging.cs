@@ -7,12 +7,6 @@ using static Logging.LogEvents.Categories;
 internal sealed partial class YamlCategoryLoader
 {
     [LoggerMessage(
-        EventId = Loading,
-        Level = LogLevel.Debug,
-        Message = "Loading categories from YAML file: '{FilePath}'")]
-    private partial void LogLoading(string filePath);
-
-    [LoggerMessage(
         EventId = Loaded,
         Level = LogLevel.Information,
         Message = "Successfully loaded {Count} categories with {AliasCount} aliases from '{FilePath}'")]

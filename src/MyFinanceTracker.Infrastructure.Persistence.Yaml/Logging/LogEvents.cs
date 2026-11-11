@@ -10,8 +10,7 @@ internal static class LogEvents
     {
         private const int SubBase = Base + 0;
 
-        public const int Loading = SubBase + 1;
-        public const int Loaded = SubBase + 2;
-        public const int LoadError = SubBase + 3;
+        public const int Loaded = SubBase + 1;
+        public const int LoadError = SubBase + 2;
     }
 }

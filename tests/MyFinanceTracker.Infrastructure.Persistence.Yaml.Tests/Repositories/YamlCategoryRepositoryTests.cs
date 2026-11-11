@@ -1,26 +1,28 @@
 using FluentAssertions;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Yaml.Loaders;
+using NSubstitute;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests.Repositories;
 
 public class YamlCategoryRepositoryTests
 {
     private readonly Category groceries = new(
-        "groceries",
-        "Продукты",
-        ["продукты", "еда", "супермаркет"]);
+        "cat_groceries",
+        "Groceries",
+        ["food", "supermarket"]);
 
     private readonly Category salary = new(
-        "salary",
-        "Зарплата",
-        ["зарплата", "доход"]);
+        "cat_salary",
+        "Salary",
+        ["income", "paycheck"]);
 
     private readonly YamlCategoryRepository sut;
 
     public YamlCategoryRepositoryTests()
     {
-        var loader = new FakeCategoryLoader([groceries, salary]);
+        var loader = Substitute.For<ICategoryLoader>();
+        loader.Load().Returns([groceries, salary]);
         sut = new YamlCategoryRepository(loader);
     }
 
@@ -38,7 +40,7 @@ public class YamlCategoryRepositoryTests
     public async Task Resolve_ById_ReturnsCategory()
     {
         // act
-        var result = await sut.Resolve("groceries", CancellationToken.None);
+        var result = await sut.Resolve("cat_groceries", CancellationToken.None);
 
         // assert
         result.Should().Be(groceries);
@@ -48,7 +50,7 @@ public class YamlCategoryRepositoryTests
     public async Task Resolve_ByName_ReturnsCategory()
     {
         // act
-        var result = await sut.Resolve("Продукты", CancellationToken.None);
+        var result = await sut.Resolve("Groceries", CancellationToken.None);
 
         // assert
         result.Should().Be(groceries);
@@ -58,19 +60,21 @@ public class YamlCategoryRepositoryTests
     public async Task Resolve_ByAlias_ReturnsCategory()
     {
         // act
-        var result = await sut.Resolve("еда", CancellationToken.None);
+        var result = await sut.Resolve("food", CancellationToken.None);
 
         // assert
         result.Should().Be(groceries);
     }
 
     [Theory]
+    [InlineData("CAT_GROCERIES")]
+    [InlineData("cat_groceries")]
     [InlineData("GROCERIES")]
     [InlineData("Groceries")]
-    [InlineData("ПРОДУКТЫ")]
-    [InlineData("продукты")]
-    [InlineData("ЕДА")]
-    [InlineData("еда")]
+    [InlineData("FOOD")]
+    [InlineData("food")]
+    [InlineData("SUPERMARKET")]
+    [InlineData("supermarket")]
     public async Task Resolve_CaseInsensitive_ReturnsCategory(string query)
     {
         // act
@@ -91,10 +95,5 @@ public class YamlCategoryRepositoryTests
 
         // assert
         result.Should().BeNull();
-    }
-
-    private sealed class FakeCategoryLoader(IReadOnlyList<Category> categories) : ICategoryLoader
-    {
-        public IReadOnlyList<Category> Load() => categories;
     }
 }
