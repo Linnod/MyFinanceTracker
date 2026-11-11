@@ -50,32 +50,17 @@ on:
         required: false
 
 jobs:
-  validate:
-    name: Run CI
-    permissions:
-      contents: read
-      checks: write
-    uses: ./.github/workflows/ci.yml
-
   deploy:
-    name: Build & Deploy Container
-    needs: [validate]
+    name: Deploy to Server
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
       contents: read
-      packages: write
+      packages: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0'
-          cache: true
-          cache-dependency-path: Directory.Packages.props
 
       - name: Set Image Name to Lowercase
         run: echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -87,16 +72,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish Container to GHCR
+      - name: Verify image exists in GHCR
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          CONTAINER_TAG: ${{ github.sha }}
-        run: >
-          dotnet publish src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj 
-          -c Release 
-          /t:PublishContainer 
-          /p:ContainerRegistry=ghcr.io
-          /p:ContainerRepository=$IMAGE_NAME
+          IMAGE_TAG: ${{ github.sha }}
+        run: bash .github/scripts/verify-image-exists.sh
 
       - name: Prepare configuration files
         env:

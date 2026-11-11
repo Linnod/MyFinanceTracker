@@ -47,8 +47,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy'
     permissions:
       contents: read
-      packages: write
-      checks: write
+      packages: read
     uses: ./.github/workflows/_cd.yml
     with:
       target_dir: "~/test"
