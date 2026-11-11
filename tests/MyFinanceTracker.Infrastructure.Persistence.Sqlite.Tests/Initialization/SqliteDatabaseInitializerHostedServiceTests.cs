@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Initialization;

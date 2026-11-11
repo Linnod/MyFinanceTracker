@@ -2,21 +2,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 
-namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configurations;
+namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities.Configurations;
 
-internal sealed class DeadLetterMessageConfiguration : IEntityTypeConfiguration<DeadLetterMessageEntity>
+internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessageEntity>
 {
-    public void Configure(EntityTypeBuilder<DeadLetterMessageEntity> builder)
+    public void Configure(EntityTypeBuilder<OutboxMessageEntity> builder)
     {
-        builder.ToTable("dead_letter_messages");
+        builder.ToTable("outbox_messages");
 
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
             .ValueGeneratedOnAdd();
-
-        builder.Property(e => e.OriginalOutboxMessageId)
-            .IsRequired();
 
         builder.Property(e => e.OperationType)
             .HasConversion<string>()
@@ -28,13 +25,8 @@ internal sealed class DeadLetterMessageConfiguration : IEntityTypeConfiguration<
         builder.Property(e => e.CreatedAtUtc)
             .IsRequired();
 
-        builder.Property(e => e.FailedAtUtc)
-            .IsRequired();
-
         builder.Property(e => e.RetryCount)
-            .IsRequired();
-
-        builder.Property(e => e.ErrorMessage)
-            .IsRequired();
+            .IsRequired()
+            .HasDefaultValue(0);
     }
 }

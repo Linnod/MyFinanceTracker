@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Sync;
 using NSubstitute;

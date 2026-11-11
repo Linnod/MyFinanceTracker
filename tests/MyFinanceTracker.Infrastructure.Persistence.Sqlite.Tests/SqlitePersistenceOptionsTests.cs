@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using FluentAssertions;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Tests;
 

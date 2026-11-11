@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 
-namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configurations;
+namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities.Configurations;
 
 internal sealed class TransactionConfiguration : IEntityTypeConfiguration<TransactionEntity>
 {

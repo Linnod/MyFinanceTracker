@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Initialization;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Repositories;

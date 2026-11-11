@@ -2,7 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.Common.Notifications;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Sync;
 

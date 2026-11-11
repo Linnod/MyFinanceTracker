@@ -7,7 +7,7 @@ using MyFinanceTracker.Common;
 using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Configuration;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Models;
