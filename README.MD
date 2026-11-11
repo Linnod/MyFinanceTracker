@@ -173,7 +173,7 @@ dotnet run --project src/MyFinanceTracker.Host
 ### Category Configuration Notes
 
 > [!IMPORTANT]
-> Category `id` is a unique identifier (slug), and `name` is used as the category name recorded on the `Transactions` sheet.
+> Category `id` is a unique identifier (slug) recorded on the `Transactions` sheet in Google Sheets, while `name` is used as the display name for Telegram messages and Gemini prompts.
 
 ### Telegram Settings
 

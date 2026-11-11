@@ -50,7 +50,7 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
             transaction.Id.ToString(),
             transaction.Date.ToString(WriteDateFormat, CultureInfo.InvariantCulture),
             transaction.Type.ToString(),
-            transaction.Category.Name,
+            transaction.Category.Id,
             signedAmount.ToString("0.##", numberFormatInfo),
             transaction.Note ?? string.Empty
         ]);
@@ -59,23 +59,20 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
     public IReadOnlyList<GoogleSheetRowValues> MapToRows(IEnumerable<Transaction> transactions)
         => [.. transactions.Select(MapToRow)];
 
-    public RowMappingResult MapToDomain(GoogleSheetRow row, IReadOnlyCollection<Category> categories)
-        => MapToDomain(row, CreateCategoryLookup(categories));
-
     public IReadOnlyList<RowMappingResult> MapToDomain(
         IEnumerable<GoogleSheetRow> rows,
         IReadOnlyCollection<Category> categories)
     {
-        var categoriesByName = CreateCategoryLookup(categories);
-        return [.. rows.Select(r => MapToDomain(r, categoriesByName))];
+        var categoriesById = CreateCategoryLookup(categories);
+        return [.. rows.Select(r => MapToDomain(r, categoriesById))];
     }
 
     private static Dictionary<string, Category> CreateCategoryLookup(IReadOnlyCollection<Category> categories)
-        => categories.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        => categories.ToDictionary(c => c.Id, StringComparer.OrdinalIgnoreCase);
 
     private RowMappingResult MapToDomain(
         GoogleSheetRow row,
-        Dictionary<string, Category> categoriesByName)
+        Dictionary<string, Category> categoriesById)
     {
         var rowNumber = ToSheetRowNumber(row.Index);
         var rowValues = row.Values;
@@ -115,14 +112,14 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
             return new RowMappingResult.Failure(rowNumber, $"Invalid Transaction Type: '{typeString}'. Expected 'Income' or 'Expense'.");
         }
 
-        if (!TryGetRequiredValue(rowValues.Values, Columns.Category, out var categoryName))
+        if (!TryGetRequiredValue(rowValues.Values, Columns.Category, out var categoryId))
         {
             return new RowMappingResult.Failure(rowNumber, "Missing required 'Category' value.");
         }
 
-        if (!categoriesByName.TryGetValue(categoryName, out var category))
+        if (!categoriesById.TryGetValue(categoryId, out var category))
         {
-            return new RowMappingResult.Failure(rowNumber, $"Unknown Category: '{categoryName}'.");
+            return new RowMappingResult.Failure(rowNumber, $"Unknown Category: '{categoryId}'.");
         }
 
         if (!TryGetRequiredValue(rowValues.Values, Columns.Amount, out var amountString))

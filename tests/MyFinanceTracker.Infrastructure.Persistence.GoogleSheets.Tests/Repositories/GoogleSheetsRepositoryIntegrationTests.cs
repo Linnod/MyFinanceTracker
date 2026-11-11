@@ -59,7 +59,7 @@ public class GoogleSheetsRepositoryIntegrationTests
         await clientMock.Received(1).AppendRows(
             "Transactions",
             Arg.Is<IEnumerable<GoogleSheetRowValues>>(rows =>
-                rows.Single().Values[3] == "Food" &&
+                rows.Single().Values[3] == "food_id" &&
                 rows.Single().Values[4] == "-50"),
             Arg.Any<CancellationToken>());
     }
@@ -110,9 +110,9 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-25.5", "Lunch"])),
-                new(2, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Entertainment", "-100", "Cinema"])),
-                new(3, new([Guid.NewGuid().ToString(), "2026-11-01", "Expense", "Food", "-15", "Coffee"]))
+                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "food_id", "-25.5", "Lunch"])),
+                new(2, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "ent_id", "-100", "Cinema"])),
+                new(3, new([Guid.NewGuid().ToString(), "2026-11-01", "Expense", "food_id", "-15", "Coffee"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -150,12 +150,12 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-20", "Lunch"])),
-                new(2, new([Guid.NewGuid().ToString(), "2026-11-03", "Expense", "Entertainment", "-50", "Cinema"])),
-                new(3, new([Guid.NewGuid().ToString(), "2026-11-03", "Income", "Food", "1000", "Refund"])),
-                new(4, new([Guid.NewGuid().ToString(), "2026-11-01", "Expense", "Food", "-10", "Old Coffee"])),
-                new(5, new([Guid.NewGuid().ToString(), "2026-11-05", "Expense", "Entertainment", "-30", "Future Movie"])),
-                new(6, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Transport", "-15", "Taxi"]))
+                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "food_id", "-20", "Lunch"])),
+                new(2, new([Guid.NewGuid().ToString(), "2026-11-03", "Expense", "ent_id", "-50", "Cinema"])),
+                new(3, new([Guid.NewGuid().ToString(), "2026-11-03", "Income", "food_id", "1000", "Refund"])),
+                new(4, new([Guid.NewGuid().ToString(), "2026-11-01", "Expense", "food_id", "-10", "Old Coffee"])),
+                new(5, new([Guid.NewGuid().ToString(), "2026-11-05", "Expense", "ent_id", "-30", "Future Movie"])),
+                new(6, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "trans_id", "-15", "Taxi"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -195,7 +195,7 @@ public class GoogleSheetsRepositoryIntegrationTests
 
         var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Date", "Type", "Category", "Amount", "Note"]));
         var invalidRow = new GoogleSheetRow(1, new GoogleSheetRowValues([
-            "bad-guid", "2026-11-02", "Expense", "Food", "-25.5"
+            "bad-guid", "2026-11-02", "Expense", "food_id", "-25.5"
         ]));
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
@@ -236,13 +236,13 @@ public class GoogleSheetsRepositoryIntegrationTests
 
         var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Date", "Type", "Category", "Amount", "Note"]));
         var matchingRow1 = new GoogleSheetRow(1, new GoogleSheetRowValues([
-            id1.ToString(), "2026-11-02", "Expense", "Food", "-20", "Breakfast"
+            id1.ToString(), "2026-11-02", "Expense", "food_id", "-20", "Breakfast"
         ]));
         var matchingRow2 = new GoogleSheetRow(2, new GoogleSheetRowValues([
-            id2.ToString(), "2026-11-02", "Expense", "Food", "-30", "Dinner"
+            id2.ToString(), "2026-11-02", "Expense", "food_id", "-30", "Dinner"
         ]));
         var otherCategoryRow = new GoogleSheetRow(3, new GoogleSheetRowValues([
-            otherId.ToString(), "2026-11-02", "Expense", "Entertainment", "-50", "Movies"
+            otherId.ToString(), "2026-11-02", "Expense", "ent_id", "-50", "Movies"
         ]));
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
@@ -288,7 +288,7 @@ public class GoogleSheetsRepositoryIntegrationTests
 
         var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Date", "Type", "Category", "Amount", "Note"]));
         var otherDateRow = new GoogleSheetRow(1, new GoogleSheetRowValues([
-            existingId.ToString(), "2026-11-01", "Expense", "Food", "-20"
+            existingId.ToString(), "2026-11-01", "Expense", "food_id", "-20"
         ]));
 
         clientMock.GetRows("Transactions", Arg.Any<CancellationToken>())
@@ -365,7 +365,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([targetId.ToString(), "2026-11-02 12:00:00", "Expense", "Food", "-50.5", "Lunch"]))
+                new(1, new([targetId.ToString(), "2026-11-02 12:00:00", "Expense", "food_id", "-50.5", "Lunch"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -405,7 +405,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "Food", "-50", "Lunch"]))
+                new(1, new([Guid.NewGuid().ToString(), "2026-11-02", "Expense", "food_id", "-50", "Lunch"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -442,8 +442,8 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([otherId.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"])),
-                new(2, new([targetId.ToString(), "2026-11-02", "Expense", "Food", "-50", "Lunch"]))
+                new(1, new([otherId.ToString(), "2026-11-01", "Expense", "food_id", "-10", "Coffee"])),
+                new(2, new([targetId.ToString(), "2026-11-02", "Expense", "food_id", "-50", "Lunch"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -472,7 +472,7 @@ public class GoogleSheetsRepositoryIntegrationTests
                 row.Values.Values[0] == targetId.ToString() &&
                 row.Values.Values[1] == "2026-11-03 10:00:00" &&
                 row.Values.Values[2] == "Income" &&
-                row.Values.Values[3] == "Transport" &&
+                row.Values.Values[3] == "trans_id" &&
                 row.Values.Values[4] == "350.5" &&
                 row.Values.Values[5] == "Bonus reimbursement"),
             Arg.Any<CancellationToken>());
@@ -498,7 +498,7 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([existingId.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"]))
+                new(1, new([existingId.ToString(), "2026-11-01", "Expense", "food_id", "-10", "Coffee"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -546,8 +546,8 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([txId1.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"])),
-                new(2, new([txId2.ToString(), "2026-11-02", "Expense", "Food", "-20", "Lunch"]))
+                new(1, new([txId1.ToString(), "2026-11-01", "Expense", "food_id", "-10", "Coffee"])),
+                new(2, new([txId2.ToString(), "2026-11-02", "Expense", "food_id", "-20", "Lunch"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(
@@ -586,9 +586,9 @@ public class GoogleSheetsRepositoryIntegrationTests
             .Returns(
             [
                 new(0, new(["Id", "Date", "Type", "Category", "Amount", "Note"])),
-                new(1, new([txId1.ToString(), "2026-11-01", "Expense", "Food", "-10", "Coffee"])),
-                new(2, new([txId2.ToString(), "2026-11-02", "Expense", "Food", "-20", "Lunch"])),
-                new(3, new([txId3.ToString(), "2026-11-03", "Expense", "Food", "-30", "Dinner"]))
+                new(1, new([txId1.ToString(), "2026-11-01", "Expense", "food_id", "-10", "Coffee"])),
+                new(2, new([txId2.ToString(), "2026-11-02", "Expense", "food_id", "-20", "Lunch"])),
+                new(3, new([txId3.ToString(), "2026-11-03", "Expense", "food_id", "-30", "Dinner"]))
             ]);
 
         var sut = new GoogleSheetsTransactionRepository(

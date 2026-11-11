@@ -35,7 +35,7 @@ public class GoogleSheetMapperTests
             id.ToString(),
             "2026-11-02 18:30:45",
             "Expense",
-            "Food",
+            "food_id",
             "-123.45",
             "Dinner"
         );
@@ -64,7 +64,7 @@ public class GoogleSheetMapperTests
             id.ToString(),
             "2026-11-01 09:00:00",
             "Income",
-            "Salary",
+            "salary_id",
             "5000",
             string.Empty
         );
@@ -79,8 +79,8 @@ public class GoogleSheetMapperTests
         var whitespaceRow = new GoogleSheetRow(2, new GoogleSheetRowValues([" ", "\t"]));
 
         // act
-        var emptyResult = sut.MapToDomain(emptyRow, [foodCategory]);
-        var whitespaceResult = sut.MapToDomain(whitespaceRow, [foodCategory]);
+        var emptyResult = sut.MapToDomain([emptyRow], [foodCategory]).Single();
+        var whitespaceResult = sut.MapToDomain([whitespaceRow], [foodCategory]).Single();
 
         // assert
         emptyResult.Should().BeOfType<RowMappingResult.Empty>();
@@ -114,13 +114,13 @@ public class GoogleSheetMapperTests
             id.ToString(),
             dateString,
             "Expense",
-            "Food",
+            "food_id",
             "-50.25",
             "Lunch"
         ]));
 
         // act
-        var result = sut.MapToDomain(row, [foodCategory]);
+        var result = sut.MapToDomain([row], [foodCategory]).Single();
 
         // assert
         result.Should().BeOfType<RowMappingResult.Success>();
@@ -141,13 +141,13 @@ public class GoogleSheetMapperTests
             id.ToString(),
             "2026-11-02 12:00:00",
             "Income",
-            "salary", // lower case
+            "SALARY_ID", // upper case
             "2500",
             ""
         ]));
 
         // act
-        var result = sut.MapToDomain(row, [salaryCategory]);
+        var result = sut.MapToDomain([row], [salaryCategory]).Single();
 
         // assert
         result.Should().BeOfType<RowMappingResult.Success>();
@@ -161,12 +161,12 @@ public class GoogleSheetMapperTests
     {
         // arrange
         var sut = CreateMapper(".");
-        var missingIdRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["", "2026-11-02 12:00:00", "Expense", "Food", "-10"]));
-        var invalidIdRow = new GoogleSheetRow(5, new GoogleSheetRowValues(["not-a-guid", "2026-11-02 12:00:00", "Expense", "Food", "-10"]));
+        var missingIdRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["", "2026-11-02 12:00:00", "Expense", "food_id", "-10"]));
+        var invalidIdRow = new GoogleSheetRow(5, new GoogleSheetRowValues(["not-a-guid", "2026-11-02 12:00:00", "Expense", "food_id", "-10"]));
 
         // act
-        var missingResult = sut.MapToDomain(missingIdRow, [foodCategory]);
-        var invalidResult = sut.MapToDomain(invalidIdRow, [foodCategory]);
+        var missingResult = sut.MapToDomain([missingIdRow], [foodCategory]).Single();
+        var invalidResult = sut.MapToDomain([invalidIdRow], [foodCategory]).Single();
 
         // assert
         missingResult.Should().BeOfType<RowMappingResult.Failure>()
@@ -181,10 +181,10 @@ public class GoogleSheetMapperTests
         // arrange
         var sut = CreateMapper(".");
         var id = Guid.NewGuid();
-        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "invalid-date", "Expense", "Food", "-10"]));
+        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "invalid-date", "Expense", "food_id", "-10"]));
 
         // act
-        var result = sut.MapToDomain(row, [foodCategory]);
+        var result = sut.MapToDomain([row], [foodCategory]).Single();
 
         // assert
         result.Should().BeOfType<RowMappingResult.Failure>()
@@ -197,10 +197,10 @@ public class GoogleSheetMapperTests
         // arrange
         var sut = CreateMapper(".");
         var id = Guid.NewGuid();
-        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "UnknownType", "Food", "-10"]));
+        var row = new GoogleSheetRow(2, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "UnknownType", "food_id", "-10"]));
 
         // act
-        var result = sut.MapToDomain(row, [foodCategory]);
+        var result = sut.MapToDomain([row], [foodCategory]).Single();
 
         // assert
         result.Should().BeOfType<RowMappingResult.Failure>()
@@ -216,7 +216,7 @@ public class GoogleSheetMapperTests
         var row = new GoogleSheetRow(4, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "Expense", "NonExistent", "-10"]));
 
         // act
-        var result = sut.MapToDomain(row, [foodCategory]);
+        var result = sut.MapToDomain([row], [foodCategory]).Single();
 
         // assert
         result.Should().BeOfType<RowMappingResult.Failure>()
@@ -233,10 +233,10 @@ public class GoogleSheetMapperTests
         // arrange
         var sut = CreateMapper(".");
         var id = Guid.NewGuid();
-        var row = new GoogleSheetRow(1, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "Expense", "Food", amountStr]));
+        var row = new GoogleSheetRow(1, new GoogleSheetRowValues([id.ToString(), "2026-11-02 12:00:00", "Expense", "food_id", amountStr]));
 
         // act
-        var result = sut.MapToDomain(row, [foodCategory]);
+        var result = sut.MapToDomain([row], [foodCategory]).Single();
 
         // assert
         result.Should().BeOfType<RowMappingResult.Failure>()
@@ -253,20 +253,20 @@ public class GoogleSheetMapperTests
             id.ToString(),
             "2026-11-02 12:00:00",
             "Expense",
-            "Food",
+            "food_id",
             "-1100,25"
         ]));
         var invalidRow = new GoogleSheetRow(2, new GoogleSheetRowValues([
             id.ToString(),
             "2026-11-02 12:00:00",
             "Expense",
-            "Food",
+            "food_id",
             "-1100.25"
         ]));
 
         // act
-        var validResult = sut.MapToDomain(validRow, [foodCategory]);
-        var invalidResult = sut.MapToDomain(invalidRow, [foodCategory]);
+        var validResult = sut.MapToDomain([validRow], [foodCategory]).Single();
+        var invalidResult = sut.MapToDomain([invalidRow], [foodCategory]).Single();
 
         // assert
         validResult.Should().BeOfType<RowMappingResult.Success>()
