@@ -1,5 +1,3 @@
-using MyFinanceTracker.Domain.Entities;
-
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
 public abstract record CreateTransactionsResponse : UseCaseResponse
@@ -10,21 +8,15 @@ public abstract record CreateTransactionsResponse : UseCaseResponse
         IReadOnlyList<Domain.Entities.Transaction> Transactions
     ) : CreateTransactionsResponse
     {
-        public override string ToString() => Transactions.Count switch
-        {
-            0 => "No transactions created",
-            1 => $"Created transaction for '{Transactions[0].Category.Name}' ({Transactions[0].Amount})",
-            _ => $"Created {Transactions.Count} transactions (Total: {Transactions.Sum(t => t.Amount)})"
-        };
+        public override string ToString() =>
+            $"Created transactions: [{string.Join(", ", Transactions.Select(t => t.Id))}]";
     }
 
     public sealed record ValidationError(
         IReadOnlyCollection<ValidationErrorItem> Errors
     ) : CreateTransactionsResponse, IValidationErrorResponse
     {
-        public override string ToString() => Errors.Count == 0
-            ? "No validation errors"
-            : string.Join("; ", Errors.Select(e => $"{e.ErrorCode}"));
+        public override string ToString() => string.Join("; ", Errors);
     }
 
     public sealed record Failure() : CreateTransactionsResponse, IFailureResponse

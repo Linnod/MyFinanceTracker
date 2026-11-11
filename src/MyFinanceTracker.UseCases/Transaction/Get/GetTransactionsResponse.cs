@@ -21,9 +21,7 @@ public abstract record GetTransactionsResponse : UseCaseResponse
         IReadOnlyCollection<ValidationErrorItem> Errors
     ) : GetTransactionsResponse, IValidationErrorResponse
     {
-        public override string ToString() => Errors.Count == 0
-            ? "No validation errors"
-            : string.Join("; ", Errors.Select(e => e.ErrorCode));
+        public override string ToString() => string.Join("; ", Errors);
     }
 
     public sealed record Failure() : GetTransactionsResponse, IFailureResponse

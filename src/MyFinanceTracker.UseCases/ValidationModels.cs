@@ -2,7 +2,12 @@ namespace MyFinanceTracker.UseCases;
 
 public sealed record ValidationErrorItem(
     string ErrorCode,
-    string? AttemptedValue = null);
+    string? AttemptedValue = null)
+{
+    public override string ToString() => AttemptedValue is not null
+        ? $"{ErrorCode} ('{AttemptedValue}')"
+        : ErrorCode;
+}
 
 public static class ValidationErrorCode
 {
