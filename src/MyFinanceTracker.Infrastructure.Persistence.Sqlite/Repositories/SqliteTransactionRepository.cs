@@ -28,26 +28,11 @@ internal sealed partial class SqliteTransactionRepository(
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var entities = transactions.Select(t => new TransactionEntity
-        {
-            Id = t.Id,
-            Type = t.Type,
-            CategoryId = t.Category.Id,
-            Amount = t.Amount,
-            Date = t.Date,
-            Note = t.Note
-        }).ToList();
+        var entities = transactions.Select(ToEntity).ToList();
 
         await dbContext.Transactions.AddRangeAsync(entities, ct);
 
-        var outboxDtos = transactions.Select(t => new TransactionOutboxDto(
-            t.Id,
-            t.Type,
-            t.Category.Id,
-            t.Amount,
-            t.Date,
-            t.Note
-        )).ToList();
+        var outboxDtos = transactions.Select(ToOutboxDto).ToList();
 
         var payload = new AddTransactionsOutboxPayload(outboxDtos);
         var outboxMessage = new OutboxMessageEntity
@@ -111,21 +96,7 @@ internal sealed partial class SqliteTransactionRepository(
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
-        if (entity is null)
-        {
-            return null;
-        }
-
-        var category = await categoryRepository.Resolve(entity.CategoryId, ct)
-            ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
-
-        return new Transaction(
-            entity.Id,
-            entity.Type,
-            category,
-            entity.Amount,
-            entity.Date,
-            entity.Note);
+        return entity is null ? null : await ToDomain(entity, ct);
     }
 
     public async Task Update(Transaction transaction, CancellationToken ct)
@@ -140,21 +111,9 @@ internal sealed partial class SqliteTransactionRepository(
             throw SqlitePersistenceException.TransactionNotFound(transaction.Id);
         }
 
-        entity.Type = transaction.Type;
-        entity.CategoryId = transaction.Category.Id;
-        entity.Amount = transaction.Amount;
-        entity.Date = transaction.Date;
-        entity.Note = transaction.Note;
+        UpdateEntity(entity, transaction);
 
-        var outboxDto = new TransactionOutboxDto(
-            transaction.Id,
-            transaction.Type,
-            transaction.Category.Id,
-            transaction.Amount,
-            transaction.Date,
-            transaction.Note);
-
-        var payload = new UpdateTransactionOutboxPayload(outboxDto);
+        var payload = new UpdateTransactionOutboxPayload(ToOutboxDto(transaction));
         var outboxMessage = new OutboxMessageEntity
         {
             OperationType = OutboxOperationType.Update,
@@ -179,22 +138,7 @@ internal sealed partial class SqliteTransactionRepository(
             .ThenByDescending(t => t.Id)
             .ToListAsync(ct);
 
-        var transactions = new List<Transaction>(entities.Count);
-        foreach (var entity in entities)
-        {
-            var category = await categoryRepository.Resolve(entity.CategoryId, ct)
-                ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
-
-            transactions.Add(new Transaction(
-                entity.Id,
-                entity.Type,
-                category,
-                entity.Amount,
-                entity.Date,
-                entity.Note));
-        }
-
-        return transactions;
+        return await ToDomain(entities, ct);
     }
 
     public async Task<PagedResult<Transaction>> Get(TransactionFilter filter, CancellationToken ct)
@@ -245,22 +189,60 @@ internal sealed partial class SqliteTransactionRepository(
         }
 
         var entities = await query.ToListAsync(ct);
-
-        var transactions = new List<Transaction>(entities.Count);
-        foreach (var entity in entities)
-        {
-            var category = await categoryRepository.Resolve(entity.CategoryId, ct)
-                ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
-
-            transactions.Add(new Transaction(
-                entity.Id,
-                entity.Type,
-                category,
-                entity.Amount,
-                entity.Date,
-                entity.Note));
-        }
+        var transactions = await ToDomain(entities, ct);
 
         return new PagedResult<Transaction>(transactions, totalCount);
     }
+
+    private async Task<Transaction> ToDomain(TransactionEntity entity, CancellationToken ct)
+    {
+        var category = await categoryRepository.Resolve(entity.CategoryId, ct)
+            ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
+
+        return new Transaction(
+            entity.Id,
+            entity.Type,
+            category,
+            entity.Amount,
+            entity.Date,
+            entity.Note);
+    }
+
+    private async Task<List<Transaction>> ToDomain(List<TransactionEntity> entities, CancellationToken ct)
+    {
+        var transactions = new List<Transaction>(entities.Count);
+        foreach (var entity in entities)
+        {
+            transactions.Add(await ToDomain(entity, ct));
+        }
+
+        return transactions;
+    }
+
+    private static TransactionEntity ToEntity(Transaction transaction) => new()
+    {
+        Id = transaction.Id,
+        Type = transaction.Type,
+        CategoryId = transaction.Category.Id,
+        Amount = transaction.Amount,
+        Date = transaction.Date,
+        Note = transaction.Note
+    };
+
+    private static void UpdateEntity(TransactionEntity entity, Transaction transaction)
+    {
+        entity.Type = transaction.Type;
+        entity.CategoryId = transaction.Category.Id;
+        entity.Amount = transaction.Amount;
+        entity.Date = transaction.Date;
+        entity.Note = transaction.Note;
+    }
+
+    private static TransactionOutboxDto ToOutboxDto(Transaction transaction) => new(
+        transaction.Id,
+        transaction.Type,
+        transaction.Category.Id,
+        transaction.Amount,
+        transaction.Date,
+        transaction.Note);
 }
