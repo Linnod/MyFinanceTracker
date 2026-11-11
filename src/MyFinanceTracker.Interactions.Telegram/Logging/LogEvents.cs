@@ -14,9 +14,8 @@ internal static class LogEvents
         public const int PollingError = SubBase + 2;
         public const int UpdateReceived = SubBase + 3;
         public const int UnauthorizedAccess = SubBase + 4;
-        public const int MessageSendFailed = SubBase + 5;
-        public const int UpdateProcessingFailed = SubBase + 6;
-        public const int IncomingMessageReceived = SubBase + 7;
+        public const int UpdateProcessingFailed = SubBase + 5;
+        public const int IncomingMessageReceived = SubBase + 6;
     }
 
     public static class Notifications
@@ -24,5 +23,12 @@ internal static class LogEvents
         private const int SubBase = Base + 1_000;
 
         public const int NotificationSendFailed = SubBase + 1;
+    }
+
+    public static class Sender
+    {
+        private const int SubBase = Base + 2_000;
+
+        public const int SendFailed = SubBase + 1;
     }
 }

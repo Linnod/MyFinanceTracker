@@ -15,6 +15,7 @@ internal sealed partial class TelegramInteractionWorker(
     ITelegramBotClient botClient,
     IServiceScopeFactory scopeFactory,
     IOptions<TelegramInteractionOptions> options,
+    ITelegramMessageSender messageSender,
     ILogger<TelegramInteractionWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,7 +61,7 @@ internal sealed partial class TelegramInteractionWorker(
                 var input = await message.BuildInput(bot, ct);
                 if (input is null)
                 {
-                    await SendReply(bot, message.Id, "Unsupported input. Please send a text, voice, or photo message.", ct);
+                    await messageSender.Send("Unsupported input. Please send a text, voice, or photo message.", ct);
                     return;
                 }
 
@@ -72,7 +73,7 @@ internal sealed partial class TelegramInteractionWorker(
                 var result = await sender.Send(input, ct);
                 var responseText = TelegramResponseFormatter.FormatResponse(result);
 
-                await SendReply(bot, message.Id, responseText, ct);
+                await messageSender.Send(responseText, ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -81,32 +82,8 @@ internal sealed partial class TelegramInteractionWorker(
             catch (Exception ex)
             {
                 LogUpdateProcessingFailed(ex, message.Id);
-                await SendReply(bot, message.Id, "Something went wrong. Please try again.", ct);
+                await messageSender.Send("Something went wrong. Please try again.", ct);
             }
-        }
-    }
-
-    private async Task SendReply(
-        ITelegramBotClient bot,
-        int messageId,
-        string text,
-        CancellationToken ct)
-    {
-        try
-        {
-            await bot.SendMessage(
-                chatId: options.Value.AllowedUserId,
-                text: text,
-                parseMode: ParseMode.Html,
-                cancellationToken: ct);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            LogMessageSendFailed(ex, messageId);
         }
     }
 

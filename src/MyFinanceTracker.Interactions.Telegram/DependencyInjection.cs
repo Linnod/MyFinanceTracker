@@ -24,6 +24,8 @@ public static class DependencyInjection
                 return new TelegramBotClient(opts.Token, httpClient);
             });
 
+        services.AddTransient<ITelegramMessageSender, TelegramMessageSender>();
+
         services.AddHostedService<TelegramInteractionWorker>();
 
         services.AddTransient<INotificationHandler<OutboxSyncNotification.MessageMovedToDeadLetter>, TelegramNotificationHandler>();

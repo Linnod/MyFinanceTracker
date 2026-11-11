@@ -1,42 +1,15 @@
 using MediatR;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MyFinanceTracker.Common.Notifications;
-using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 
 namespace MyFinanceTracker.Interactions.Telegram;
 
-internal sealed partial class TelegramNotificationHandler(
-    ITelegramBotClient botClient,
-    IOptions<TelegramInteractionOptions> options,
-    ILogger<TelegramNotificationHandler> logger) :
+internal sealed class TelegramNotificationHandler(ITelegramMessageSender messageSender) :
     INotificationHandler<OutboxSyncNotification.MessageMovedToDeadLetter>,
     INotificationHandler<OutboxSyncNotification.SyncFailed>
 {
     public Task Handle(OutboxSyncNotification.MessageMovedToDeadLetter notification, CancellationToken ct) =>
-        SendNotification(notification, ct);
+        messageSender.Send(TelegramResponseFormatter.FormatNotification(notification), ct);
 
     public Task Handle(OutboxSyncNotification.SyncFailed notification, CancellationToken ct) =>
-        SendNotification(notification, ct);
-
-    private async Task SendNotification(OutboxSyncNotification notification, CancellationToken ct)
-    {
-        try
-        {
-            await botClient.SendMessage(
-                chatId: options.Value.AllowedUserId,
-                text: TelegramResponseFormatter.FormatNotification(notification),
-                parseMode: ParseMode.Html,
-                cancellationToken: ct);
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            LogNotificationSendFailed(ex);
-        }
-    }
+        messageSender.Send(TelegramResponseFormatter.FormatNotification(notification), ct);
 }

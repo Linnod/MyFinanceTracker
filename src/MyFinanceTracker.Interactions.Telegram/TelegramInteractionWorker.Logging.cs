@@ -39,12 +39,6 @@ internal sealed partial class TelegramInteractionWorker
     partial void LogUpdateProcessingFailed(Exception ex, int messageId);
 
     [LoggerMessage(
-        EventId = MessageSendFailed,
-        Level = LogLevel.Error,
-        Message = "Failed to send response to message {MessageId}")]
-    partial void LogMessageSendFailed(Exception ex, int messageId);
-
-    [LoggerMessage(
         EventId = PollingError,
         Level = LogLevel.Error,
         Message = "Telegram Bot API polling error")]
