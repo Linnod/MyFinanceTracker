@@ -48,6 +48,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      checks: write
     uses: ./.github/workflows/_cd.yml
     with:
       target_dir: "~/test"
