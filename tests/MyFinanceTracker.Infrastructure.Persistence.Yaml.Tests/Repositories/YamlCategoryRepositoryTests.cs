@@ -9,13 +9,11 @@ public class YamlCategoryRepositoryTests
 {
     private readonly Category groceries = new(
         "cat_groceries",
-        "Groceries",
-        ["food", "supermarket"]);
+        "Groceries");
 
     private readonly Category salary = new(
         "cat_salary",
-        "Salary",
-        ["income", "paycheck"]);
+        "Salary");
 
     private readonly YamlCategoryRepository sut;
 
@@ -37,30 +35,10 @@ public class YamlCategoryRepositoryTests
     }
 
     [Fact]
-    public async Task Resolve_ById_ReturnsCategory()
+    public async Task GetById_ValidId_ReturnsCategory()
     {
         // act
-        var result = await sut.Resolve("cat_groceries", CancellationToken.None);
-
-        // assert
-        result.Should().Be(groceries);
-    }
-
-    [Fact]
-    public async Task Resolve_ByName_ReturnsCategory()
-    {
-        // act
-        var result = await sut.Resolve("Groceries", CancellationToken.None);
-
-        // assert
-        result.Should().Be(groceries);
-    }
-
-    [Fact]
-    public async Task Resolve_ByAlias_ReturnsCategory()
-    {
-        // act
-        var result = await sut.Resolve("food", CancellationToken.None);
+        var result = await sut.GetById("cat_groceries", CancellationToken.None);
 
         // assert
         result.Should().Be(groceries);
@@ -69,16 +47,10 @@ public class YamlCategoryRepositoryTests
     [Theory]
     [InlineData("CAT_GROCERIES")]
     [InlineData("cat_groceries")]
-    [InlineData("GROCERIES")]
-    [InlineData("Groceries")]
-    [InlineData("FOOD")]
-    [InlineData("food")]
-    [InlineData("SUPERMARKET")]
-    [InlineData("supermarket")]
-    public async Task Resolve_CaseInsensitive_ReturnsCategory(string query)
+    public async Task GetById_CaseInsensitive_ReturnsCategory(string query)
     {
         // act
-        var result = await sut.Resolve(query, CancellationToken.None);
+        var result = await sut.GetById(query, CancellationToken.None);
 
         // assert
         result.Should().Be(groceries);
@@ -88,10 +60,10 @@ public class YamlCategoryRepositoryTests
     [InlineData("unknown")]
     [InlineData("groceris")]
     [InlineData("")]
-    public async Task Resolve_NotFound_ReturnsNull(string query)
+    public async Task GetById_NotFound_ReturnsNull(string query)
     {
         // act
-        var result = await sut.Resolve(query, CancellationToken.None);
+        var result = await sut.GetById(query, CancellationToken.None);
 
         // assert
         result.Should().BeNull();

@@ -27,16 +27,6 @@ internal sealed class CategoryParserException : Exception
         return new CategoryParserException($"Duplicate Category Name: '{name}'");
     }
 
-    public static CategoryParserException DuplicateAlias(string alias)
-    {
-        return new CategoryParserException($"Duplicate alias: '{alias}'");
-    }
-
-    public static CategoryParserException MissingAliases(string categoryId)
-    {
-        return new CategoryParserException($"Category with ID '{categoryId}' must have at least one alias.");
-    }
-
     public static CategoryParserException InvalidCategory(DomainException inner)
     {
         return new CategoryParserException($"Invalid category: {inner.Message}", inner);

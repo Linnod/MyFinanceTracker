@@ -19,8 +19,8 @@ public class ListCategoriesHandlerTests
     public async Task Handle_DefaultRequest_ReturnsOnlyNonArchivedCategories()
     {
         // arrange
-        var activeCategory = new Domain.Entities.Category("active", "Active", ["active"], isArchived: false);
-        var archivedCategory = new Domain.Entities.Category("archived", "Archived", ["archived"], isArchived: true);
+        var activeCategory = new Domain.Entities.Category("active", "Active", isArchived: false);
+        var archivedCategory = new Domain.Entities.Category("archived", "Archived", isArchived: true);
 
         categoryRepository.GetAll(Arg.Any<CancellationToken>())
             .Returns([activeCategory, archivedCategory]);
@@ -40,8 +40,8 @@ public class ListCategoriesHandlerTests
     public async Task Handle_IncludeArchivedTrue_ReturnsAllCategories()
     {
         // arrange
-        var activeCategory = new Domain.Entities.Category("active", "Active", ["active"], isArchived: false);
-        var archivedCategory = new Domain.Entities.Category("archived", "Archived", ["archived"], isArchived: true);
+        var activeCategory = new Domain.Entities.Category("active", "Active", isArchived: false);
+        var archivedCategory = new Domain.Entities.Category("archived", "Archived", isArchived: true);
 
         categoryRepository.GetAll(Arg.Any<CancellationToken>())
             .Returns([activeCategory, archivedCategory]);

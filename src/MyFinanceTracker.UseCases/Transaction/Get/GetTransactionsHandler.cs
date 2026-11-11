@@ -14,19 +14,19 @@ internal sealed class GetTransactionsHandler(
     {
         IReadOnlyList<Domain.Entities.Category>? resolvedCategories = null;
 
-        if (request.CategoryAliases is { Count: > 0 })
+        if (request.CategoryIds is { Count: > 0 })
         {
             var errors = new List<ValidationErrorItem>();
             var foundCategories = new List<Domain.Entities.Category>();
 
-            foreach (var alias in request.CategoryAliases)
+            foreach (var categoryId in request.CategoryIds)
             {
-                var category = await categoryRepository.Resolve(alias, ct);
+                var category = await categoryRepository.GetById(categoryId, ct);
                 if (category is null)
                 {
                     errors.Add(new ValidationErrorItem(
                         ValidationErrorCode.Transaction.CategoryNotFound,
-                        alias));
+                        categoryId));
                 }
                 else
                 {

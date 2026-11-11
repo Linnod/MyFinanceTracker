@@ -141,7 +141,7 @@ internal sealed partial class OutboxProcessor(
         var transactions = new List<Transaction>(payload.Transactions.Count);
         foreach (var dto in payload.Transactions)
         {
-            var category = await categoryRepository.Resolve(dto.CategoryId, ct)
+            var category = await categoryRepository.GetById(dto.CategoryId, ct)
                 ?? throw OutboxProcessingException.CategoryNotFound(message, dto);
 
             transactions.Add(new Transaction(
@@ -168,7 +168,7 @@ internal sealed partial class OutboxProcessor(
         var payload = DeserializePayload<UpdateTransactionOutboxPayload>(message);
         var dto = payload.Transaction;
 
-        var category = await categoryRepository.Resolve(dto.CategoryId, ct)
+        var category = await categoryRepository.GetById(dto.CategoryId, ct)
             ?? throw OutboxProcessingException.CategoryNotFound(message, dto);
 
         var transaction = new Transaction(

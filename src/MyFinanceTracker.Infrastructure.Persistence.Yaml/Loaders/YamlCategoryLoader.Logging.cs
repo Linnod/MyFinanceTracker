@@ -9,8 +9,8 @@ internal sealed partial class YamlCategoryLoader
     [LoggerMessage(
         EventId = Loaded,
         Level = LogLevel.Information,
-        Message = "Successfully loaded {Count} categories with {AliasCount} aliases from '{FilePath}'")]
-    private partial void LogLoaded(int count, int aliasCount, string filePath);
+        Message = "Successfully loaded {Count} categories from '{FilePath}'")]
+    private partial void LogLoaded(int count, string filePath);
 
     [LoggerMessage(
         EventId = LoadError,

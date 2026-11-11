@@ -24,7 +24,7 @@ public class GetTransactionsHandlerTests
     public async Task Handle_SingleCategory_ReturnsSuccess()
     {
         // arrange
-        var category = new Domain.Entities.Category("A", "Food", ["food"]);
+        var category = new Domain.Entities.Category("food", "Food");
         var fromDate = new DateTime(2026, 1, 20);
         var toDate = new DateTime(2026, 1, 27);
 
@@ -40,7 +40,7 @@ public class GetTransactionsHandlerTests
         };
 
         categoryRepository
-            .Resolve("food", Arg.Any<CancellationToken>())
+            .GetById("food", Arg.Any<CancellationToken>())
             .Returns(category);
 
         transactionRepository
@@ -60,7 +60,7 @@ public class GetTransactionsHandlerTests
             new GetTransactionsRequest(
                 FromDate: fromDate,
                 ToDate: toDate,
-                CategoryAliases: ["food"],
+                CategoryIds: ["food"],
                 Type: TransactionType.Expense),
             CancellationToken.None);
 
@@ -74,28 +74,24 @@ public class GetTransactionsHandlerTests
         success.CategoryNames.Should().Equal("Food");
         success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
-        await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).GetById("food", Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_MultipleCategories_ReturnsSuccessWithDistinctCategories()
     {
         // arrange
-        var food = new Domain.Entities.Category("A", "Food", ["food", "groceries"]);
-        var ent = new Domain.Entities.Category("B", "Entertainment", ["ent", "cinema"]);
+        var food = new Domain.Entities.Category("food", "Food");
+        var ent = new Domain.Entities.Category("ent", "Entertainment");
         var fromDate = new DateTime(2026, 1, 20);
         var toDate = new DateTime(2026, 1, 27);
 
         categoryRepository
-            .Resolve("food", Arg.Any<CancellationToken>())
+            .GetById("food", Arg.Any<CancellationToken>())
             .Returns(food);
 
         categoryRepository
-            .Resolve("groceries", Arg.Any<CancellationToken>())
-            .Returns(food);
-
-        categoryRepository
-            .Resolve("ent", Arg.Any<CancellationToken>())
+            .GetById("ent", Arg.Any<CancellationToken>())
             .Returns(ent);
 
         var transactions = new[]
@@ -114,12 +110,12 @@ public class GetTransactionsHandlerTests
                 Arg.Any<CancellationToken>())
             .Returns(new PagedResult<Domain.Entities.Transaction>(transactions, transactions.Length));
 
-        // act - note "food" and "groceries" map to same category A
+        // act - duplicate "food" ID should be deduplicated
         var result = await sut.Handle(
             new GetTransactionsRequest(
                 FromDate: fromDate,
                 ToDate: toDate,
-                CategoryAliases: ["food", "groceries", "ent"]),
+                CategoryIds: ["food", "food", "ent"]),
             CancellationToken.None);
 
         // assert
@@ -130,9 +126,8 @@ public class GetTransactionsHandlerTests
         success.CategoryNames.Should().BeEquivalentTo(["Food", "Entertainment"]);
         success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
-        await categoryRepository.Received(1).Resolve("food", Arg.Any<CancellationToken>());
-        await categoryRepository.Received(1).Resolve("groceries", Arg.Any<CancellationToken>());
-        await categoryRepository.Received(1).Resolve("ent", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(2).GetById("food", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).GetById("ent", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -147,7 +142,7 @@ public class GetTransactionsHandlerTests
             new Domain.Entities.Transaction(
                 Guid.NewGuid(),
                 TransactionType.Expense,
-                new Domain.Entities.Category("A", "Food", ["food"]),
+                new Domain.Entities.Category("food", "Food"),
                 100m,
                 fromDate,
                 "Lunch")
@@ -168,7 +163,7 @@ public class GetTransactionsHandlerTests
             new GetTransactionsRequest(
                 FromDate: fromDate,
                 ToDate: toDate,
-                CategoryAliases: null),
+                CategoryIds: null),
             CancellationToken.None);
 
         // assert
@@ -181,7 +176,7 @@ public class GetTransactionsHandlerTests
         success.CategoryNames.Should().BeEmpty();
         success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
-        await categoryRepository.DidNotReceive().Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await categoryRepository.DidNotReceive().GetById(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await categoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
     }
 
@@ -190,7 +185,7 @@ public class GetTransactionsHandlerTests
     {
         // arrange
         categoryRepository
-            .Resolve("fod", Arg.Any<CancellationToken>())
+            .GetById("fod", Arg.Any<CancellationToken>())
             .Returns((Domain.Entities.Category?)null);
 
         // act
@@ -198,7 +193,7 @@ public class GetTransactionsHandlerTests
             new GetTransactionsRequest(
                 FromDate: new DateTime(2026, 1, 1),
                 ToDate: new DateTime(2026, 1, 27),
-                CategoryAliases: ["fod"]),
+                CategoryIds: ["fod"]),
             CancellationToken.None);
 
         // assert
@@ -211,7 +206,7 @@ public class GetTransactionsHandlerTests
         error.Errors.Single().ErrorCode
             .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
 
-        await categoryRepository.Received(1).Resolve("fod", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).GetById("fod", Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .Get(Arg.Any<TransactionFilter>(), Arg.Any<CancellationToken>());
@@ -223,10 +218,10 @@ public class GetTransactionsHandlerTests
         // arrange
         var fromDate = new DateTime(2026, 1, 1);
         var toDate = new DateTime(2026, 1, 31);
-        var category = new Domain.Entities.Category("food_id", "Food", ["food"]);
+        var category = new Domain.Entities.Category("food", "Food");
 
         categoryRepository
-            .Resolve("food", Arg.Any<CancellationToken>())
+            .GetById("food", Arg.Any<CancellationToken>())
             .Returns(category);
 
         var transactions = new[]
@@ -247,7 +242,7 @@ public class GetTransactionsHandlerTests
             new GetTransactionsRequest(
                 FromDate: fromDate,
                 ToDate: toDate,
-                CategoryAliases: ["food"],
+                CategoryIds: ["food"],
                 Skip: 5,
                 Take: 10),
             CancellationToken.None);

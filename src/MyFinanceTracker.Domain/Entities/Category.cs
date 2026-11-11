@@ -6,13 +6,11 @@ public record Category
 {
     public string Id { get; }
     public string Name { get; }
-    public IReadOnlyCollection<string> Aliases { get; }
     public bool IsArchived { get; }
 
     public Category(
         string id,
         string name,
-        IReadOnlyCollection<string> aliases,
         bool isArchived = false)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -25,14 +23,8 @@ public record Category
             throw new DomainException("Category Name cannot be empty or whitespace.");
         }
 
-        if (aliases is null || aliases.Count == 0)
-        {
-            throw new DomainException("Category must have at least one alias.");
-        }
-
         Id = id;
         Name = name;
-        Aliases = aliases;
         IsArchived = isArchived;
     }
 

@@ -24,8 +24,8 @@ public class GeminiSystemPromptBuilderTests
         // arrange
         var categories = new List<Category>
         {
-            new("cat_1", "Groceries", ["food", "supermarket"]),
-            new("cat_2", "Salary", ["paycheck"])
+            new("cat_1", "Groceries"),
+            new("cat_2", "Salary")
         };
 
         sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
@@ -37,7 +37,8 @@ public class GeminiSystemPromptBuilderTests
         // assert
         result.Should().Contain("Groceries");
         result.Should().Contain("Salary");
-        result.Should().Contain("food, supermarket");
+        result.Should().Contain("cat_1");
+        result.Should().Contain("cat_2");
     }
 
     [Fact]

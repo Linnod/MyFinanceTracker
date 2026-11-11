@@ -26,8 +26,7 @@ internal sealed partial class YamlCategoryLoader(
             var content = File.ReadAllText(resolvedPath);
             var categories = parser.Parse(content);
 
-            var totalAliases = categories.Sum(c => c.Aliases.Count);
-            LogLoaded(categories.Count, totalAliases, resolvedPath);
+            LogLoaded(categories.Count, resolvedPath);
 
             return categories;
         }

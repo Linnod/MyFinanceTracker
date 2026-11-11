@@ -28,8 +28,8 @@ public sealed class OutboxProcessorTests : IDisposable
     private readonly IOutboxNotificationPublisher notificationPublisher;
     private readonly ILogger<OutboxProcessor> logger;
 
-    private readonly Category foodCategory = new("food", "Food", ["groceries"]);
-    private readonly Category transportCategory = new("transport", "Transport", ["fuel"]);
+    private readonly Category foodCategory = new("food", "Food");
+    private readonly Category transportCategory = new("transport", "Transport");
 
     public OutboxProcessorTests()
     {
@@ -50,7 +50,7 @@ public sealed class OutboxProcessorTests : IDisposable
         notificationPublisher = Substitute.For<IOutboxNotificationPublisher>();
         logger = Substitute.For<ILogger<OutboxProcessor>>();
 
-        categoryRepository.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        categoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var query = callInfo.Arg<string>();

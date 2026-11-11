@@ -21,7 +21,7 @@ internal sealed class UpdateTransactionHandler(
             ]);
         }
 
-        var (category, error) = await ResolveCategory(request.CategoryAlias, existing.Category, ct);
+        var (category, error) = await GetCategory(request.CategoryId, existing.Category, ct);
         if (error != null)
         {
             return error;
@@ -41,28 +41,28 @@ internal sealed class UpdateTransactionHandler(
         return new UpdateTransactionResponse.Success(updated);
     }
 
-    private async Task<(Domain.Entities.Category? Category, UpdateTransactionResponse? Error)> ResolveCategory(
-        string? categoryAlias,
+    private async Task<(Domain.Entities.Category? Category, UpdateTransactionResponse? Error)> GetCategory(
+        string? categoryId,
         Domain.Entities.Category existingCategory,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(categoryAlias))
+        if (string.IsNullOrWhiteSpace(categoryId))
         {
             return (existingCategory, null);
         }
 
-        var resolved = await categoryRepository.Resolve(categoryAlias, ct);
+        var resolved = await categoryRepository.GetById(categoryId, ct);
         if (resolved is null)
         {
             return (null, new UpdateTransactionResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, categoryAlias)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, categoryId)
             ]));
         }
 
         if (resolved.IsArchived)
         {
             return (null, new UpdateTransactionResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, categoryAlias)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, categoryId)
             ]));
         }
 

@@ -13,7 +13,7 @@ internal sealed class CreateTransactionsHandler(
         var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
         foreach (var item in request.Items)
         {
-            var (category, error) = await ResolveCategory(item, ct);
+            var (category, error) = await GetCategory(item, ct);
             if (error != null)
             {
                 return error;
@@ -34,29 +34,29 @@ internal sealed class CreateTransactionsHandler(
         return new CreateTransactionsResponse.Success(transactions);
     }
 
-    private async Task<(Domain.Entities.Category? Category, CreateTransactionsResponse? Error)> ResolveCategory(
+    private async Task<(Domain.Entities.Category? Category, CreateTransactionsResponse? Error)> GetCategory(
         CreateTransactionItem item,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(item.CategoryAlias))
+        if (string.IsNullOrWhiteSpace(item.CategoryId))
         {
             return (null, new CreateTransactionsResponse.ValidationError([
                 new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryRequired)
             ]));
         }
 
-        var category = await categoryRepository.Resolve(item.CategoryAlias, ct);
+        var category = await categoryRepository.GetById(item.CategoryId, ct);
         if (category is null)
         {
             return (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, item.CategoryAlias)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, item.CategoryId)
             ]));
         }
 
         if (category.IsArchived)
         {
             return (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, item.CategoryAlias)
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, item.CategoryId)
             ]));
         }
 

@@ -44,13 +44,10 @@ public class YamlCategoryParserTests
             categories:
               - id: income
                 name: Income
-                aliases: [income]
               - id: A
                 name: First
-                aliases: [first]
               - id: A
                 name: Second
-                aliases: [second]
             """;
 
         // act
@@ -69,13 +66,10 @@ public class YamlCategoryParserTests
             categories:
               - id: income
                 name: Income
-                aliases: [income]
               - id: food_1
                 name: Products
-                aliases: [first]
               - id: food_2
                 name: products
-                aliases: [second]
             """;
 
         // act
@@ -87,50 +81,6 @@ public class YamlCategoryParserTests
     }
 
     [Fact]
-    void Parse_ShouldThrowDuplicateAlias_WhenAliasesAreNotUnique()
-    {
-        // arrange
-        const string yaml = """
-            categories:
-              - id: A
-                name: Income
-                aliases: [income]
-              - id: B
-                name: Food
-                aliases: [test]
-              - id: C
-                name: Drinks
-                aliases: [test]
-            """;
-
-        // act
-        var act = () => sut.Parse(yaml);
-
-        // assert
-        act.Should().Throw<CategoryParserException>()
-            .WithMessage("*Duplicate alias*test*");
-    }
-
-    [Fact]
-    void Parse_ShouldThrowMissingAliases_WhenCategoryHasNoAliases()
-    {
-        // arrange
-        const string yaml = """
-            categories:
-              - id: A
-                name: Income
-                aliases: []
-            """;
-
-        // act
-        var act = () => sut.Parse(yaml);
-
-        // assert
-        act.Should().Throw<CategoryParserException>()
-            .WithMessage("*must have at least one alias*");
-    }
-
-    [Fact]
     void Parse_ShouldThrowInvalidCategory_WhenDomainValidationFails()
     {
         // arrange
@@ -138,7 +88,6 @@ public class YamlCategoryParserTests
             categories:
               - id: ""
                 name: Products
-                aliases: [products]
             """;
 
         // act
@@ -157,16 +106,14 @@ public class YamlCategoryParserTests
             categories:
               - id: INCOME
                 name: Salary
-                aliases: [income]
               - id: FOOD
                 name: Products
-                aliases: [eat, meal]
             """;
 
         Category[] expected =
         [
-            new("INCOME", "Salary", ["income"]),
-            new("FOOD", "Products", ["eat", "meal"])
+            new("INCOME", "Salary"),
+            new("FOOD", "Products")
         ];
 
         // act
@@ -184,17 +131,15 @@ public class YamlCategoryParserTests
             categories:
               - id: ACTIVE
                 name: Active Category
-                aliases: [active]
               - id: ARCHIVED
                 name: Archived Category
-                aliases: [archived]
                 archived: true
             """;
 
         Category[] expected =
         [
-            new("ACTIVE", "Active Category", ["active"], isArchived: false),
-            new("ARCHIVED", "Archived Category", ["archived"], isArchived: true)
+            new("ACTIVE", "Active Category", isArchived: false),
+            new("ARCHIVED", "Archived Category", isArchived: true)
         ];
 
         // act

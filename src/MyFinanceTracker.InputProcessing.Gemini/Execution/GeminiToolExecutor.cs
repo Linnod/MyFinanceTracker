@@ -50,7 +50,7 @@ internal sealed partial class GeminiToolExecutor(
         var items = typedArgs.Amounts.Select(amount => new CreateTransactionItem(
             TransactionType: typedArgs.Type,
             Amount: amount,
-            CategoryAlias: typedArgs.CategoryAlias ?? string.Empty,
+            CategoryId: typedArgs.CategoryId ?? string.Empty,
             Date: date,
             Note: typedArgs.Note
         )).ToList();
@@ -114,7 +114,7 @@ internal sealed partial class GeminiToolExecutor(
             Id: parsedId,
             Type: typedArgs.Type,
             Amount: typedArgs.Amount,
-            CategoryAlias: typedArgs.CategoryAlias,
+            CategoryId: typedArgs.CategoryId,
             Date: typedArgs.Date,
             Note: typedArgs.Note,
             ClearNote: typedArgs.ClearNote ?? false);
@@ -151,7 +151,7 @@ internal sealed partial class GeminiToolExecutor(
         var request = new GetTransactionsRequest(
             typedArgs.FromDate.Value,
             typedArgs.ToDate.Value,
-            typedArgs.CategoryAliases,
+            typedArgs.CategoryIds,
             typedArgs.Type,
             Take: typedArgs.Limit);
 

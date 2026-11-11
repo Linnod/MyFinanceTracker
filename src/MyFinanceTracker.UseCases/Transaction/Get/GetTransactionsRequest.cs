@@ -6,7 +6,7 @@ namespace MyFinanceTracker.UseCases.Transaction.Get;
 public record GetTransactionsRequest(
     DateTime FromDate,
     DateTime ToDate,
-    IReadOnlyList<string>? CategoryAliases = null,
+    IReadOnlyList<string>? CategoryIds = null,
     TransactionType? Type = null,
     int? Skip = null,
     int? Take = null
@@ -20,9 +20,9 @@ public record GetTransactionsRequest(
             $"To: {ToDate:dd.MM.yyyy HH:mm:ss}"
         };
 
-        if (CategoryAliases is { Count: > 0 })
+        if (CategoryIds is { Count: > 0 })
         {
-            parts.Add($"Categories: {string.Join(", ", CategoryAliases)}");
+            parts.Add($"Categories: {string.Join(", ", CategoryIds)}");
         }
 
         if (Type.HasValue)

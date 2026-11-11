@@ -27,8 +27,8 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     private readonly ILogger<OutboxProcessor> outboxLogger;
     private readonly ILogger<SqliteDatabaseInitializerHostedService> initializerLogger;
 
-    private readonly Category foodCategory = new("food", "Food", ["groceries"]);
-    private readonly Category salaryCategory = new("salary", "Salary", ["income"]);
+    private readonly Category foodCategory = new("food", "Food");
+    private readonly Category salaryCategory = new("salary", "Salary");
 
     public SqliteDatabaseInitializerHostedServiceTests()
     {
@@ -49,7 +49,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         outboxLogger = Substitute.For<ILogger<OutboxProcessor>>();
         initializerLogger = Substitute.For<ILogger<SqliteDatabaseInitializerHostedService>>();
 
-        categoryRepository.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        categoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var query = callInfo.Arg<string>();

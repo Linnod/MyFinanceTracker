@@ -9,7 +9,7 @@ namespace MyFinanceTracker.InputProcessing.Gemini.Tests.Parsing;
 public class ToolCallArgsTests
 {
     private record TestArgs(
-        string? CategoryAlias,
+        string? CategoryId,
         DateTime? Date,
         IReadOnlyList<decimal>? Amounts,
         TransactionType? Type);
@@ -46,7 +46,7 @@ public class ToolCallArgsTests
         // arrange
         using var jsonDoc = JsonDocument.Parse("""
         {
-            "categoryAlias": "groceries",
+            "categoryId": "groceries",
             "date": "2026-08-08T14:30:00",
             "amounts": [100.5, 50],
             "type": "expense"
@@ -55,7 +55,7 @@ public class ToolCallArgsTests
 
         var args = new Dictionary<string, object>
         {
-            ["categoryAlias"] = jsonDoc.RootElement.GetProperty("categoryAlias"),
+            ["categoryId"] = jsonDoc.RootElement.GetProperty("categoryId"),
             ["date"] = jsonDoc.RootElement.GetProperty("date"),
             ["amounts"] = jsonDoc.RootElement.GetProperty("amounts"),
             ["type"] = jsonDoc.RootElement.GetProperty("type")
@@ -67,7 +67,7 @@ public class ToolCallArgsTests
 
         // assert
         result.Should().NotBeNull();
-        result!.CategoryAlias.Should().Be("groceries");
+        result!.CategoryId.Should().Be("groceries");
         result.Date.Should().Be(new DateTime(2026, 8, 8, 14, 30, 0));
         result.Amounts.Should().Equal(100.5m, 50m);
         result.Type.Should().Be(TransactionType.Expense);

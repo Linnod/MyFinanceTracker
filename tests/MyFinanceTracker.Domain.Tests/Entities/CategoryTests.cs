@@ -11,15 +11,13 @@ public class CategoryTests
         // arrange
         var id = "salary";
         var name = "Salary";
-        string[] aliases = ["salary", "income", "main"];
 
         // act
-        var category = new Category(id, name, aliases);
+        var category = new Category(id, name);
 
         // assert
         Assert.Equal(id, category.Id);
         Assert.Equal(name, category.Name);
-        Assert.Equal(aliases, category.Aliases);
         Assert.False(category.IsArchived);
     }
 
@@ -29,7 +27,7 @@ public class CategoryTests
     void Constructor_WithArchivedFlag_InitializesIsArchivedCorrectly(bool isArchived)
     {
         // arrange & act
-        var category = new Category("salary", "Salary", ["salary"], isArchived);
+        var category = new Category("salary", "Salary", isArchived);
 
         // assert
         Assert.Equal(isArchived, category.IsArchived);
@@ -43,10 +41,9 @@ public class CategoryTests
     {
         // arrange
         var name = "Food";
-        string[] aliases = ["food"];
 
         // act
-        Category act() => new(invalidId!, name, aliases);
+        Category act() => new(invalidId!, name);
 
         // assert
         var exception = Assert.Throws<DomainException>((Func<Category>)act);
@@ -61,10 +58,9 @@ public class CategoryTests
     {
         // arrange
         var id = "food";
-        string[] aliases = ["food"];
 
         // act
-        Category act() => new(id, invalidName!, aliases);
+        Category act() => new(id, invalidName!);
 
         // assert
         var exception = Assert.Throws<DomainException>(act);
@@ -72,42 +68,11 @@ public class CategoryTests
     }
 
     [Fact]
-    void Constructor_WithNullAliases_ThrowsDomainException()
-    {
-        // arrange
-        var id = "food";
-        var name = "Food";
-
-        // Act
-        Category act() => new(id, name, null!);
-
-        // assert
-        var exception = Assert.Throws<DomainException>((Func<Category>)act);
-        Assert.Equal("Category must have at least one alias.", exception.Message);
-    }
-
-    [Fact]
-    void Constructor_WithEmptyAliases_ThrowsDomainException()
-    {
-        // arrange
-        var id = "food";
-        var name = "Food";
-        var emptyAliases = Array.Empty<string>();
-
-        // act
-        Category act() => new(id, name, emptyAliases);
-
-        // assert
-        var exception = Assert.Throws<DomainException>((Func<Category>)act);
-        Assert.Equal("Category must have at least one alias.", exception.Message);
-    }
-
-    [Fact]
     public void ToString_ReturnsCategoryName()
     {
         // arrange
         var name = "Food";
-        var category = new Category("food", name, ["food"]);
+        var category = new Category("food", name);
 
         // act
         var result = category.ToString();

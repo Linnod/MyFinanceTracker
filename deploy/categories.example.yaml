@@ -3,26 +3,20 @@
 categories:
   - id: "salary"
     name: "Salary"
-    aliases: ["salary", "paycheck", "wage"]
 
   - id: "interest"
     name: "Interest"
-    aliases: ["interest", "dividends", "deposit"]
 
   - id: "food"
     name: "Food"
-    aliases: ["food", "grocery", "supermarket"]
 
   - id: "transport"
     name: "Transport"
-    aliases: ["transport", "bus", "taxi"]
 
   - id: "other"
     name: "Other"
-    aliases: ["other", "misc"]
 
   # Obsolete categories can be archived so they remain in history:
   # - id: "old_hobby"
   #   name: "Old Hobby"
-  #   aliases: ["old_hobby"]
   #   archived: true

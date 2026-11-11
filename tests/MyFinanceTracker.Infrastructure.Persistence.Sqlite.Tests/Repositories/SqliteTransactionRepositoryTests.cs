@@ -24,9 +24,9 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     private readonly ILogger<SqliteTransactionRepository> logger;
     private readonly DateTimeOffset fixedTime = new(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly Category foodCategory = new("food", "Food", ["groceries", "food"]);
-    private readonly Category transportCategory = new("transport", "Transport", ["bus", "taxi"]);
-    private readonly Category salaryCategory = new("salary", "Salary", ["paycheck", "income"]);
+    private readonly Category foodCategory = new("food", "Food");
+    private readonly Category transportCategory = new("transport", "Transport");
+    private readonly Category salaryCategory = new("salary", "Salary");
 
     public SqliteTransactionRepositoryTests()
     {
@@ -42,7 +42,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
 
         contextFactory = new TestDbContextFactory(options);
         categoryRepository = Substitute.For<ICategoryRepository>();
-        categoryRepository.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        categoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var query = callInfo.Arg<string>();
@@ -197,7 +197,6 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         singleResult.Id.Should().Be(tx2.Id);
         singleResult.Amount.Should().Be(75m);
         singleResult.Category.Should().Be(foodCategory);
-        singleResult.Category.Aliases.Should().Contain("groceries");
 
         // Act & Assert 5: Filter by multiple categories
         var multiCategoryFilter = new TransactionFilter(Categories: [foodCategory, transportCategory]);

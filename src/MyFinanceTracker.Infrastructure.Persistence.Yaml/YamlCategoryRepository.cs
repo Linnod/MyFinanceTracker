@@ -11,18 +11,16 @@ internal sealed class YamlCategoryRepository(ICategoryLoader loader) : ICategory
     public Task<IReadOnlyList<Category>> GetAll(CancellationToken ct)
         => Task.FromResult(categories);
 
-    public Task<Category?> Resolve(string query, CancellationToken ct)
+    public Task<Category?> GetById(string id, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(query))
+        if (string.IsNullOrWhiteSpace(id))
         {
             return Task.FromResult<Category?>(null);
         }
 
-        var trimmed = query.Trim();
+        var trimmed = id.Trim();
         var category = categories.FirstOrDefault(c =>
-            c.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
-            c.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
-            c.Aliases.Any(a => a.Equals(trimmed, StringComparison.OrdinalIgnoreCase)));
+            c.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
 
         return Task.FromResult(category);
     }

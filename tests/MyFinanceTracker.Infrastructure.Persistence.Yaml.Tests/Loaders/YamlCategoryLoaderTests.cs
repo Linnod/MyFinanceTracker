@@ -45,7 +45,7 @@ public class YamlCategoryLoaderTests
         try
         {
             File.WriteAllText(tempFile, "dummy content");
-            Category[] expected = [new Category("cat1", "Category 1", ["c1"])];
+            Category[] expected = [new Category("cat1", "Category 1")];
             parser.Parse("dummy content").Returns(expected);
 
             var sut = CreateSut(tempFile);

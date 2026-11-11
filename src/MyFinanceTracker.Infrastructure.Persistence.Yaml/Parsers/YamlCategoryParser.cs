@@ -42,14 +42,6 @@ internal sealed class YamlCategoryParser : ICategoryParser
             throw CategoryParserException.NoCategoriesFound();
         }
 
-        var invalidCategory = data.Categories
-            .FirstOrDefault(c => c.Aliases == null || c.Aliases.Count == 0);
-
-        if (invalidCategory != null)
-        {
-            throw CategoryParserException.MissingAliases(invalidCategory.Id);
-        }
-
         var duplicateId = data.Categories
             .GroupBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(g => g.Count() > 1);
@@ -68,23 +60,10 @@ internal sealed class YamlCategoryParser : ICategoryParser
             throw CategoryParserException.DuplicateName(duplicateName.Key);
         }
 
-        var allAliases = data.Categories
-            .SelectMany(c => c.Aliases)
-            .ToList();
-
-        var duplicateAlias = allAliases
-            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault(g => g.Count() > 1);
-
-        if (duplicateAlias != null)
-        {
-            throw CategoryParserException.DuplicateAlias(duplicateAlias.Key);
-        }
-
         try
         {
             return [.. data.Categories
-                .Select(c => new Category(c.Id, c.Name, c.Aliases, c.Archived))];
+                .Select(c => new Category(c.Id, c.Name, c.Archived))];
         }
         catch (DomainException ex)
         {
@@ -101,7 +80,6 @@ internal sealed class YamlCategoryParser : ICategoryParser
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public List<string> Aliases { get; set; } = [];
         public bool Archived { get; set; }
     }
 }

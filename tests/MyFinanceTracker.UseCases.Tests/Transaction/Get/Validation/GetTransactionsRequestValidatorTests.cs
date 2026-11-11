@@ -22,7 +22,7 @@ public class GetTransactionsRequestValidatorTests
         var request = new GetTransactionsRequest(
             FromDate: new DateTime(2026, 1, 1),
             ToDate: new DateTime(2026, 1, 27),
-            CategoryAliases: ["food", "taxi"],
+            CategoryIds: ["food", "taxi"],
             Type: TransactionType.Expense);
 
         // act
@@ -39,7 +39,7 @@ public class GetTransactionsRequestValidatorTests
         var request = new GetTransactionsRequest(
             FromDate: new DateTime(2026, 1, 1),
             ToDate: new DateTime(2026, 1, 27),
-            CategoryAliases: null,
+            CategoryIds: null,
             Type: null);
 
         // act
@@ -112,19 +112,19 @@ public class GetTransactionsRequestValidatorTests
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
-    public void Validate_EmptyCategoryAlias_ReturnsCategoryRequired(string alias)
+    public void Validate_EmptyCategoryId_ReturnsCategoryRequired(string categoryId)
     {
         // arrange
         var request = new GetTransactionsRequest(
             FromDate: new DateTime(2026, 1, 1),
             ToDate: new DateTime(2026, 1, 27),
-            CategoryAliases: [alias]);
+            CategoryIds: [categoryId]);
 
         // act
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor(x => x.CategoryAliases)
+        result.ShouldHaveValidationErrorFor(x => x.CategoryIds)
             .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
     }
 

@@ -9,7 +9,7 @@ namespace MyFinanceTracker.Interactions.Telegram.Tests;
 
 public sealed class TelegramResponseFormatterTests
 {
-    private static readonly Category TestCategory = new("groceries", "Groceries", ["food"]);
+    private static readonly Category TestCategory = new("groceries", "Groceries");
 
     [Fact]
     public void FormatResponse_Completed_HappyPath_FormatsTransactionsWithoutErrors()
@@ -80,7 +80,7 @@ public sealed class TelegramResponseFormatterTests
     public void FormatResponse_SpecialCharacters_AreHtmlEncoded()
     {
         // arrange
-        var category = new Category("test", "Food & Drinks <A>", ["food"]);
+        var category = new Category("test", "Food & Drinks <A>");
         var transaction = new Transaction(
             Guid.NewGuid(),
             TransactionType.Expense,

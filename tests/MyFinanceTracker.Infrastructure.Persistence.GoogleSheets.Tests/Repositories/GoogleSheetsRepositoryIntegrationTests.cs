@@ -22,9 +22,9 @@ public class GoogleSheetsRepositoryIntegrationTests
         DecimalSeparator = "."
     };
 
-    private readonly Category foodCategory = new("food_id", "Food", ["food"]);
-    private readonly Category entertainmentCategory = new("ent_id", "Entertainment", ["entertainment"]);
-    private readonly Category transportCategory = new("trans_id", "Transport", ["transport"]);
+    private readonly Category foodCategory = new("food_id", "Food");
+    private readonly Category entertainmentCategory = new("ent_id", "Entertainment");
+    private readonly Category transportCategory = new("trans_id", "Transport");
 
     [Fact]
     public async Task AddRange_ShouldAppendRowsViaClient()

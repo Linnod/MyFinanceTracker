@@ -23,9 +23,9 @@ internal sealed class GetTransactionsRequestValidator : AbstractValidator<GetTra
             .GreaterThanOrEqualTo(x => x.FromDate)
             .WithErrorCode(ValidationErrorCode.Transaction.InvalidDateRange);
 
-        When(x => x.CategoryAliases is { Count: > 0 }, () =>
+        When(x => x.CategoryIds is { Count: > 0 }, () =>
         {
-            RuleForEach(x => x.CategoryAliases)
+            RuleForEach(x => x.CategoryIds)
                 .NotEmpty()
                 .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
         });

@@ -196,7 +196,7 @@ internal sealed partial class SqliteTransactionRepository(
 
     private async Task<Transaction> ToDomain(TransactionEntity entity, CancellationToken ct)
     {
-        var category = await categoryRepository.Resolve(entity.CategoryId, ct)
+        var category = await categoryRepository.GetById(entity.CategoryId, ct)
             ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
 
         return new Transaction(

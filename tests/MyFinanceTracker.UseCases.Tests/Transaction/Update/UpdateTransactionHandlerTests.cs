@@ -12,8 +12,8 @@ public class UpdateTransactionHandlerTests
     private readonly ITransactionRepository transactionRepository = Substitute.For<ITransactionRepository>();
     private readonly UpdateTransactionHandler sut;
 
-    private readonly Domain.Entities.Category foodCategory = new("food", "Food", ["groceries", "food"]);
-    private readonly Domain.Entities.Category transportCategory = new("transport", "Transport", ["bus", "taxi"]);
+    private readonly Domain.Entities.Category foodCategory = new("food", "Food");
+    private readonly Domain.Entities.Category transportCategory = new("transport", "Transport");
 
     public UpdateTransactionHandlerTests()
     {
@@ -99,10 +99,10 @@ public class UpdateTransactionHandlerTests
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
             .Returns(existing);
 
-        categoryRepository.Resolve("unknown", Arg.Any<CancellationToken>())
+        categoryRepository.GetById("unknown", Arg.Any<CancellationToken>())
             .Returns((Domain.Entities.Category?)null);
 
-        var request = new UpdateTransactionRequest(id, CategoryAlias: "unknown");
+        var request = new UpdateTransactionRequest(id, CategoryId: "unknown");
 
         // act
         var result = await sut.Handle(request, CancellationToken.None);
@@ -129,15 +129,15 @@ public class UpdateTransactionHandlerTests
             new DateTime(2026, 11, 1),
             null);
 
-        var archivedCategory = new Domain.Entities.Category("archived_id", "Archived Category", ["archived"], isArchived: true);
+        var archivedCategory = new Domain.Entities.Category("archived", "Archived Category", isArchived: true);
 
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
             .Returns(existing);
 
-        categoryRepository.Resolve("archived", Arg.Any<CancellationToken>())
+        categoryRepository.GetById("archived", Arg.Any<CancellationToken>())
             .Returns(archivedCategory);
 
-        var request = new UpdateTransactionRequest(id, CategoryAlias: "archived");
+        var request = new UpdateTransactionRequest(id, CategoryId: "archived");
 
         // act
         var result = await sut.Handle(request, CancellationToken.None);
@@ -167,10 +167,10 @@ public class UpdateTransactionHandlerTests
         transactionRepository.GetById(id, Arg.Any<CancellationToken>())
             .Returns(existing);
 
-        categoryRepository.Resolve("transport", Arg.Any<CancellationToken>())
+        categoryRepository.GetById("transport", Arg.Any<CancellationToken>())
             .Returns(transportCategory);
 
-        var request = new UpdateTransactionRequest(id, CategoryAlias: "transport");
+        var request = new UpdateTransactionRequest(id, CategoryId: "transport");
 
         // act
         var result = await sut.Handle(request, CancellationToken.None);

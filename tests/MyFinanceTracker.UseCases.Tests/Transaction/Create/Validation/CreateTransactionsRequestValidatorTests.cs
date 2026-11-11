@@ -78,7 +78,7 @@ public class CreateTransactionsRequestValidatorTests
     [InlineData("")]
     [InlineData(" ")]
     [InlineData(null)]
-    void Validate_CategoryAliasIsEmpty_ReturnsCategoryRequiredError(string? categoryAlias)
+    void Validate_CategoryIdIsEmpty_ReturnsCategoryRequiredError(string? categoryId)
     {
         // arrange
         var request = new CreateTransactionsRequest(
@@ -86,7 +86,7 @@ public class CreateTransactionsRequestValidatorTests
             new CreateTransactionItem(
                 TransactionType.Expense,
                 100m,
-                categoryAlias!,
+                categoryId!,
                 new DateTime(2026, 1, 27),
                 "Lunch")
         ]);
@@ -95,7 +95,7 @@ public class CreateTransactionsRequestValidatorTests
         var result = sut.TestValidate(request);
 
         // assert
-        result.ShouldHaveValidationErrorFor("Items[0].CategoryAlias")
+        result.ShouldHaveValidationErrorFor("Items[0].CategoryId")
             .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
     }
 

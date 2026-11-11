@@ -5,7 +5,7 @@ namespace MyFinanceTracker.InputProcessing.Gemini.Parsing;
 internal sealed record AddTransactionArgs(
     TransactionType Type,
     IReadOnlyList<decimal>? Amounts,
-    string? CategoryAlias,
+    string? CategoryId,
     DateTime? Date,
     string? Note
 )

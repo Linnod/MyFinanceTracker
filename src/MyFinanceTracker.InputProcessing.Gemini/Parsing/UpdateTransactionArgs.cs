@@ -6,7 +6,7 @@ internal sealed record UpdateTransactionArgs(
     string? Id,
     TransactionType? Type,
     decimal? Amount,
-    string? CategoryAlias,
+    string? CategoryId,
     DateTime? Date,
     string? Note,
     bool? ClearNote);

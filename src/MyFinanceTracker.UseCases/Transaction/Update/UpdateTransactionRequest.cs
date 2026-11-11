@@ -7,7 +7,7 @@ public sealed record UpdateTransactionRequest(
     Guid Id,
     TransactionType? Type = null,
     decimal? Amount = null,
-    string? CategoryAlias = null,
+    string? CategoryId = null,
     DateTime? Date = null,
     string? Note = null,
     bool ClearNote = false) : IRequest<UpdateTransactionResponse>;

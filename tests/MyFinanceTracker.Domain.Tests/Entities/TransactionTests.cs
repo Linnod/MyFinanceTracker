@@ -6,7 +6,7 @@ namespace MyFinanceTracker.Domain.Tests.Entities;
 public class TransactionTests
 {
     private static Category CreateTestCategory() =>
-        new("food", "Food", ["food"]);
+        new("food", "Food");
 
     [Fact]
     void Constructor_WithValidArguments_InitializesPropertiesCorrectly()
@@ -14,7 +14,7 @@ public class TransactionTests
         // arrange
         var id = Guid.NewGuid();
         var type = TransactionType.Income;
-        var category = new Category("salary", "Salary", ["salary"]);
+        var category = new Category("salary", "Salary");
         var amount = 1500.00m;
         var date = new DateTime(2026, 5, 10, 14, 30, 45);
         var note = "Monthly salary";

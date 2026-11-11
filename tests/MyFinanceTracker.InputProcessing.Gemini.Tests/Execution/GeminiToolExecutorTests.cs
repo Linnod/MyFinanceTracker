@@ -41,12 +41,12 @@ public class GeminiToolExecutorTests
             {
                 ["type"] = "expense",
                 ["amounts"] = new[] { 100m },
-                ["categoryAlias"] = "food",
+                ["categoryId"] = "food",
                 ["date"] = "2026-08-08T14:30:00"
             }
         };
 
-        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"]);
+        var category = new Category(Guid.NewGuid().ToString(), "Groceries");
         var createdTransactions = new List<Transaction>
         {
             new(
@@ -76,7 +76,7 @@ public class GeminiToolExecutorTests
             Arg.Is<CreateTransactionsRequest>(r =>
                 r.Items.Count == 1 &&
                 r.Items[0].TransactionType == TransactionType.Expense &&
-                r.Items[0].CategoryAlias == "food" &&
+                r.Items[0].CategoryId == "food" &&
                 r.Items[0].Amount == 100m &&
                 r.Items[0].Date == transactionDate),
             Arg.Any<CancellationToken>()
@@ -95,12 +95,12 @@ public class GeminiToolExecutorTests
             {
                 ["type"] = "expense",
                 ["amounts"] = new[] { 50m },
-                ["categoryAlias"] = "food",
+                ["categoryId"] = "food",
                 ["recognizedInput"] = "Coffee 50"
             }
         };
 
-        var category = new Category(Guid.NewGuid().ToString(), "Food", ["food"]);
+        var category = new Category(Guid.NewGuid().ToString(), "Food");
         var createdTransactions = new List<Transaction>
         {
             new(
@@ -140,7 +140,7 @@ public class GeminiToolExecutorTests
             Args = new Dictionary<string, object>
             {
                 ["type"] = "expense",
-                ["categoryAlias"] = "food",
+                ["categoryId"] = "food",
                 ["recognizedInput"] = "Expense in food category"
             }
         };
@@ -181,13 +181,13 @@ public class GeminiToolExecutorTests
             {
                 ["fromDate"] = "2026-08-01T00:00:00",
                 ["toDate"] = "2026-08-10T23:59:59",
-                ["categoryAliases"] = new[] { "food", "entertainment" },
+                ["categoryIds"] = new[] { "food", "entertainment" },
                 ["type"] = "expense",
                 ["recognizedInput"] = "View expenses in food and entertainment"
             }
         };
 
-        var category = new Category(Guid.NewGuid().ToString(), "Groceries", ["food"]);
+        var category = new Category(Guid.NewGuid().ToString(), "Groceries");
         var transactions = new List<Transaction>
         {
             new(
@@ -222,8 +222,8 @@ public class GeminiToolExecutorTests
             Arg.Is<GetTransactionsRequest>(r =>
                 r.FromDate == fromDate &&
                 r.ToDate == toDate &&
-                r.CategoryAliases != null &&
-                r.CategoryAliases.SequenceEqual(new[] { "food", "entertainment" }) &&
+                r.CategoryIds != null &&
+                r.CategoryIds.SequenceEqual(new[] { "food", "entertainment" }) &&
                 r.Type == TransactionType.Expense &&
                 r.Take == null),
             Arg.Any<CancellationToken>()
@@ -383,12 +383,12 @@ public class GeminiToolExecutorTests
                 ["id"] = txId.ToString(),
                 ["amount"] = 75.50m,
                 ["type"] = "expense",
-                ["categoryAlias"] = "food",
+                ["categoryId"] = "food",
                 ["recognizedInput"] = "update tx amount 75.50"
             }
         };
 
-        var category = new Category("food", "Food", ["groceries", "food"]);
+        var category = new Category("food", "Food");
         var updatedTransaction = new Transaction(
             txId,
             TransactionType.Expense,
@@ -413,7 +413,7 @@ public class GeminiToolExecutorTests
                 r.Id == txId &&
                 r.Amount == 75.50m &&
                 r.Type == TransactionType.Expense &&
-                r.CategoryAlias == "food" &&
+                r.CategoryId == "food" &&
                 r.Date == null &&
                 r.Note == null &&
                 !r.ClearNote),
@@ -437,7 +437,7 @@ public class GeminiToolExecutorTests
             }
         };
 
-        var category = new Category("food", "Food", ["food"]);
+        var category = new Category("food", "Food");
         var updatedTransaction = new Transaction(
             txId,
             TransactionType.Expense,

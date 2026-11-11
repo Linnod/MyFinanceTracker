@@ -9,8 +9,8 @@ namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests.Mapping
 
 public class GoogleSheetMapperTests
 {
-    private readonly Category foodCategory = new("food_id", "Food", ["food"]);
-    private readonly Category salaryCategory = new("salary_id", "Salary", ["salary"]);
+    private readonly Category foodCategory = new("food_id", "Food");
+    private readonly Category salaryCategory = new("salary_id", "Salary");
 
     [Fact]
     public void MapToRow_ShouldFormatExpenseCorrectly()

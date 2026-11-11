@@ -45,7 +45,7 @@ internal sealed class UpdateTransactionRequestValidator : AbstractValidator<Upda
     {
         return request.Type is not null
             || request.Amount is not null
-            || !string.IsNullOrWhiteSpace(request.CategoryAlias)
+            || !string.IsNullOrWhiteSpace(request.CategoryId)
             || request.Date is not null
             || !string.IsNullOrWhiteSpace(request.Note)
             || request.ClearNote;

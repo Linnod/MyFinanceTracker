@@ -113,7 +113,7 @@ Copy the example template:
 cp deploy/categories.example.yaml categories.yaml
 ```
 
-Adjust category IDs, names, and aliases as needed.
+Adjust category IDs and names as needed.
 
 ### 6. Configure the application
 

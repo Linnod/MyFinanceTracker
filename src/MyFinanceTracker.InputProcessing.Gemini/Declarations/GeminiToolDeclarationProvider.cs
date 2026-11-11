@@ -36,10 +36,10 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Description = "List of amounts spent or received (e.g. [150] or [100, 50.5]).",
                                 Items = new Schema { Type = Type.Number }
                             },
-                            ["categoryAlias"] = new Schema
+                            ["categoryId"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Category alias matching one from available categories list."
+                                Description = "Category ID matching one from available categories list."
                             },
                             ["date"] = new Schema
                             {
@@ -52,7 +52,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Description = "Optional note or comment describing the transaction."
                             }
                         },
-                        Required = ["type", "amounts", "categoryAlias", "date"]
+                        Required = ["type", "amounts", "categoryId", "date"]
                     }
                 },
                 new FunctionDeclaration
@@ -99,10 +99,10 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Type = Type.Number,
                                 Description = "Optional new positive amount."
                             },
-                            ["categoryAlias"] = new Schema
+                            ["categoryId"] = new Schema
                             {
                                 Type = Type.String,
-                                Description = "Optional new category alias."
+                                Description = "Optional new category ID."
                             },
                             ["date"] = new Schema
                             {
@@ -142,10 +142,10 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                                 Type = Type.String,
                                 Description = "End date and time in ISO 8601 format (YYYY-MM-DDTHH:mm:ss, inclusive). For a full day, use YYYY-MM-DDT23:59:59."
                             },
-                            ["categoryAliases"] = new Schema
+                            ["categoryIds"] = new Schema
                             {
                                 Type = Type.Array,
-                                Description = "Optional list of category aliases to filter by. Omit to include all categories.",
+                                Description = "Optional list of category IDs to filter by. Omit to include all categories.",
                                 Items = new Schema { Type = Type.String }
                             },
                             ["type"] = new Schema
@@ -166,7 +166,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 new FunctionDeclaration
                 {
                     Name = ToolNames.ListCategories,
-                    Description = "List all available categories and their aliases."
+                    Description = "List all available categories."
                 }
             ]
         }

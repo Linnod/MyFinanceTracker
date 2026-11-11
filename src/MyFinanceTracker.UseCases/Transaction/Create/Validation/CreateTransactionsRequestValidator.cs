@@ -17,7 +17,7 @@ internal sealed class CreateTransactionsRequestValidator : AbstractValidator<Cre
                 .GreaterThan(0)
                 .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive);
 
-            item.RuleFor(i => i.CategoryAlias)
+            item.RuleFor(i => i.CategoryId)
                 .NotEmpty()
                 .WithErrorCode(ValidationErrorCode.Transaction.CategoryRequired);
 
