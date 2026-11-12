@@ -89,16 +89,8 @@ public class GoogleSheetMapperTests
 
     [Theory]
     [InlineData("2026-11-02 14:30:45", 2026, 11, 2, 14, 30, 45)]
-    [InlineData("2026-11-09 0:05:12", 2026, 11, 9, 0, 5, 12)]
-    [InlineData("2026-11-09 9:05:12", 2026, 11, 9, 9, 5, 12)]
-    [InlineData("2026-11-02 14:30", 2026, 11, 2, 14, 30, 0)]
-    [InlineData("2026-11-02 8:30", 2026, 11, 2, 8, 30, 0)]
-    [InlineData("2026-11-02", 2026, 11, 2, 0, 0, 0)]
-    [InlineData("09.11.2026 00:05:12", 2026, 11, 9, 0, 5, 12)]
-    [InlineData("09.11.2026 0:05:12", 2026, 11, 9, 0, 5, 12)]
-    [InlineData("02.11.2026", 2026, 11, 2, 0, 0, 0)]
-    [InlineData("2.11.2026", 2026, 11, 2, 0, 0, 0)]
-    public void MapToDomain_ShouldSupportVariousDateFormats(
+    [InlineData("2026-11-09 00:05:12", 2026, 11, 9, 0, 5, 12)]
+    public void MapToDomain_ShouldParseExpectedDateFormat(
         string dateString,
         int year,
         int month,

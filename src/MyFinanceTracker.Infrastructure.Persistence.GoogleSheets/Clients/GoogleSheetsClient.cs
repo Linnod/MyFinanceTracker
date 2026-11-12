@@ -49,7 +49,7 @@ internal sealed partial class GoogleSheetsClient(
         };
 
         var appendRequest = sheetsService.Spreadsheets.Values.Append(valueRange, options.SpreadsheetId, sheetName);
-        appendRequest.ValueInputOption = AppendRequest.ValueInputOptionEnum.USERENTERED;
+        appendRequest.ValueInputOption = AppendRequest.ValueInputOptionEnum.RAW;
         appendRequest.InsertDataOption = AppendRequest.InsertDataOptionEnum.OVERWRITE;
 
         await appendRequest.ExecuteAsync(ct);
@@ -109,7 +109,7 @@ internal sealed partial class GoogleSheetsClient(
         };
 
         var updateRequest = sheetsService.Spreadsheets.Values.Update(valueRange, options.SpreadsheetId, range);
-        updateRequest.ValueInputOption = UpdateRequest.ValueInputOptionEnum.USERENTERED;
+        updateRequest.ValueInputOption = UpdateRequest.ValueInputOptionEnum.RAW;
 
         await updateRequest.ExecuteAsync(ct);
 

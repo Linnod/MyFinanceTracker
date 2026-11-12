@@ -10,20 +10,7 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 {
     private const NumberStyles AmountNumberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint;
 
-    private const string WriteDateFormat = "yyyy-MM-dd HH:mm:ss";
-
-    private static readonly string[] SupportedDateFormats =
-    [
-        WriteDateFormat,
-        "yyyy-MM-dd H:mm:ss",
-        "yyyy-MM-dd HH:mm",
-        "yyyy-MM-dd H:mm",
-        "yyyy-MM-dd",
-        "dd.MM.yyyy HH:mm:ss",
-        "dd.MM.yyyy H:mm:ss",
-        "dd.MM.yyyy",
-        "d.M.yyyy"
-    ];
+    private const string DateFormat = "yyyy-MM-dd HH:mm:ss";
 
     private static class Columns
     {
@@ -48,7 +35,7 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
 
         return new GoogleSheetRowValues([
             transaction.Id.ToString(),
-            transaction.Date.ToString(WriteDateFormat, CultureInfo.InvariantCulture),
+            transaction.Date.ToString(DateFormat, CultureInfo.InvariantCulture),
             transaction.Type.ToString(),
             transaction.Category.Id,
             signedAmount.ToString("0.##", numberFormatInfo),
@@ -97,7 +84,7 @@ internal sealed class GoogleSheetMapper(IOptions<GoogleSheetsOptions> options)
             return new RowMappingResult.Failure(rowNumber, "Missing required 'Date' value.");
         }
 
-        if (!DateTime.TryParseExact(dateString, SupportedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        if (!DateTime.TryParseExact(dateString, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
             return new RowMappingResult.Failure(rowNumber, $"Invalid Date: '{dateString}'.");
         }

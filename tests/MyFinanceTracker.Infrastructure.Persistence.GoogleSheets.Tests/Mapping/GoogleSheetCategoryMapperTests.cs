@@ -185,4 +185,31 @@ public class GoogleSheetCategoryMapperTests
         results[1].Should().BeOfType<CategoryRowMappingResult.Empty>();
         results[2].Should().BeOfType<CategoryRowMappingResult.Success>();
     }
+
+    [Fact]
+    public void MapToRow_IdWithLeadingZeros_PreservesStringFormat()
+    {
+        // arrange
+        var category = new Category("001", "Special", isArchived: false);
+
+        // act
+        var result = sut.MapToRow(category);
+
+        // assert
+        result.Values[0].Should().Be("001");
+    }
+
+    [Fact]
+    public void MapToDomain_IdWithLeadingZeros_PreservesStringFormat()
+    {
+        // arrange
+        var row = new GoogleSheetRow(1, new GoogleSheetRowValues(["001", "Special", "FALSE"]));
+
+        // act
+        var result = sut.MapToDomain([row]).Single();
+
+        // assert
+        var success = result.Should().BeOfType<CategoryRowMappingResult.Success>().Subject;
+        success.Category.Id.Should().Be("001");
+    }
 }
