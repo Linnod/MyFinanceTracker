@@ -42,8 +42,6 @@ on:
         required: true
       GEMINI_MODEL:
         required: true
-      CATEGORIES_YAML:
-        required: true
       GOOGLE_CREDENTIALS_JSON:
         required: true
       APPLICATIONINSIGHTS_CONNECTION_STRING:
@@ -85,7 +83,6 @@ jobs:
           SECRET_GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           SECRET_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SECRET_GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
-          SECRET_CATEGORIES: ${{ secrets.CATEGORIES_YAML }}
           SECRET_GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
           CONTAINER_NAME: ${{ inputs.container_name }}
@@ -99,7 +96,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.yml,docker-compose.prod.yml,.env,deploy/categories.yaml,deploy/google-api-credentials.json"
+          source: "docker-compose.yml,docker-compose.prod.yml,.env,deploy/google-api-credentials.json"
           target: "${{ inputs.target_dir }}"
 
       - name: Deploy container via SSH

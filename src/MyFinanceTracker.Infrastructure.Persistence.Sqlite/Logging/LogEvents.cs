@@ -18,6 +18,17 @@ internal static class LogEvents
         public const int GettingAllTransactions = SubBase + 6;
     }
 
+    public static class CategoryRepository
+    {
+        private const int SubBase = Base + 3_000;
+
+        public const int AddingCategory = SubBase + 1;
+        public const int GettingCategoryById = SubBase + 2;
+        public const int GettingCategoriesByIds = SubBase + 3;
+        public const int UpdatingCategory = SubBase + 4;
+        public const int GettingAllCategories = SubBase + 5;
+    }
+
     public static class Sync
     {
         private const int SubBase = Base + 1_000;
@@ -45,5 +56,7 @@ internal static class LogEvents
         public const int SyncingTransactions = SubBase + 6;
         public const int StoppingInitialization = SubBase + 7;
         public const int StopCompleted = SubBase + 8;
+        public const int FetchingCategories = SubBase + 9;
+        public const int SyncingCategories = SubBase + 10;
     }
 }

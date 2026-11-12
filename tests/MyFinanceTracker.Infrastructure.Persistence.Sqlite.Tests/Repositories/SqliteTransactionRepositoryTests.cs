@@ -19,7 +19,6 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     private readonly SqliteConnection connection;
     private readonly DbContextOptions<SqliteDbContext> options;
     private readonly IDbContextFactory<SqliteDbContext> contextFactory;
-    private readonly ICategoryRepository categoryRepository;
     private readonly TimeProvider timeProvider;
     private readonly ILogger<SqliteTransactionRepository> logger;
     private readonly DateTimeOffset fixedTime = new(2026, 11, 5, 12, 0, 0, TimeSpan.Zero);
@@ -40,16 +39,13 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         using var context = new SqliteDbContext(options);
         context.Database.EnsureCreated();
 
+        context.Categories.AddRange(
+            new CategoryEntity { Id = foodCategory.Id, Name = foodCategory.Name, IsArchived = foodCategory.IsArchived },
+            new CategoryEntity { Id = transportCategory.Id, Name = transportCategory.Name, IsArchived = transportCategory.IsArchived },
+            new CategoryEntity { Id = salaryCategory.Id, Name = salaryCategory.Name, IsArchived = salaryCategory.IsArchived });
+        context.SaveChanges();
+
         contextFactory = new TestDbContextFactory(options);
-        categoryRepository = Substitute.For<ICategoryRepository>();
-        categoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo =>
-            {
-                var query = callInfo.Arg<string>();
-                return new[] { foodCategory, transportCategory, salaryCategory }
-                    .FirstOrDefault(c => c.Id.Equals(query, StringComparison.OrdinalIgnoreCase) ||
-                                         c.Name.Equals(query, StringComparison.OrdinalIgnoreCase));
-            });
         timeProvider = new FixedTimeProvider(fixedTime);
         logger = Substitute.For<ILogger<SqliteTransactionRepository>>();
     }
@@ -60,7 +56,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     }
 
     private SqliteTransactionRepository CreateRepository() =>
-        new(contextFactory, categoryRepository, timeProvider, logger);
+        new(contextFactory, timeProvider, logger);
 
     [Fact]
     public async Task AddRange_ShouldPersistTransactionsAndCreateOutboxMessage()
@@ -111,7 +107,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         outboxMessages.Should().HaveCount(1);
 
         var outboxMessage = outboxMessages[0];
-        outboxMessage.OperationType.Should().Be(OutboxOperationType.Add);
+        outboxMessage.OperationType.Should().Be(OutboxOperationType.AddTransaction);
         outboxMessage.CreatedAtUtc.Should().Be(fixedTime);
 
         var payload = JsonSerializer.Deserialize<AddTransactionsOutboxPayload>(outboxMessage.PayloadJson);
@@ -348,7 +344,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         outboxMessages.Should().HaveCount(1);
 
         var outboxMessage = outboxMessages[0];
-        outboxMessage.OperationType.Should().Be(OutboxOperationType.Delete);
+        outboxMessage.OperationType.Should().Be(OutboxOperationType.DeleteTransaction);
         outboxMessage.CreatedAtUtc.Should().Be(fixedTime);
 
         var payload = JsonSerializer.Deserialize<DeleteTransactionsOutboxPayload>(outboxMessage.PayloadJson);
@@ -470,35 +466,6 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetById_UnresolvableCategory_ThrowsSqlitePersistenceException()
-    {
-        // arrange
-        var repository = CreateRepository();
-        var txId = Guid.NewGuid();
-
-        await using (var seedContext = new SqliteDbContext(options))
-        {
-            seedContext.Transactions.Add(new TransactionEntity
-            {
-                Id = txId,
-                Type = TransactionType.Expense,
-                CategoryId = "unresolvable_cat",
-                Amount = 50m,
-                Date = new DateTime(2026, 11, 1, 10, 0, 0),
-                Note = "Test"
-            });
-            await seedContext.SaveChangesAsync();
-        }
-
-        // act
-        var act = () => repository.GetById(txId, CancellationToken.None);
-
-        // assert
-        await act.Should().ThrowAsync<SqlitePersistenceException>()
-            .WithMessage($"*{txId}*");
-    }
-
-    [Fact]
     public async Task Update_ExistingTransaction_UpdatesDatabaseAndCreatesOutboxMessage()
     {
         // arrange
@@ -544,7 +511,7 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         outboxMessages.Should().HaveCount(1);
 
         var outboxMessage = outboxMessages[0];
-        outboxMessage.OperationType.Should().Be(OutboxOperationType.Update);
+        outboxMessage.OperationType.Should().Be(OutboxOperationType.UpdateTransaction);
         outboxMessage.CreatedAtUtc.Should().Be(fixedTime);
 
         var payload = JsonSerializer.Deserialize<UpdateTransactionOutboxPayload>(outboxMessage.PayloadJson);

@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities.Configurations;
 
@@ -17,6 +16,7 @@ internal sealed class TransactionConfiguration : IEntityTypeConfiguration<Transa
             .IsRequired();
 
         builder.Property(e => e.CategoryId)
+            .UseCollation("NOCASE")
             .IsRequired();
 
         builder.Property(e => e.Amount)
@@ -29,5 +29,10 @@ internal sealed class TransactionConfiguration : IEntityTypeConfiguration<Transa
 
         builder.HasIndex(e => e.Date);
         builder.HasIndex(e => e.CategoryId);
+
+        builder.HasOne(t => t.Category)
+            .WithMany()
+            .HasForeignKey(t => t.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -18,6 +18,17 @@ internal static class LogEvents
         public const int GettingAllTransactions = SubBase + 6;
     }
 
+    public static class CategoryRepository
+    {
+        private const int SubBase = Base + 100;
+
+        public const int AddingCategory = SubBase + 1;
+        public const int GettingCategoryById = SubBase + 2;
+        public const int GettingCategoriesByIds = SubBase + 3;
+        public const int UpdatingCategory = SubBase + 4;
+        public const int GettingAllCategories = SubBase + 5;
+    }
+
     public static class Client
     {
         private const int SubBase = Base + 1_000;

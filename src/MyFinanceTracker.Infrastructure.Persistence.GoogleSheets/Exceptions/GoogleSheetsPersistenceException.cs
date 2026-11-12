@@ -7,9 +7,15 @@ internal sealed class GoogleSheetsPersistenceException : Exception
     public IReadOnlyList<RowMappingResult.Failure> Failures { get; }
 
     public GoogleSheetsPersistenceException(string sheetName, IReadOnlyList<RowMappingResult.Failure> failures)
-        : base(FormatMessage(sheetName, failures))
+        : base(FormatMessage(sheetName, failures.Select(f => (f.RowNumber, f.Reason))))
     {
         Failures = failures;
+    }
+
+    public GoogleSheetsPersistenceException(string sheetName, IReadOnlyList<CategoryRowMappingResult.Failure> failures)
+        : base(FormatMessage(sheetName, failures.Select(f => (f.RowNumber, f.Reason))))
+    {
+        Failures = [.. failures.Select(f => new RowMappingResult.Failure(f.RowNumber, f.Reason))];
     }
 
     private GoogleSheetsPersistenceException(string message) : base(message)
@@ -20,7 +26,10 @@ internal sealed class GoogleSheetsPersistenceException : Exception
     public static GoogleSheetsPersistenceException TransactionNotFound(string sheetName, Guid transactionId) =>
         new($"Transaction '{transactionId}' was not found in Google Sheet '{sheetName}'.");
 
-    private static string FormatMessage(string sheetName, IReadOnlyList<RowMappingResult.Failure> failures)
+    public static GoogleSheetsPersistenceException CategoryNotFound(string sheetName, string categoryId) =>
+        new($"Category '{categoryId}' was not found in Google Sheet '{sheetName}'.");
+
+    private static string FormatMessage(string sheetName, IEnumerable<(int RowNumber, string Reason)> failures)
     {
         var errors = string.Join(Environment.NewLine, failures.Select(f => $"Row {f.RowNumber}: {f.Reason}"));
         return $"Errors found in Google Sheet '{sheetName}':{Environment.NewLine}{errors}";

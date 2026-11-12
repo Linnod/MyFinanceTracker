@@ -3,8 +3,14 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using MyFinanceTracker.UseCases.Behaviors;
+using MyFinanceTracker.UseCases.Category.Create;
+using MyFinanceTracker.UseCases.Category.Create.Behaviors;
+using MyFinanceTracker.UseCases.Category.Create.Validation;
 using MyFinanceTracker.UseCases.Category.List;
 using MyFinanceTracker.UseCases.Category.List.Behaviors;
+using MyFinanceTracker.UseCases.Category.Update;
+using MyFinanceTracker.UseCases.Category.Update.Behaviors;
+using MyFinanceTracker.UseCases.Category.Update.Validation;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Create.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Create.Validation;
@@ -88,7 +94,10 @@ public static class DependencyInjection
 
     private static IServiceCollection AddCategoriesUseCases(this IServiceCollection services)
     {
-        return services.AddListCategories();
+        return services
+            .AddListCategories()
+            .AddCreateCategory()
+            .AddUpdateCategory();
     }
 
     private static IServiceCollection AddListCategories(this IServiceCollection services)
@@ -97,6 +106,28 @@ public static class DependencyInjection
             .AddTransient<
                 IPipelineBehavior<ListCategoriesRequest, ListCategoriesResponse>,
                 ListCategoriesLoggingBehavior>();
+    }
+
+    private static IServiceCollection AddCreateCategory(this IServiceCollection services)
+    {
+        return services
+            .AddTransient<
+                IPipelineBehavior<CreateCategoryRequest, CreateCategoryResponse>,
+                CreateCategoryLoggingBehavior>()
+            .AddScoped<IValidator<CreateCategoryRequest>, CreateCategoryRequestValidator>()
+            .AddValidationBehavior<CreateCategoryRequest, CreateCategoryResponse>(
+                errors => new CreateCategoryResponse.ValidationError(errors));
+    }
+
+    private static IServiceCollection AddUpdateCategory(this IServiceCollection services)
+    {
+        return services
+            .AddTransient<
+                IPipelineBehavior<UpdateCategoryRequest, UpdateCategoryResponse>,
+                UpdateCategoryLoggingBehavior>()
+            .AddScoped<IValidator<UpdateCategoryRequest>, UpdateCategoryRequestValidator>()
+            .AddValidationBehavior<UpdateCategoryRequest, UpdateCategoryResponse>(
+                errors => new UpdateCategoryResponse.ValidationError(errors));
     }
 
     private static IServiceCollection AddValidationBehavior<TRequest, TResponse>(

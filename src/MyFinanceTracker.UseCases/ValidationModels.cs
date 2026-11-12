@@ -28,4 +28,14 @@ public static class ValidationErrorCode
         public const string NothingToUpdate = nameof(NothingToUpdate);
         public const string InvalidPagination = nameof(InvalidPagination);
     }
+
+    public static class Category
+    {
+        public const string CategoryIdRequired = nameof(CategoryIdRequired);
+        public const string InvalidIdFormat = nameof(InvalidIdFormat);
+        public const string CategoryNameRequired = nameof(CategoryNameRequired);
+        public const string CategoryAlreadyExists = nameof(CategoryAlreadyExists);
+        public const string CategoryNotFound = nameof(CategoryNotFound);
+        public const string NoChangesSpecified = nameof(NoChangesSpecified);
+    }
 }

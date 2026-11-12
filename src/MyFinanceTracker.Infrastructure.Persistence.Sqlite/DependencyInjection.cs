@@ -26,6 +26,7 @@ public static class DependencyInjection
             builder.UseSqlite(opt.ConnectionString);
         });
 
+        services.AddSingleton<ICategoryRepository, SqliteCategoryRepository>();
         services.AddSingleton<ITransactionRepository, SqliteTransactionRepository>();
         services.AddSingleton<IOutboxNotificationPublisher, OutboxNotificationPublisher>();
         services.AddSingleton<OutboxProcessor>();

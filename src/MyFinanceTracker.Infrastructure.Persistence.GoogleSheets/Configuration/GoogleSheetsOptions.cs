@@ -19,5 +19,8 @@ internal sealed class GoogleSheetsOptions
     public string TransactionsSheetName { get; init; } = "Transactions";
 
     [Required(AllowEmptyStrings = false)]
+    public string CategoriesSheetName { get; init; } = "Categories";
+
+    [Required(AllowEmptyStrings = false)]
     public string DecimalSeparator { get; init; } = ",";
 }

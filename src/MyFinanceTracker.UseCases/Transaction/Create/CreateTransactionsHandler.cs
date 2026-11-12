@@ -10,19 +10,42 @@ internal sealed class CreateTransactionsHandler(
 {
     public async Task<CreateTransactionsResponse> Handle(CreateTransactionsRequest request, CancellationToken ct)
     {
+        if (request.Items.Any(i => string.IsNullOrWhiteSpace(i.CategoryId)))
+        {
+            return new CreateTransactionsResponse.ValidationError([
+                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryRequired)
+            ]);
+        }
+
+        var distinctIds = request.Items
+            .Select(i => i.CategoryId.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var foundCategories = await categoryRepository.GetByIds(distinctIds, ct);
+        var categoriesById = foundCategories.ToDictionary(c => c.Id, StringComparer.OrdinalIgnoreCase);
+
         var transactions = new List<Domain.Entities.Transaction>(request.Items.Count);
         foreach (var item in request.Items)
         {
-            var (category, error) = await GetCategory(item, ct);
-            if (error != null)
+            if (!categoriesById.TryGetValue(item.CategoryId.Trim(), out var category))
             {
-                return error;
+                return new CreateTransactionsResponse.ValidationError([
+                    new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, item.CategoryId)
+                ]);
+            }
+
+            if (category.IsArchived)
+            {
+                return new CreateTransactionsResponse.ValidationError([
+                    new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, item.CategoryId)
+                ]);
             }
 
             transactions.Add(new Domain.Entities.Transaction(
                 id: Guid.NewGuid(),
                 type: item.TransactionType,
-                category: category!,
+                category: category,
                 amount: item.Amount,
                 date: item.Date,
                 note: item.Note
@@ -32,34 +55,5 @@ internal sealed class CreateTransactionsHandler(
         await transactionRepository.AddRange(transactions, ct);
 
         return new CreateTransactionsResponse.Success(transactions);
-    }
-
-    private async Task<(Domain.Entities.Category? Category, CreateTransactionsResponse? Error)> GetCategory(
-        CreateTransactionItem item,
-        CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(item.CategoryId))
-        {
-            return (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryRequired)
-            ]));
-        }
-
-        var category = await categoryRepository.GetById(item.CategoryId, ct);
-        if (category is null)
-        {
-            return (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, item.CategoryId)
-            ]));
-        }
-
-        if (category.IsArchived)
-        {
-            return (null, new CreateTransactionsResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryArchived, item.CategoryId)
-            ]));
-        }
-
-        return (category, null);
     }
 }

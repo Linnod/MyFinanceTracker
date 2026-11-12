@@ -21,7 +21,9 @@ public static class DependencyInjection
         services.ConfigureGoogleSheetsOptions(configuration)
             .AddSheetsService()
             .AddKeyedSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>(PersistenceServiceKeys.RemoteTransactionRepository)
+            .AddKeyedSingleton<ICategoryRepository, GoogleSheetsCategoryRepository>(PersistenceServiceKeys.RemoteCategoryRepository)
             .AddSingleton<GoogleSheetMapper>()
+            .AddSingleton<GoogleSheetCategoryMapper>()
             .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>();
 
         return services;

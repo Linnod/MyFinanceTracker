@@ -5,7 +5,7 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 
 internal sealed class SqliteDbContext(DbContextOptions<SqliteDbContext> options) : DbContext(options)
 {
-
+    public DbSet<CategoryEntity> Categories => Set<CategoryEntity>();
     public DbSet<TransactionEntity> Transactions => Set<TransactionEntity>();
     public DbSet<OutboxMessageEntity> OutboxMessages => Set<OutboxMessageEntity>();
     public DbSet<DeadLetterMessageEntity> DeadLetterMessages => Set<DeadLetterMessageEntity>();

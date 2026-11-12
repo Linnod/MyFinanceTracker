@@ -20,6 +20,18 @@ internal partial class SqliteDatabaseInitializerHostedService
     partial void LogFlushingOutbox();
 
     [LoggerMessage(
+        EventId = FetchingCategories,
+        Level = LogLevel.Debug,
+        Message = "Fetching remote categories for initial database synchronization")]
+    partial void LogFetchingCategories();
+
+    [LoggerMessage(
+        EventId = SyncingCategories,
+        Level = LogLevel.Debug,
+        Message = "Replacing local categories cache with {Count} categories")]
+    partial void LogSyncingCategories(int count);
+
+    [LoggerMessage(
         EventId = FetchingTransactions,
         Level = LogLevel.Debug,
         Message = "Fetching remote transactions for initial database synchronization")]

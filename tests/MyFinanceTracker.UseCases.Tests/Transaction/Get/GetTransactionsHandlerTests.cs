@@ -40,8 +40,8 @@ public class GetTransactionsHandlerTests
         };
 
         categoryRepository
-            .GetById("food", Arg.Any<CancellationToken>())
-            .Returns(category);
+            .GetByIds(Arg.Is<IReadOnlyCollection<string>>(ids => ids.Contains("food")), Arg.Any<CancellationToken>())
+            .Returns([category]);
 
         transactionRepository
             .Get(
@@ -74,7 +74,7 @@ public class GetTransactionsHandlerTests
         success.CategoryNames.Should().Equal("Food");
         success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
-        await categoryRepository.Received(1).GetById("food", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -87,12 +87,8 @@ public class GetTransactionsHandlerTests
         var toDate = new DateTime(2026, 1, 27);
 
         categoryRepository
-            .GetById("food", Arg.Any<CancellationToken>())
-            .Returns(food);
-
-        categoryRepository
-            .GetById("ent", Arg.Any<CancellationToken>())
-            .Returns(ent);
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns([food, ent]);
 
         var transactions = new[]
         {
@@ -110,7 +106,7 @@ public class GetTransactionsHandlerTests
                 Arg.Any<CancellationToken>())
             .Returns(new PagedResult<Domain.Entities.Transaction>(transactions, transactions.Length));
 
-        // act - duplicate "food" ID should be deduplicated
+        // act - duplicate "food" ID should be deduplicated in resolvedCategories
         var result = await sut.Handle(
             new GetTransactionsRequest(
                 FromDate: fromDate,
@@ -126,8 +122,7 @@ public class GetTransactionsHandlerTests
         success.CategoryNames.Should().BeEquivalentTo(["Food", "Entertainment"]);
         success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
-        await categoryRepository.Received(2).GetById("food", Arg.Any<CancellationToken>());
-        await categoryRepository.Received(1).GetById("ent", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -176,6 +171,7 @@ public class GetTransactionsHandlerTests
         success.CategoryNames.Should().BeEmpty();
         success.Transactions.Items.Should().BeEquivalentTo(transactions);
 
+        await categoryRepository.DidNotReceive().GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
         await categoryRepository.DidNotReceive().GetById(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await categoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
     }
@@ -185,8 +181,8 @@ public class GetTransactionsHandlerTests
     {
         // arrange
         categoryRepository
-            .GetById("fod", Arg.Any<CancellationToken>())
-            .Returns((Domain.Entities.Category?)null);
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns([]);
 
         // act
         var result = await sut.Handle(
@@ -206,7 +202,7 @@ public class GetTransactionsHandlerTests
         error.Errors.Single().ErrorCode
             .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
 
-        await categoryRepository.Received(1).GetById("fod", Arg.Any<CancellationToken>());
+        await categoryRepository.Received(1).GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .Get(Arg.Any<TransactionFilter>(), Arg.Any<CancellationToken>());
@@ -221,8 +217,8 @@ public class GetTransactionsHandlerTests
         var category = new Domain.Entities.Category("food", "Food");
 
         categoryRepository
-            .GetById("food", Arg.Any<CancellationToken>())
-            .Returns(category);
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns([category]);
 
         var transactions = new[]
         {

@@ -54,4 +54,42 @@ public class GeminiSystemPromptBuilderTests
         // assert
         result.Should().Contain("No categories available.");
     }
+
+    [Fact]
+    async Task BuildSystemInstruction_WhenArchivedCategoriesExist_ShouldIncludeArchivedTagInPrompt()
+    {
+        // arrange
+        var categories = new List<Category>
+        {
+            new("groceries", "Groceries", isArchived: false),
+            new("old_hobby", "Old Hobby", isArchived: true)
+        };
+
+        sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ListCategoriesResponse.Success(categories));
+
+        // act
+        var result = await builder.BuildSystemInstruction(CancellationToken.None);
+
+        // assert
+        result.Should().Contain("- Id: 'old_hobby', Name: 'Old Hobby' [ARCHIVED]");
+        result.Should().Contain("- Id: 'groceries', Name: 'Groceries'");
+        result.Should().NotContain("- Id: 'groceries', Name: 'Groceries' [ARCHIVED]");
+    }
+
+    [Fact]
+    async Task BuildSystemInstruction_ShouldSendListCategoriesRequestWithIncludeArchivedTrue()
+    {
+        // arrange
+        sender.Send(Arg.Any<ListCategoriesRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ListCategoriesResponse.Success([]));
+
+        // act
+        await builder.BuildSystemInstruction(CancellationToken.None);
+
+        // assert
+        await sender.Received(1).Send(
+            Arg.Is<ListCategoriesRequest>(r => r.IncludeArchived),
+            Arg.Any<CancellationToken>());
+    }
 }

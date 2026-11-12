@@ -7,6 +7,8 @@ using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Gemini.Execution;
 using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Category.Create;
+using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
@@ -552,6 +554,136 @@ public class GeminiToolExecutorTests
         error.AttemptedValue.Should().Be("invalid-guid");
 
         await sender.DidNotReceive().Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenCreateCategoryCall_ShouldSendCreateCategoryRequest()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.CreateCategory,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = "subscriptions",
+                ["name"] = "Подписки"
+            }
+        };
+
+        var createdCategory = new Category("subscriptions", "Подписки");
+        sender.Send(Arg.Any<CreateCategoryRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new CreateCategoryResponse.Success(createdCategory));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<CreateCategoryResponse.Success>();
+        var result = (CreateCategoryResponse.Success)response;
+        result.Category.Id.Should().Be("subscriptions");
+        result.Category.Name.Should().Be("Подписки");
+
+        await sender.Received(1).Send(
+            Arg.Is<CreateCategoryRequest>(r => r.Id == "subscriptions" && r.Name == "Подписки"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenCreateCategoryCallWithNullArgs_ShouldReturnFailure()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.CreateCategory,
+            Args = null
+        };
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<CreateCategoryResponse.Failure>();
+        await sender.DidNotReceive().Send(Arg.Any<CreateCategoryRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateCategoryCall_ShouldSendUpdateCategoryRequest()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateCategory,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = "subscriptions",
+                ["name"] = "Новые подписки"
+            }
+        };
+
+        var updatedCategory = new Category("subscriptions", "Новые подписки");
+        sender.Send(Arg.Any<UpdateCategoryRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new UpdateCategoryResponse.Success(updatedCategory));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<UpdateCategoryResponse.Success>();
+        var result = (UpdateCategoryResponse.Success)response;
+        result.Category.Name.Should().Be("Новые подписки");
+
+        await sender.Received(1).Send(
+            Arg.Is<UpdateCategoryRequest>(r => r.Id == "subscriptions" && r.Name == "Новые подписки" && r.IsArchived == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateCategoryCallWithIsArchived_ShouldSendUpdateCategoryRequest()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateCategory,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = "subscriptions",
+                ["isArchived"] = true
+            }
+        };
+
+        var updatedCategory = new Category("subscriptions", "Подписки", isArchived: true);
+        sender.Send(Arg.Any<UpdateCategoryRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new UpdateCategoryResponse.Success(updatedCategory));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<UpdateCategoryResponse.Success>();
+        var result = (UpdateCategoryResponse.Success)response;
+        result.Category.IsArchived.Should().BeTrue();
+
+        await sender.Received(1).Send(
+            Arg.Is<UpdateCategoryRequest>(r => r.Id == "subscriptions" && r.Name == null && r.IsArchived == true),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenUpdateCategoryCallWithNullArgs_ShouldReturnFailure()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.UpdateCategory,
+            Args = null
+        };
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<UpdateCategoryResponse.Failure>();
+        await sender.DidNotReceive().Send(Arg.Any<UpdateCategoryRequest>(), Arg.Any<CancellationToken>());
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

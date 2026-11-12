@@ -26,17 +26,17 @@ public class CreateTransactionsHandlerTests
         var category = new Domain.Entities.Category("food", "Food");
 
         categoryRepository
-            .GetById("food", Arg.Any<CancellationToken>())
-            .Returns(category);
+            .GetByIds(Arg.Is<IReadOnlyCollection<string>>(ids => ids.Contains("food")), Arg.Any<CancellationToken>())
+            .Returns([category]);
 
         var request = new CreateTransactionsRequest(
         [
             new CreateTransactionItem(
-            TransactionType.Expense,
-            100m,
-            "food",
-            new DateTime(2026, 1, 27, 10, 0, 0),
-            "Lunch")
+                TransactionType.Expense,
+                100m,
+                "food",
+                new DateTime(2026, 1, 27, 10, 0, 0),
+                "Lunch")
         ]);
 
         // act
@@ -60,7 +60,7 @@ public class CreateTransactionsHandlerTests
         transaction.Note.Should().Be("Lunch");
 
         await categoryRepository.Received(1)
-            .GetById("food", Arg.Any<CancellationToken>());
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
 
         await transactionRepository.Received(1)
             .AddRange(
@@ -82,7 +82,7 @@ public class CreateTransactionsHandlerTests
                 100m,
                 string.Empty,
                 new DateTime(2026, 1, 27, 10, 0, 0),
-            "Lunch")
+                "Lunch")
         ]);
 
         // act
@@ -101,7 +101,7 @@ public class CreateTransactionsHandlerTests
             .Should().Be(ValidationErrorCode.Transaction.CategoryRequired);
 
         await categoryRepository.DidNotReceive()
-            .GetById(Arg.Any<string>(), Arg.Any<CancellationToken>());
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .AddRange(
@@ -139,7 +139,7 @@ public class CreateTransactionsHandlerTests
             .Should().Be(ValidationErrorCode.Transaction.CategoryRequired);
 
         await categoryRepository.DidNotReceive()
-            .GetById(Arg.Any<string>(), Arg.Any<CancellationToken>());
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .AddRange(
@@ -152,17 +152,17 @@ public class CreateTransactionsHandlerTests
     {
         // arrange
         categoryRepository
-            .GetById("fod", Arg.Any<CancellationToken>())
-            .Returns((Domain.Entities.Category?)null);
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns([]);
 
         var request = new CreateTransactionsRequest(
         [
             new CreateTransactionItem(
-            TransactionType.Expense,
-            100m,
-            "fod",
-            new DateTime(2026, 1, 27, 10, 0, 0),
-            "Lunch")
+                TransactionType.Expense,
+                100m,
+                "fod",
+                new DateTime(2026, 1, 27, 10, 0, 0),
+                "Lunch")
         ]);
 
         // act
@@ -181,7 +181,7 @@ public class CreateTransactionsHandlerTests
             .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
 
         await categoryRepository.Received(1)
-            .GetById("fod", Arg.Any<CancellationToken>());
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .AddRange(
@@ -196,8 +196,8 @@ public class CreateTransactionsHandlerTests
         var archivedCategory = new Domain.Entities.Category("food", "Food", isArchived: true);
 
         categoryRepository
-            .GetById("food", Arg.Any<CancellationToken>())
-            .Returns(archivedCategory);
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns([archivedCategory]);
 
         var request = new CreateTransactionsRequest(
         [
@@ -234,12 +234,8 @@ public class CreateTransactionsHandlerTests
         var category = new Domain.Entities.Category("food", "Food");
 
         categoryRepository
-            .GetById("food", Arg.Any<CancellationToken>())
-            .Returns(category);
-
-        categoryRepository
-            .GetById("unknown-category", Arg.Any<CancellationToken>())
-            .Returns((Domain.Entities.Category?)null);
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns([category]);
 
         var request = new CreateTransactionsRequest(
         [
@@ -274,10 +270,7 @@ public class CreateTransactionsHandlerTests
             .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
 
         await categoryRepository.Received(1)
-            .GetById("food", Arg.Any<CancellationToken>());
-
-        await categoryRepository.Received(1)
-            .GetById("unknown-category", Arg.Any<CancellationToken>());
+            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
 
         await transactionRepository.DidNotReceive()
             .AddRange(

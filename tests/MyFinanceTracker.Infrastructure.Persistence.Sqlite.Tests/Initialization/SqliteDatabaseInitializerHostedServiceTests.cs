@@ -23,7 +23,8 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     private readonly DbContextOptions<SqliteDbContext> options;
     private readonly IDbContextFactory<SqliteDbContext> contextFactory;
     private readonly ITransactionRepository transactionRepository;
-    private readonly ICategoryRepository categoryRepository;
+    private readonly ICategoryRepository remoteCategoryRepository;
+    private readonly ICategoryRepository localCategoryRepository;
     private readonly ILogger<OutboxProcessor> outboxLogger;
     private readonly ILogger<SqliteDatabaseInitializerHostedService> initializerLogger;
 
@@ -39,23 +40,41 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             .UseSqlite(connection)
             .Options;
 
-        // Create tables
+        // Create tables and seed initial categories
         using var context = new SqliteDbContext(options);
         context.Database.EnsureCreated();
+        context.Categories.AddRange(
+            new CategoryEntity { Id = foodCategory.Id, Name = foodCategory.Name, IsArchived = foodCategory.IsArchived },
+            new CategoryEntity { Id = salaryCategory.Id, Name = salaryCategory.Name, IsArchived = salaryCategory.IsArchived });
+        context.SaveChanges();
 
         contextFactory = new TestDbContextFactory(options);
         transactionRepository = Substitute.For<ITransactionRepository>();
-        categoryRepository = Substitute.For<ICategoryRepository>();
+        remoteCategoryRepository = Substitute.For<ICategoryRepository>();
+        localCategoryRepository = Substitute.For<ICategoryRepository>();
         outboxLogger = Substitute.For<ILogger<OutboxProcessor>>();
         initializerLogger = Substitute.For<ILogger<SqliteDatabaseInitializerHostedService>>();
 
-        categoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        localCategoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var query = callInfo.Arg<string>();
                 return new[] { foodCategory, salaryCategory }
                     .FirstOrDefault(c => c.Id.Equals(query, StringComparison.OrdinalIgnoreCase));
             });
+
+        localCategoryRepository.GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var query = callInfo.Arg<IReadOnlyCollection<string>>();
+                var lookup = new HashSet<string>(query, StringComparer.OrdinalIgnoreCase);
+                return new[] { foodCategory, salaryCategory }
+                    .Where(c => lookup.Contains(c.Id))
+                    .ToList();
+            });
+
+        remoteCategoryRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory, salaryCategory]);
     }
 
     public void Dispose()
@@ -66,19 +85,20 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     private OutboxProcessor CreateOutboxProcessor() =>
         new(contextFactory,
             transactionRepository,
-            categoryRepository,
+            remoteCategoryRepository,
+            localCategoryRepository,
             TimeProvider.System,
             Microsoft.Extensions.Options.Options.Create(new SqlitePersistenceOptions()),
             Substitute.For<IOutboxNotificationPublisher>(),
             outboxLogger);
 
     private SqliteDatabaseInitializerHostedService CreateInitializer(OutboxProcessor? processor = null) =>
-        new(contextFactory, transactionRepository, processor ?? CreateOutboxProcessor(), initializerLogger);
+        new(contextFactory, transactionRepository, remoteCategoryRepository, processor ?? CreateOutboxProcessor(), initializerLogger);
 
     [Fact]
     public async Task StartAsync_ShouldFlushOutboxFirst_ThenOverwriteTransactionsFromRemote()
     {
-        // Arrange
+        // arrange
         var oldLocalTxId = Guid.NewGuid();
         var pendingOutboxTxId = Guid.NewGuid();
         var remoteTxId = Guid.NewGuid();
@@ -107,7 +127,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
 
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
-                OperationType = OutboxOperationType.Add,
+                OperationType = OutboxOperationType.AddTransaction,
                 PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([pendingOutboxDto])),
                 CreatedAtUtc = DateTimeOffset.UtcNow
             });
@@ -130,15 +150,15 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         var processor = CreateOutboxProcessor();
         var initializer = CreateInitializer(processor);
 
-        // Act
+        // act
         await initializer.StartAsync(CancellationToken.None);
 
-        // Assert - Outbox message was processed and sent to remote
+        // assert - Outbox message was processed and sent to remote
         await transactionRepository.Received(1).AddRange(
             Arg.Is<IReadOnlyCollection<Transaction>>(txs => txs.Any(t => t.Id == pendingOutboxTxId)),
             Arg.Any<CancellationToken>());
 
-        // Assert - Database state:
+        // assert - Database state:
         await using var assertContext = new SqliteDbContext(options);
 
         // Outbox is now empty
@@ -158,7 +178,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     [Fact]
     public async Task StopAsync_ShouldFlushOutbox()
     {
-        // Arrange
+        // arrange
         var txDto = new TransactionOutboxDto(
             Guid.NewGuid(),
             TransactionType.Expense,
@@ -171,7 +191,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         {
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
-                OperationType = OutboxOperationType.Add,
+                OperationType = OutboxOperationType.AddTransaction,
                 PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
                 CreatedAtUtc = DateTimeOffset.UtcNow
             });
@@ -181,10 +201,10 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         var processor = CreateOutboxProcessor();
         var initializer = CreateInitializer(processor);
 
-        // Act
+        // act
         await initializer.StopAsync(CancellationToken.None);
 
-        // Assert
+        // assert
         await transactionRepository.Received(1).AddRange(
             Arg.Is<IReadOnlyCollection<Transaction>>(txs => txs.Any(t => t.Id == txDto.Id)),
             Arg.Any<CancellationToken>());
@@ -197,7 +217,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     [Fact]
     public async Task StopAsync_ShouldNotThrow_WhenExceptionOccurs()
     {
-        // Arrange
+        // arrange
         var txDto = new TransactionOutboxDto(
             Guid.NewGuid(),
             TransactionType.Expense,
@@ -210,7 +230,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         {
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
-                OperationType = OutboxOperationType.Add,
+                OperationType = OutboxOperationType.AddTransaction,
                 PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
                 CreatedAtUtc = DateTimeOffset.UtcNow
             });
@@ -223,10 +243,10 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         var processor = CreateOutboxProcessor();
         var initializer = CreateInitializer(processor);
 
-        // Act
+        // act
         var act = () => initializer.StopAsync(CancellationToken.None);
 
-        // Assert
+        // assert
         await act.Should().NotThrowAsync();
     }
 

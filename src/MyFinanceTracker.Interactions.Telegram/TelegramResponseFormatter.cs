@@ -5,7 +5,9 @@ using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
 using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Category.Create;
 using MyFinanceTracker.UseCases.Category.List;
+using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
@@ -92,6 +94,14 @@ internal static class TelegramResponseFormatter
                 AppendCategories(sb, categories);
                 break;
 
+            case CreateCategoryResponse.Success createdCategory:
+                AppendCreatedCategory(sb, createdCategory);
+                break;
+
+            case UpdateCategoryResponse.Success updatedCategory:
+                AppendUpdatedCategory(sb, updatedCategory);
+                break;
+
             case IValidationErrorResponse validationError:
                 AppendValidationErrors(sb, validationError);
                 break;
@@ -147,6 +157,15 @@ internal static class TelegramResponseFormatter
         {
             sb.AppendLine($"• <code>{WebUtility.HtmlEncode(c.Name)}</code>");
         }
+    }
+
+    private static void AppendCreatedCategory(StringBuilder sb, CreateCategoryResponse.Success created) =>
+        sb.AppendLine($"Created category <b>{WebUtility.HtmlEncode(created.Category.Name)}</b> (<code>{WebUtility.HtmlEncode(created.Category.Id)}</code>)");
+
+    private static void AppendUpdatedCategory(StringBuilder sb, UpdateCategoryResponse.Success updated)
+    {
+        var archivedTag = updated.Category.IsArchived ? " [Archived]" : string.Empty;
+        sb.AppendLine($"Updated category <b>{WebUtility.HtmlEncode(updated.Category.Name)}</b> (<code>{WebUtility.HtmlEncode(updated.Category.Id)}</code>){archivedTag}");
     }
 
     private static void AppendValidationErrors(StringBuilder sb, IValidationErrorResponse validationError)
@@ -236,6 +255,15 @@ internal static class TelegramResponseFormatter
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
         ValidationErrorCode.Transaction.NothingToUpdate => "At least one field must be provided to update the transaction.",
+        ValidationErrorCode.Category.CategoryIdRequired => "Category ID is required.",
+        ValidationErrorCode.Category.InvalidIdFormat => err.AttemptedValue is not null
+            ? $"Category ID '{err.AttemptedValue}' has an invalid format. It must contain only lowercase English letters, digits, and underscores."
+            : "Category ID has an invalid format. It must contain only lowercase English letters, digits, and underscores.",
+        ValidationErrorCode.Category.CategoryNameRequired => "Category name is required.",
+        ValidationErrorCode.Category.CategoryAlreadyExists => err.AttemptedValue is not null
+            ? $"Category '{err.AttemptedValue}' already exists."
+            : "Category already exists.",
+        ValidationErrorCode.Category.NoChangesSpecified => "At least one field (name or archive status) must be provided to update the category.",
         _ => err.ErrorCode
     };
 

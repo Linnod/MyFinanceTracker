@@ -10,6 +10,8 @@ internal sealed class TransactionEntity
 
     public required string CategoryId { get; set; }
 
+    public CategoryEntity Category { get; set; } = null!;
+
     public decimal Amount { get; set; }
 
     public DateTime Date { get; set; }

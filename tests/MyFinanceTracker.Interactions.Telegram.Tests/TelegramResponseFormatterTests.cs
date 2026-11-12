@@ -2,6 +2,9 @@ using FluentAssertions;
 using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.InputProcessing;
+using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Category.Create;
+using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Get;
 
@@ -99,5 +102,35 @@ public sealed class TelegramResponseFormatterTests
         formatted.Should().Contain("Food &amp; Drinks &lt;A&gt;</b>");
         formatted.Should().Contain("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt; &amp; more");
         formatted.Should().NotContain("<script>");
+    }
+
+    [Fact]
+    public void FormatResponse_CategoryValidationErrors_FormatsAllCategoryErrorCodesCorrectly()
+    {
+        // arrange
+        var createValidation = new CreateCategoryResponse.ValidationError([
+            new(ValidationErrorCode.Category.CategoryIdRequired),
+            new(ValidationErrorCode.Category.InvalidIdFormat, "BAD-ID!"),
+            new(ValidationErrorCode.Category.CategoryNameRequired),
+            new(ValidationErrorCode.Category.CategoryAlreadyExists, "existing_cat")
+        ]);
+
+        var updateValidation = new UpdateCategoryResponse.ValidationError([
+            new(ValidationErrorCode.Category.CategoryNotFound, "missing_cat"),
+            new(ValidationErrorCode.Category.NoChangesSpecified)
+        ]);
+
+        var result = new ProcessingResult.Completed([createValidation, updateValidation]);
+
+        // act
+        var formatted = TelegramResponseFormatter.FormatResponse(result);
+
+        // assert
+        formatted.Should().Contain("Category ID is required.");
+        formatted.Should().Contain("Category ID &#39;BAD-ID!&#39; has an invalid format. It must contain only lowercase English letters, digits, and underscores.");
+        formatted.Should().Contain("Category name is required.");
+        formatted.Should().Contain("Category &#39;existing_cat&#39; already exists.");
+        formatted.Should().Contain("Category &#39;missing_cat&#39; was not found.");
+        formatted.Should().Contain("At least one field (name or archive status) must be provided to update the category.");
     }
 }

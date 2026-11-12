@@ -3,7 +3,6 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MyFinanceTracker.Common.Notifications;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
@@ -23,7 +22,8 @@ public sealed class OutboxProcessorTests : IDisposable
     private readonly DbContextOptions<SqliteDbContext> options;
     private readonly IDbContextFactory<SqliteDbContext> contextFactory;
     private readonly ITransactionRepository remoteRepository;
-    private readonly ICategoryRepository categoryRepository;
+    private readonly ICategoryRepository remoteCategoryRepository;
+    private readonly ICategoryRepository localCategoryRepository;
     private readonly TimeProvider timeProvider;
     private readonly IOutboxNotificationPublisher notificationPublisher;
     private readonly ILogger<OutboxProcessor> logger;
@@ -45,17 +45,28 @@ public sealed class OutboxProcessorTests : IDisposable
 
         contextFactory = new TestDbContextFactory(options);
         remoteRepository = Substitute.For<ITransactionRepository>();
-        categoryRepository = Substitute.For<ICategoryRepository>();
+        remoteCategoryRepository = Substitute.For<ICategoryRepository>();
+        localCategoryRepository = Substitute.For<ICategoryRepository>();
         timeProvider = TimeProvider.System;
         notificationPublisher = Substitute.For<IOutboxNotificationPublisher>();
         logger = Substitute.For<ILogger<OutboxProcessor>>();
 
-        categoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        localCategoryRepository.GetById(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 var query = callInfo.Arg<string>();
                 return new[] { foodCategory, transportCategory }
                     .FirstOrDefault(c => c.Id.Equals(query, StringComparison.OrdinalIgnoreCase));
+            });
+
+        localCategoryRepository.GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var query = callInfo.Arg<IReadOnlyCollection<string>>();
+                var lookup = new HashSet<string>(query, StringComparer.OrdinalIgnoreCase);
+                return new[] { foodCategory, transportCategory }
+                    .Where(c => lookup.Contains(c.Id))
+                    .ToList();
             });
     }
 
@@ -67,7 +78,8 @@ public sealed class OutboxProcessorTests : IDisposable
     private OutboxProcessor CreateProcessor(int maxRetries = 3) =>
         new(contextFactory,
             remoteRepository,
-            categoryRepository,
+            remoteCategoryRepository,
+            localCategoryRepository,
             timeProvider,
             Microsoft.Extensions.Options.Options.Create(new SqlitePersistenceOptions { MaxRetryAttempts = maxRetries }),
             notificationPublisher,
@@ -113,7 +125,7 @@ public sealed class OutboxProcessorTests : IDisposable
         {
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
-                OperationType = OutboxOperationType.Add,
+                OperationType = OutboxOperationType.AddTransaction,
                 PayloadJson = JsonSerializer.Serialize(payload),
                 CreatedAtUtc = DateTimeOffset.UtcNow
             });
@@ -150,7 +162,7 @@ public sealed class OutboxProcessorTests : IDisposable
         {
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
-                OperationType = OutboxOperationType.Delete,
+                OperationType = OutboxOperationType.DeleteTransaction,
                 PayloadJson = JsonSerializer.Serialize(payload),
                 CreatedAtUtc = DateTimeOffset.UtcNow
             });
@@ -185,8 +197,8 @@ public sealed class OutboxProcessorTests : IDisposable
         await using (var seedContext = new SqliteDbContext(options))
         {
             seedContext.OutboxMessages.AddRange(
-                new OutboxMessageEntity { Id = 1, OperationType = OutboxOperationType.Add, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto1])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 },
-                new OutboxMessageEntity { Id = 2, OperationType = OutboxOperationType.Add, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto2])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
+                new OutboxMessageEntity { Id = 1, OperationType = OutboxOperationType.AddTransaction, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto1])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 },
+                new OutboxMessageEntity { Id = 2, OperationType = OutboxOperationType.AddTransaction, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto2])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
             );
             await seedContext.SaveChangesAsync();
         }
@@ -227,8 +239,8 @@ public sealed class OutboxProcessorTests : IDisposable
         await using (var seedContext = new SqliteDbContext(options))
         {
             seedContext.OutboxMessages.AddRange(
-                new OutboxMessageEntity { Id = 1, OperationType = OutboxOperationType.Add, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto1])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 2 },
-                new OutboxMessageEntity { Id = 2, OperationType = OutboxOperationType.Add, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto2])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
+                new OutboxMessageEntity { Id = 1, OperationType = OutboxOperationType.AddTransaction, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto1])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 2 },
+                new OutboxMessageEntity { Id = 2, OperationType = OutboxOperationType.AddTransaction, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto2])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
             );
             await seedContext.SaveChangesAsync();
         }
@@ -277,7 +289,7 @@ public sealed class OutboxProcessorTests : IDisposable
         await using (var seedContext = new SqliteDbContext(options))
         {
             seedContext.OutboxMessages.Add(
-                new OutboxMessageEntity { Id = 10, OperationType = OutboxOperationType.Add, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
+                new OutboxMessageEntity { Id = 10, OperationType = OutboxOperationType.AddTransaction, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
             );
             await seedContext.SaveChangesAsync();
         }
@@ -308,7 +320,7 @@ public sealed class OutboxProcessorTests : IDisposable
         await using (var seedContext = new SqliteDbContext(options))
         {
             seedContext.OutboxMessages.Add(
-                new OutboxMessageEntity { Id = 20, OperationType = OutboxOperationType.Add, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
+                new OutboxMessageEntity { Id = 20, OperationType = OutboxOperationType.AddTransaction, PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])), CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
             );
             await seedContext.SaveChangesAsync();
         }
@@ -344,7 +356,7 @@ public sealed class OutboxProcessorTests : IDisposable
         await using (var seedContext = new SqliteDbContext(options))
         {
             seedContext.OutboxMessages.Add(
-                new OutboxMessageEntity { Id = 30, OperationType = OutboxOperationType.Add, PayloadJson = "{ malformed json", CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
+                new OutboxMessageEntity { Id = 30, OperationType = OutboxOperationType.AddTransaction, PayloadJson = "{ malformed json", CreatedAtUtc = DateTimeOffset.UtcNow, RetryCount = 0 }
             );
             await seedContext.SaveChangesAsync();
         }
@@ -377,7 +389,7 @@ public sealed class OutboxProcessorTests : IDisposable
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
                 Id = 42,
-                OperationType = OutboxOperationType.Add,
+                OperationType = OutboxOperationType.AddTransaction,
                 PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
                 CreatedAtUtc = DateTimeOffset.UtcNow,
                 RetryCount = 2
@@ -397,7 +409,7 @@ public sealed class OutboxProcessorTests : IDisposable
         await notificationPublisher.Received(1).Publish(
             Arg.Is<OutboxSyncNotification.MessageMovedToDeadLetter>(n =>
                 n.OriginalOutboxMessageId == 42 &&
-                n.OperationType == "Add" &&
+                n.OperationType == "AddTransaction" &&
                 n.ErrorMessage == "Permanent remote error"),
             Arg.Any<CancellationToken>());
     }
@@ -413,7 +425,7 @@ public sealed class OutboxProcessorTests : IDisposable
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
                 Id = 1,
-                OperationType = OutboxOperationType.Add,
+                OperationType = OutboxOperationType.AddTransaction,
                 PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
                 CreatedAtUtc = DateTimeOffset.UtcNow,
                 RetryCount = 0
@@ -451,7 +463,7 @@ public sealed class OutboxProcessorTests : IDisposable
         {
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
-                OperationType = OutboxOperationType.Update,
+                OperationType = OutboxOperationType.UpdateTransaction,
                 PayloadJson = JsonSerializer.Serialize(payload),
                 CreatedAtUtc = DateTimeOffset.UtcNow
             });
@@ -498,7 +510,7 @@ public sealed class OutboxProcessorTests : IDisposable
             seedContext.OutboxMessages.Add(new OutboxMessageEntity
             {
                 Id = 50,
-                OperationType = OutboxOperationType.Update,
+                OperationType = OutboxOperationType.UpdateTransaction,
                 PayloadJson = JsonSerializer.Serialize(payload),
                 CreatedAtUtc = DateTimeOffset.UtcNow,
                 RetryCount = 2
@@ -523,6 +535,74 @@ public sealed class OutboxProcessorTests : IDisposable
         deadLetters[0].ErrorMessage.Should().Contain("Category 'unknown_category'");
 
         await remoteRepository.DidNotReceiveWithAnyArgs().Update(default!, default);
+    }
+
+    [Fact]
+    public async Task ProcessPendingMessages_AddCategoryOperation_CallsRemoteCategoryRepositoryAndRemovesMessage()
+    {
+        // arrange
+        using var processor = CreateProcessor();
+        var categoryDto = new CategoryOutboxDto("shopping", "Shopping", false);
+        var payload = new AddCategoryOutboxPayload(categoryDto);
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.OutboxMessages.Add(new OutboxMessageEntity
+            {
+                Id = 1,
+                OperationType = OutboxOperationType.AddCategory,
+                PayloadJson = JsonSerializer.Serialize(payload),
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                RetryCount = 0
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        // act
+        await processor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert
+        await remoteCategoryRepository.Received(1).Add(
+            Arg.Is<Category>(c => c.Id == "shopping" && c.Name == "Shopping" && !c.IsArchived),
+            Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        var messages = await assertContext.OutboxMessages.ToListAsync();
+        messages.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ProcessPendingMessages_UpdateCategoryOperation_CallsRemoteCategoryRepositoryAndRemovesMessage()
+    {
+        // arrange
+        using var processor = CreateProcessor();
+        var categoryDto = new CategoryOutboxDto("shopping", "Shopping & Supermarket", true);
+        var payload = new UpdateCategoryOutboxPayload(categoryDto);
+
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.OutboxMessages.Add(new OutboxMessageEntity
+            {
+                Id = 1,
+                OperationType = OutboxOperationType.UpdateCategory,
+                PayloadJson = JsonSerializer.Serialize(payload),
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                RetryCount = 0
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        // act
+        await processor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert
+        await remoteCategoryRepository.Received(1).Update(
+            Arg.Is<Category>(c => c.Id == "shopping" && c.Name == "Shopping & Supermarket" && c.IsArchived),
+            Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        var messages = await assertContext.OutboxMessages.ToListAsync();
+        messages.Should().BeEmpty();
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<SqliteDbContext> options) : IDbContextFactory<SqliteDbContext>

@@ -5,7 +5,9 @@ using Microsoft.Extensions.Logging;
 using MyFinanceTracker.InputProcessing.Gemini.Declarations;
 using MyFinanceTracker.InputProcessing.Gemini.Parsing;
 using MyFinanceTracker.UseCases;
+using MyFinanceTracker.UseCases.Category.Create;
 using MyFinanceTracker.UseCases.Category.List;
+using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
@@ -30,6 +32,8 @@ internal sealed partial class GeminiToolExecutor(
             GeminiToolDeclarationProvider.ToolNames.UpdateTransaction => await HandleUpdateTransaction(args, ct),
             GeminiToolDeclarationProvider.ToolNames.ListCategories => await HandleListCategories(ct),
             GeminiToolDeclarationProvider.ToolNames.GetTransactions => await HandleGetTransactions(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.CreateCategory => await HandleCreateCategory(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.UpdateCategory => await HandleUpdateCategory(args, ct),
             _ => throw new UnreachableException($"Unsupported function call: '{functionCall.Name}'")
         };
 
@@ -161,5 +165,36 @@ internal sealed partial class GeminiToolExecutor(
     private async Task<UseCaseResponse> HandleListCategories(CancellationToken ct)
     {
         return await sender.Send(new ListCategoriesRequest(), ct);
+    }
+
+    private async Task<UseCaseResponse> HandleCreateCategory(ToolCallArgs args, CancellationToken ct)
+    {
+        var typedArgs = args.To<CreateCategoryArgs>();
+        if (typedArgs is null)
+        {
+            return new CreateCategoryResponse.Failure();
+        }
+
+        var request = new CreateCategoryRequest(
+            Id: typedArgs.Id ?? string.Empty,
+            Name: typedArgs.Name ?? string.Empty);
+
+        return await sender.Send(request, ct);
+    }
+
+    private async Task<UseCaseResponse> HandleUpdateCategory(ToolCallArgs args, CancellationToken ct)
+    {
+        var typedArgs = args.To<UpdateCategoryArgs>();
+        if (typedArgs is null)
+        {
+            return new UpdateCategoryResponse.Failure();
+        }
+
+        var request = new UpdateCategoryRequest(
+            Id: typedArgs.Id ?? string.Empty,
+            Name: typedArgs.Name,
+            IsArchived: typedArgs.IsArchived);
+
+        return await sender.Send(request, ct);
     }
 }

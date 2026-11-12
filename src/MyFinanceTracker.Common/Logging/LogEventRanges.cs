@@ -20,8 +20,7 @@ public static class LogEventRanges
 
     public static class Persistence
     {
-        public const int Yaml = 40_100_000;
-        public const int GoogleSheets = 40_200_000;
-        public const int Sqlite = 40_300_000;
+        public const int GoogleSheets = 40_100_000;
+        public const int Sqlite = 40_200_000;
     }
 }

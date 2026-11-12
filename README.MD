@@ -12,7 +12,7 @@ Personal finance tracker that stores transactions in Google Sheets and supports 
 - Gemini-powered natural language processing, audio transcription, and image analysis
 - Local SQLite persistence with Transactional Outbox pattern
 - Resilient background synchronization to Google Sheets (retry policy & dead-letter queue)
-- Automated category mapping with YAML configuration
+- Category management synchronized with Google Sheets and SQLite
 - Telegram Bot interaction mode
 - Clean Architecture + CQRS (MediatR)
 - Structured logging with correlation IDs
@@ -61,7 +61,6 @@ src/
 ├── MyFinanceTracker.UseCases/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/
 ├── MyFinanceTracker.Infrastructure.Persistence.Sqlite/
-├── MyFinanceTracker.Infrastructure.Persistence.Yaml/
 ├── MyFinanceTracker.InputProcessing/
 ├── MyFinanceTracker.InputProcessing.Gemini/
 ├── MyFinanceTracker.Interactions.Telegram/
@@ -72,7 +71,6 @@ tests/
 ├── MyFinanceTracker.UseCases.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
 ├── MyFinanceTracker.Infrastructure.Persistence.Sqlite.Tests/
-├── MyFinanceTracker.Infrastructure.Persistence.Yaml.Tests/
 ├── MyFinanceTracker.InputProcessing.Gemini.Tests/
 └── MyFinanceTracker.Interactions.Telegram.Tests/
 ```
@@ -107,13 +105,7 @@ Share your copied spreadsheet with the Service Account email address and grant i
 
 ### 5. Configure categories
 
-Copy the example template:
-
-```bash
-cp deploy/categories.example.yaml categories.yaml
-```
-
-Adjust category IDs and names as needed.
+Categories are stored on the `Categories` sheet in your Google Spreadsheet (with columns: `Id`, `Name`, `IsArchived`). They are synchronized with the local SQLite database at startup.
 
 ### 6. Configure the application
 
@@ -148,6 +140,7 @@ dotnet run --project src/MyFinanceTracker.Host
     "SpreadsheetId": "YOUR_SPREADSHEET_ID",
     "CredentialsFilePath": "google-api-credentials.json",
     "TransactionsSheetName": "Transactions",
+    "CategoriesSheetName": "Categories",
     "ApplicationName": "MyFinanceTracker",
     "DecimalSeparator": ","
   },
@@ -155,9 +148,6 @@ dotnet run --project src/MyFinanceTracker.Host
     "ConnectionString": "Data Source=finance.db",
     "SyncIntervalSeconds": 60,
     "MaxRetryAttempts": 5
-  },
-  "YamlPersistence": {
-    "FilePath": "categories.yaml"
   },
   "Telegram": {
     "Token": "YOUR_TELEGRAM_BOT_TOKEN",
@@ -189,7 +179,6 @@ You can also run the application as a background service via Docker Compose:
 1. Prepare configuration files, persistent data directory, and secrets:
    ```bash
    cp .env.example .env
-   cp deploy/categories.example.yaml deploy/categories.yaml
    cp google-api-credentials.json deploy/google-api-credentials.json
    mkdir -p deploy/data
    ```

@@ -18,7 +18,8 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Sync;
 internal sealed partial class OutboxProcessor(
     IDbContextFactory<SqliteDbContext> dbContextFactory,
     [FromKeyedServices(PersistenceServiceKeys.RemoteTransactionRepository)] ITransactionRepository transactionRepository,
-    ICategoryRepository categoryRepository,
+    [FromKeyedServices(PersistenceServiceKeys.RemoteCategoryRepository)] ICategoryRepository remoteCategoryRepository,
+    ICategoryRepository localCategoryRepository,
     TimeProvider timeProvider,
     IOptions<SqlitePersistenceOptions> options,
     IOutboxNotificationPublisher notificationPublisher,
@@ -69,9 +70,11 @@ internal sealed partial class OutboxProcessor(
         {
             var task = message.OperationType switch
             {
-                OutboxOperationType.Add => ProcessAdd(message, ct),
-                OutboxOperationType.Delete => ProcessDelete(message, ct),
-                OutboxOperationType.Update => ProcessUpdate(message, ct),
+                OutboxOperationType.AddTransaction => ProcessAddTransaction(message, ct),
+                OutboxOperationType.DeleteTransaction => ProcessDeleteTransaction(message, ct),
+                OutboxOperationType.UpdateTransaction => ProcessUpdateTransaction(message, ct),
+                OutboxOperationType.AddCategory => ProcessAddCategory(message, ct),
+                OutboxOperationType.UpdateCategory => ProcessUpdateCategory(message, ct),
                 _ => throw OutboxProcessingException.UnsupportedOperation(message)
             };
 
@@ -134,15 +137,21 @@ internal sealed partial class OutboxProcessor(
             ct);
     }
 
-    private async Task ProcessAdd(OutboxMessageEntity message, CancellationToken ct)
+    private async Task ProcessAddTransaction(OutboxMessageEntity message, CancellationToken ct)
     {
         var payload = DeserializePayload<AddTransactionsOutboxPayload>(message);
+
+        var categoryIds = payload.Transactions.Select(t => t.CategoryId).Distinct().ToList();
+        var categories = await localCategoryRepository.GetByIds(categoryIds, ct);
+        var categoriesById = categories.ToDictionary(c => c.Id, StringComparer.OrdinalIgnoreCase);
 
         var transactions = new List<Transaction>(payload.Transactions.Count);
         foreach (var dto in payload.Transactions)
         {
-            var category = await categoryRepository.GetById(dto.CategoryId, ct)
-                ?? throw OutboxProcessingException.CategoryNotFound(message, dto);
+            if (!categoriesById.TryGetValue(dto.CategoryId, out var category))
+            {
+                throw OutboxProcessingException.CategoryNotFound(message, dto);
+            }
 
             transactions.Add(new Transaction(
                 dto.Id,
@@ -156,19 +165,19 @@ internal sealed partial class OutboxProcessor(
         await transactionRepository.AddRange(transactions, ct);
     }
 
-    private async Task ProcessDelete(OutboxMessageEntity message, CancellationToken ct)
+    private async Task ProcessDeleteTransaction(OutboxMessageEntity message, CancellationToken ct)
     {
         var payload = DeserializePayload<DeleteTransactionsOutboxPayload>(message);
 
         await transactionRepository.DeleteRange(payload.Ids, ct);
     }
 
-    private async Task ProcessUpdate(OutboxMessageEntity message, CancellationToken ct)
+    private async Task ProcessUpdateTransaction(OutboxMessageEntity message, CancellationToken ct)
     {
         var payload = DeserializePayload<UpdateTransactionOutboxPayload>(message);
         var dto = payload.Transaction;
 
-        var category = await categoryRepository.GetById(dto.CategoryId, ct)
+        var category = await localCategoryRepository.GetById(dto.CategoryId, ct)
             ?? throw OutboxProcessingException.CategoryNotFound(message, dto);
 
         var transaction = new Transaction(
@@ -180,6 +189,28 @@ internal sealed partial class OutboxProcessor(
             dto.Note);
 
         await transactionRepository.Update(transaction, ct);
+    }
+
+    private async Task ProcessAddCategory(OutboxMessageEntity message, CancellationToken ct)
+    {
+        var payload = DeserializePayload<AddCategoryOutboxPayload>(message);
+        var category = new Category(
+            payload.Category.Id,
+            payload.Category.Name,
+            payload.Category.IsArchived);
+
+        await remoteCategoryRepository.Add(category, ct);
+    }
+
+    private async Task ProcessUpdateCategory(OutboxMessageEntity message, CancellationToken ct)
+    {
+        var payload = DeserializePayload<UpdateCategoryOutboxPayload>(message);
+        var category = new Category(
+            payload.Category.Id,
+            payload.Category.Name,
+            payload.Category.IsArchived);
+
+        await remoteCategoryRepository.Update(category, ct);
     }
 
     private static T DeserializePayload<T>(OutboxMessageEntity message)

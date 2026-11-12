@@ -167,6 +167,57 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 {
                     Name = ToolNames.ListCategories,
                     Description = "List all available categories."
+                },
+                new FunctionDeclaration
+                {
+                    Name = ToolNames.CreateCategory,
+                    Description = "Create a new category for transactions.",
+                    Parameters = new Schema
+                    {
+                        Type = Type.Object,
+                        Properties = new Dictionary<string, Schema>
+                        {
+                            ["id"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "English snake_case category identifier (e.g. 'subscriptions')."
+                            },
+                            ["name"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Display name of the category in the user's language (e.g. 'Подписки')."
+                            }
+                        },
+                        Required = ["id", "name"]
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = ToolNames.UpdateCategory,
+                    Description = "Update an existing category: rename it or change its archive status.",
+                    Parameters = new Schema
+                    {
+                        Type = Type.Object,
+                        Properties = new Dictionary<string, Schema>
+                        {
+                            ["id"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Exact category ID of an existing category."
+                            },
+                            ["name"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Optional new display name for the category."
+                            },
+                            ["isArchived"] = new Schema
+                            {
+                                Type = Type.Boolean,
+                                Description = "Optional flag to archive (true) or unarchive (false) the category."
+                            }
+                        },
+                        Required = ["id"]
+                    }
                 }
             ]
         }
@@ -181,5 +232,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
         public const string UpdateTransaction = "update_transaction";
         public const string GetTransactions = "get_transactions";
         public const string ListCategories = "list_categories";
+        public const string CreateCategory = "create_category";
+        public const string UpdateCategory = "update_category";
     }
 }

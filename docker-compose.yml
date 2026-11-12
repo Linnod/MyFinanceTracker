@@ -14,8 +14,8 @@ services:
       - GoogleSheets__SpreadsheetId=${GOOGLE_SHEET_ID}
       - GoogleSheets__CredentialsFilePath=/app/secrets/google-api-credentials.json
       - GoogleSheets__TransactionsSheetName=Transactions
+      - GoogleSheets__CategoriesSheetName=Categories
       - GoogleSheets__DecimalSeparator=,
-      - YamlPersistence__FilePath=/app/data/categories.yaml
       - SqlitePersistence__ConnectionString=Data Source=/app/data/finance.db
       - SqlitePersistence__SyncIntervalSeconds=${SYNC_INTERVAL_SECONDS:-20}
       - Gemini__ApiKey=${GEMINI_API_KEY}
@@ -23,7 +23,6 @@ services:
     volumes:
       - ./deploy/google-api-credentials.json:/app/secrets/google-api-credentials.json:ro
       - ./deploy/data:/app/data
-      - ./deploy/categories.yaml:/app/data/categories.yaml:ro
     logging:
       driver: "json-file"
       options:

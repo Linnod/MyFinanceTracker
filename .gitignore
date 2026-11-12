@@ -37,9 +37,7 @@ Thumbs.db
 **/appsettings.Development.json
 **/appsettings.Local.json
 
-# 3. Domain/Business Data
-# If your category mapping contains private info
-categories.yaml
+# 3. Database Data
 *.db
 *.db-shm
 *.db-wal

@@ -8,7 +8,6 @@ required_vars=(
   SECRET_GOOGLE_SHEET_ID
   SECRET_GEMINI_API_KEY
   SECRET_GEMINI_MODEL
-  SECRET_CATEGORIES
   SECRET_GOOGLE_CREDENTIALS
   CONTAINER_NAME
   IMAGE_TAG
@@ -41,5 +40,4 @@ fi
 
 # Prepare deploy directory and configuration files
 mkdir -p deploy
-printf '%s\n' "$SECRET_CATEGORIES" > deploy/categories.yaml
 printf '%s\n' "$SECRET_GOOGLE_CREDENTIALS" > deploy/google-api-credentials.json

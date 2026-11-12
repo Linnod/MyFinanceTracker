@@ -2,7 +2,9 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 
 internal enum OutboxOperationType
 {
-    Add = 1,
-    Delete = 2,
-    Update = 3
+    AddTransaction = 1,
+    DeleteTransaction = 2,
+    UpdateTransaction = 3,
+    AddCategory = 4,
+    UpdateCategory = 5
 }

@@ -61,5 +61,25 @@ public static class LogEvents
             public const int Completed = SubBase + 2;
             public const int CriticalError = SubBase + 3;
         }
+
+        public static class Create
+        {
+            private const int SubBase = Base + 1_000;
+
+            public const int Starting = SubBase + 1;
+            public const int Completed = SubBase + 2;
+            public const int ValidationFailed = SubBase + 3;
+            public const int CriticalError = SubBase + 4;
+        }
+
+        public static class Update
+        {
+            private const int SubBase = Base + 2_000;
+
+            public const int Starting = SubBase + 1;
+            public const int Completed = SubBase + 2;
+            public const int ValidationFailed = SubBase + 3;
+            public const int CriticalError = SubBase + 4;
+        }
     }
 }

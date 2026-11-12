@@ -13,7 +13,6 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Repositories;
 
 internal sealed partial class SqliteTransactionRepository(
     IDbContextFactory<SqliteDbContext> dbContextFactory,
-    ICategoryRepository categoryRepository,
     TimeProvider timeProvider,
     ILogger<SqliteTransactionRepository> logger) : ITransactionRepository
 {
@@ -37,7 +36,7 @@ internal sealed partial class SqliteTransactionRepository(
         var payload = new AddTransactionsOutboxPayload(outboxDtos);
         var outboxMessage = new OutboxMessageEntity
         {
-            OperationType = OutboxOperationType.Add,
+            OperationType = OutboxOperationType.AddTransaction,
             PayloadJson = JsonSerializer.Serialize(payload),
             CreatedAtUtc = timeProvider.GetUtcNow()
         };
@@ -74,7 +73,7 @@ internal sealed partial class SqliteTransactionRepository(
         var payload = new DeleteTransactionsOutboxPayload(existingEntities.Select(t => t.Id).ToList());
         var outboxMessage = new OutboxMessageEntity
         {
-            OperationType = OutboxOperationType.Delete,
+            OperationType = OutboxOperationType.DeleteTransaction,
             PayloadJson = JsonSerializer.Serialize(payload),
             CreatedAtUtc = timeProvider.GetUtcNow()
         };
@@ -93,10 +92,11 @@ internal sealed partial class SqliteTransactionRepository(
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
 
         var entity = await dbContext.Transactions
+            .Include(t => t.Category)
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id, ct);
 
-        return entity is null ? null : await ToDomain(entity, ct);
+        return entity is null ? null : ToDomain(entity);
     }
 
     public async Task Update(Transaction transaction, CancellationToken ct)
@@ -116,7 +116,7 @@ internal sealed partial class SqliteTransactionRepository(
         var payload = new UpdateTransactionOutboxPayload(ToOutboxDto(transaction));
         var outboxMessage = new OutboxMessageEntity
         {
-            OperationType = OutboxOperationType.Update,
+            OperationType = OutboxOperationType.UpdateTransaction,
             PayloadJson = JsonSerializer.Serialize(payload),
             CreatedAtUtc = timeProvider.GetUtcNow()
         };
@@ -133,12 +133,13 @@ internal sealed partial class SqliteTransactionRepository(
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
 
         var entities = await dbContext.Transactions
+            .Include(t => t.Category)
             .AsNoTracking()
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.Id)
             .ToListAsync(ct);
 
-        return await ToDomain(entities, ct);
+        return ToDomain(entities);
     }
 
     public async Task<PagedResult<Transaction>> Get(TransactionFilter filter, CancellationToken ct)
@@ -147,7 +148,9 @@ internal sealed partial class SqliteTransactionRepository(
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
 
-        var query = dbContext.Transactions.AsNoTracking();
+        var query = dbContext.Transactions
+            .Include(t => t.Category)
+            .AsNoTracking();
 
         if (filter.FromDate.HasValue)
         {
@@ -189,35 +192,21 @@ internal sealed partial class SqliteTransactionRepository(
         }
 
         var entities = await query.ToListAsync(ct);
-        var transactions = await ToDomain(entities, ct);
+        var transactions = ToDomain(entities);
 
         return new PagedResult<Transaction>(transactions, totalCount);
     }
 
-    private async Task<Transaction> ToDomain(TransactionEntity entity, CancellationToken ct)
-    {
-        var category = await categoryRepository.GetById(entity.CategoryId, ct)
-            ?? throw SqlitePersistenceException.CategoryNotFound(entity.Id, entity.CategoryId);
+    private static Transaction ToDomain(TransactionEntity entity) => new(
+        entity.Id,
+        entity.Type,
+        new Category(entity.Category.Id, entity.Category.Name, entity.Category.IsArchived),
+        entity.Amount,
+        entity.Date,
+        entity.Note);
 
-        return new Transaction(
-            entity.Id,
-            entity.Type,
-            category,
-            entity.Amount,
-            entity.Date,
-            entity.Note);
-    }
-
-    private async Task<List<Transaction>> ToDomain(List<TransactionEntity> entities, CancellationToken ct)
-    {
-        var transactions = new List<Transaction>(entities.Count);
-        foreach (var entity in entities)
-        {
-            transactions.Add(await ToDomain(entity, ct));
-        }
-
-        return transactions;
-    }
+    private static List<Transaction> ToDomain(List<TransactionEntity> entities) =>
+        [.. entities.Select(ToDomain)];
 
     private static TransactionEntity ToEntity(Transaction transaction) => new()
     {

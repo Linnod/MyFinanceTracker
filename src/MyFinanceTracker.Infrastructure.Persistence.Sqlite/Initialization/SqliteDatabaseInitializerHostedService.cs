@@ -13,6 +13,7 @@ namespace MyFinanceTracker.Infrastructure.Persistence.Sqlite.Initialization;
 internal sealed partial class SqliteDatabaseInitializerHostedService(
     IDbContextFactory<SqliteDbContext> dbContextFactory,
     [FromKeyedServices(PersistenceServiceKeys.RemoteTransactionRepository)] ITransactionRepository transactionRepository,
+    [FromKeyedServices(PersistenceServiceKeys.RemoteCategoryRepository)] ICategoryRepository remoteCategoryRepository,
     OutboxProcessor outboxProcessor,
     ILogger<SqliteDatabaseInitializerHostedService> logger) : IHostedService
 {
@@ -24,6 +25,7 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         LogFlushingOutbox();
         await outboxProcessor.ProcessPendingMessages(ct);
 
+        await SyncCategories(ct);
         await SyncTransactions(ct);
     }
 
@@ -48,34 +50,59 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         await dbContext.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", ct);
     }
 
+    private async Task SyncCategories(CancellationToken ct)
+    {
+        LogFetchingCategories();
+        var remoteCategories = await remoteCategoryRepository.GetAll(ct);
+
+        LogSyncingCategories(remoteCategories.Count);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var existingTransactions = await dbContext.Transactions.ToListAsync(ct);
+        dbContext.Transactions.RemoveRange(existingTransactions);
+
+        var existingCategories = await dbContext.Categories.ToListAsync(ct);
+        dbContext.Categories.RemoveRange(existingCategories);
+
+        if (remoteCategories.Count > 0)
+        {
+            var entities = remoteCategories.Select(c => new CategoryEntity
+            {
+                Id = c.Id,
+                Name = c.Name,
+                IsArchived = c.IsArchived
+            });
+
+            await dbContext.Categories.AddRangeAsync(entities, ct);
+        }
+
+        await dbContext.SaveChangesAsync(ct);
+    }
+
     private async Task SyncTransactions(CancellationToken ct)
     {
         LogFetchingTransactions();
         var remoteTransactions = await transactionRepository.GetAll(ct);
 
         LogSyncingTransactions(remoteTransactions.Count);
-        await using (var dbContext = await dbContextFactory.CreateDbContextAsync(ct))
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
+
+        if (remoteTransactions.Count > 0)
         {
-            var existingTransactions = await dbContext.Transactions.ToListAsync(ct);
-            dbContext.Transactions.RemoveRange(existingTransactions);
-
-            if (remoteTransactions.Count > 0)
+            var entities = remoteTransactions.Select(t => new TransactionEntity
             {
-                var entities = remoteTransactions.Select(t => new TransactionEntity
-                {
-                    Id = t.Id,
-                    Type = t.Type,
-                    CategoryId = t.Category.Id,
-                    Amount = t.Amount,
-                    Date = t.Date,
-                    Note = t.Note
-                });
+                Id = t.Id,
+                Type = t.Type,
+                CategoryId = t.Category.Id,
+                Amount = t.Amount,
+                Date = t.Date,
+                Note = t.Note
+            });
 
-                await dbContext.Transactions.AddRangeAsync(entities, ct);
-            }
-
-            await dbContext.SaveChangesAsync(ct);
+            await dbContext.Transactions.AddRangeAsync(entities, ct);
         }
+
+        await dbContext.SaveChangesAsync(ct);
 
         LogDatabaseInitialized(remoteTransactions.Count);
     }

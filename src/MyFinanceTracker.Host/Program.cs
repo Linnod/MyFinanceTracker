@@ -4,7 +4,6 @@ using MyFinanceTracker.Host.Configuration;
 using MyFinanceTracker.Interactions.Telegram;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite;
-using MyFinanceTracker.Infrastructure.Persistence.Yaml;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.InputProcessing.Gemini;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,6 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services
     .AddSingleton(TimeProvider.System)
     .AddOptionalApplicationInsights(builder.Configuration)
-    .AddYamlCategoryRepository(builder.Configuration)
     .AddGeminiInputProcessor(builder.Configuration)
     .AddUseCases()
     .AddGoogleSheetsPersistence(builder.Configuration)

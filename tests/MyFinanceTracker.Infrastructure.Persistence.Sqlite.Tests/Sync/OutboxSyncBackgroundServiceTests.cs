@@ -18,7 +18,8 @@ public sealed class OutboxSyncBackgroundServiceTests : IDisposable
     private readonly DbContextOptions<SqliteDbContext> options;
     private readonly IDbContextFactory<SqliteDbContext> contextFactory;
     private readonly ITransactionRepository remoteRepository;
-    private readonly ICategoryRepository categoryRepository;
+    private readonly ICategoryRepository remoteCategoryRepository;
+    private readonly ICategoryRepository localCategoryRepository;
     private readonly ILogger<OutboxProcessor> processorLogger;
     private readonly ILogger<OutboxSyncBackgroundService> workerLogger;
 
@@ -36,7 +37,8 @@ public sealed class OutboxSyncBackgroundServiceTests : IDisposable
 
         contextFactory = new TestDbContextFactory(options);
         remoteRepository = Substitute.For<ITransactionRepository>();
-        categoryRepository = Substitute.For<ICategoryRepository>();
+        remoteCategoryRepository = Substitute.For<ICategoryRepository>();
+        localCategoryRepository = Substitute.For<ICategoryRepository>();
         processorLogger = Substitute.For<ILogger<OutboxProcessor>>();
         workerLogger = Substitute.For<ILogger<OutboxSyncBackgroundService>>();
     }
@@ -58,7 +60,8 @@ public sealed class OutboxSyncBackgroundServiceTests : IDisposable
         var processor = new OutboxProcessor(
             contextFactory,
             remoteRepository,
-            categoryRepository,
+            remoteCategoryRepository,
+            localCategoryRepository,
             TimeProvider.System,
             optionsWrapper,
             Substitute.For<IOutboxNotificationPublisher>(),
@@ -106,7 +109,8 @@ public sealed class OutboxSyncBackgroundServiceTests : IDisposable
         using var processor = new OutboxProcessor(
             brokenContextFactory,
             remoteRepository,
-            categoryRepository,
+            remoteCategoryRepository,
+            localCategoryRepository,
             TimeProvider.System,
             optionsWrapper,
             notificationPublisher,

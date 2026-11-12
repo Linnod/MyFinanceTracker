@@ -233,4 +233,61 @@ public class ToolCallArgsTests
         result.Should().NotBeNull();
         result!.Limit.Should().BeNull();
     }
+
+    [Fact]
+    void To_WhenCreateCategoryArgsProvided_ShouldBindCorrectly()
+    {
+        // arrange
+        using var jsonDoc = JsonDocument.Parse("""
+        {
+            "id": "subscriptions",
+            "name": "Подписки"
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["id"] = jsonDoc.RootElement.GetProperty("id"),
+            ["name"] = jsonDoc.RootElement.GetProperty("name")
+        };
+        var sut = new ToolCallArgs(args);
+
+        // act
+        var result = sut.To<CreateCategoryArgs>();
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Id.Should().Be("subscriptions");
+        result.Name.Should().Be("Подписки");
+    }
+
+    [Fact]
+    void To_WhenUpdateCategoryArgsProvided_ShouldBindCorrectly()
+    {
+        // arrange
+        using var jsonDoc = JsonDocument.Parse("""
+        {
+            "id": "subscriptions",
+            "name": "Мои подписки",
+            "isArchived": true
+        }
+        """);
+
+        var args = new Dictionary<string, object>
+        {
+            ["id"] = jsonDoc.RootElement.GetProperty("id"),
+            ["name"] = jsonDoc.RootElement.GetProperty("name"),
+            ["isArchived"] = jsonDoc.RootElement.GetProperty("isArchived")
+        };
+        var sut = new ToolCallArgs(args);
+
+        // act
+        var result = sut.To<UpdateCategoryArgs>();
+
+        // assert
+        result.Should().NotBeNull();
+        result!.Id.Should().Be("subscriptions");
+        result.Name.Should().Be("Мои подписки");
+        result.IsArchived.Should().BeTrue();
+    }
 }
