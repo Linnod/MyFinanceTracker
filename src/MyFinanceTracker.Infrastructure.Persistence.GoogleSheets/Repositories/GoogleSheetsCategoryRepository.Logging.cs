@@ -36,4 +36,16 @@ internal partial class GoogleSheetsCategoryRepository
         Level = LogLevel.Debug,
         Message = "Preparing to get all categories from Google Sheets")]
     partial void LogGettingAllCategories();
+
+    [LoggerMessage(
+        EventId = CategoryAlreadyExists,
+        Level = LogLevel.Information,
+        Message = "Category '{Id}' already exists in Google Sheets")]
+    partial void LogCategoryAlreadyExists(string id);
+
+    [LoggerMessage(
+        EventId = DuplicateCategoriesDetected,
+        Level = LogLevel.Warning,
+        Message = "Duplicate categories detected in Google Sheets: {DuplicateIds}")]
+    partial void LogDuplicateCategoriesDetected(string duplicateIds);
 }

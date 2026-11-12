@@ -29,7 +29,23 @@ internal sealed partial class GoogleSheetsCategoryRepository(
         LogGettingAllCategories();
 
         var validRows = await LoadValidRows(ct);
-        return [.. validRows.Select(s => s.Category)];
+        var categories = validRows.Select(s => s.Category).ToList();
+
+        var distinctCategories = categories
+            .DistinctBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (distinctCategories.Count < categories.Count)
+        {
+            var duplicateIds = categories
+                .GroupBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key);
+
+            LogDuplicateCategoriesDetected(string.Join(", ", duplicateIds));
+        }
+
+        return distinctCategories;
     }
 
     public async Task<Category?> GetById(string id, CancellationToken ct)
@@ -81,6 +97,16 @@ internal sealed partial class GoogleSheetsCategoryRepository(
         await semaphore.WaitAsync(ct);
         try
         {
+            var validRows = await LoadValidRows(ct);
+            var exists = validRows.Any(s =>
+                s.Category.Id.Equals(category.Id, StringComparison.OrdinalIgnoreCase));
+
+            if (exists)
+            {
+                LogCategoryAlreadyExists(category.Id);
+                return;
+            }
+
             var row = mapper.MapToRow(category);
             await client.AppendRows(options.CategoriesSheetName, [row], ct);
         }

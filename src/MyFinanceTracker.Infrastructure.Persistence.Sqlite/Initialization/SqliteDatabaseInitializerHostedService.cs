@@ -66,12 +66,14 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
 
         if (remoteCategories.Count > 0)
         {
-            var entities = remoteCategories.Select(c => new CategoryEntity
-            {
-                Id = c.Id,
-                Name = c.Name,
-                IsArchived = c.IsArchived
-            });
+            var entities = remoteCategories
+                .DistinctBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
+                .Select(c => new CategoryEntity
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    IsArchived = c.IsArchived
+                });
 
             await dbContext.Categories.AddRangeAsync(entities, ct);
         }
@@ -89,15 +91,17 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
 
         if (remoteTransactions.Count > 0)
         {
-            var entities = remoteTransactions.Select(t => new TransactionEntity
-            {
-                Id = t.Id,
-                Type = t.Type,
-                CategoryId = t.Category.Id,
-                Amount = t.Amount,
-                Date = t.Date,
-                Note = t.Note
-            });
+            var entities = remoteTransactions
+                .DistinctBy(t => t.Id)
+                .Select(t => new TransactionEntity
+                {
+                    Id = t.Id,
+                    Type = t.Type,
+                    CategoryId = t.Category.Id,
+                    Amount = t.Amount,
+                    Date = t.Date,
+                    Note = t.Note
+                });
 
             await dbContext.Transactions.AddRangeAsync(entities, ct);
         }

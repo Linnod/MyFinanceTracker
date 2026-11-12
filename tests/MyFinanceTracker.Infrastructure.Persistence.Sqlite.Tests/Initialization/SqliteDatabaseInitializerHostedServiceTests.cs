@@ -176,6 +176,37 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task StartAsync_RemoteRepositoriesReturnDuplicates_DeduplicatesAndDoesNotThrow()
+    {
+        // arrange
+        var txId = Guid.NewGuid();
+        var remoteTx1 = new Transaction(txId, TransactionType.Expense, foodCategory, 10m, DateTime.UtcNow, "note");
+        var remoteTx2 = new Transaction(txId, TransactionType.Expense, foodCategory, 10m, DateTime.UtcNow, "note");
+
+        var duplicateFoodCategory = new Category("FOOD", "Food Duplicate");
+        remoteCategoryRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory, duplicateFoodCategory, salaryCategory]);
+
+        transactionRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([remoteTx1, remoteTx2]);
+
+        var initializer = CreateInitializer();
+
+        // act
+        var act = () => initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await act.Should().NotThrowAsync();
+
+        await using var assertContext = new SqliteDbContext(options);
+        var categories = await assertContext.Categories.ToListAsync();
+        categories.Should().HaveCount(2);
+
+        var transactions = await assertContext.Transactions.ToListAsync();
+        transactions.Should().HaveCount(1);
+    }
+
+    [Fact]
     public async Task StopAsync_ShouldFlushOutbox()
     {
         // arrange
