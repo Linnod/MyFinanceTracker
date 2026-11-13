@@ -100,7 +100,7 @@ internal sealed partial class GoogleSheetsTransactionRepository(
             var targetRow = validRows.FirstOrDefault(s => s.Transaction.Id == transaction.Id);
             if (targetRow is null)
             {
-                throw GoogleSheetsPersistenceException.TransactionNotFound(options.TransactionsSheetName, transaction.Id);
+                throw GoogleSheetsEntityNotFoundException.TransactionNotFound(options.TransactionsSheetName, transaction.Id);
             }
 
             var rowValues = mapper.MapToRow(transaction);
@@ -168,7 +168,10 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         var failures = results.OfType<RowMappingResult.Failure>().ToList();
         ThrowIfFailures(failures);
 
-        return [.. results.OfType<RowMappingResult.Success>()];
+        var validRows = results.OfType<RowMappingResult.Success>().ToList();
+        ThrowIfDuplicateIds(validRows);
+
+        return validRows;
     }
 
     private static IEnumerable<GoogleSheetRow> SkipHeader(IEnumerable<GoogleSheetRow> rows)
@@ -179,6 +182,20 @@ internal sealed partial class GoogleSheetsTransactionRepository(
         if (failures.Count > 0)
         {
             throw new GoogleSheetsPersistenceException(options.TransactionsSheetName, failures);
+        }
+    }
+
+    private void ThrowIfDuplicateIds(List<RowMappingResult.Success> validRows)
+    {
+        var duplicateIds = validRows
+            .GroupBy(s => s.Transaction.Id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (duplicateIds.Count > 0)
+        {
+            throw GoogleSheetsPersistenceException.DuplicateTransactions(options.TransactionsSheetName, duplicateIds);
         }
     }
 }

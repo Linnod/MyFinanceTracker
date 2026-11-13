@@ -29,23 +29,7 @@ internal sealed partial class GoogleSheetsCategoryRepository(
         LogGettingAllCategories();
 
         var validRows = await LoadValidRows(ct);
-        var categories = validRows.Select(s => s.Category).ToList();
-
-        var distinctCategories = categories
-            .DistinctBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (distinctCategories.Count < categories.Count)
-        {
-            var duplicateIds = categories
-                .GroupBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key);
-
-            LogDuplicateCategoriesDetected(string.Join(", ", duplicateIds));
-        }
-
-        return distinctCategories;
+        return [.. validRows.Select(s => s.Category)];
     }
 
     public async Task<Category?> GetById(string id, CancellationToken ct)
@@ -86,8 +70,7 @@ internal sealed partial class GoogleSheetsCategoryRepository(
         var validRows = await LoadValidRows(ct);
         return [.. validRows
             .Select(s => s.Category)
-            .Where(c => normalizedIds.Contains(c.Id))
-            .DistinctBy(c => c.Id, StringComparer.OrdinalIgnoreCase)];
+            .Where(c => normalizedIds.Contains(c.Id))];
     }
 
     public async Task Add(Category category, CancellationToken ct)
@@ -129,7 +112,7 @@ internal sealed partial class GoogleSheetsCategoryRepository(
 
             if (targetRow is null)
             {
-                throw GoogleSheetsPersistenceException.CategoryNotFound(options.CategoriesSheetName, category.Id);
+                throw GoogleSheetsEntityNotFoundException.CategoryNotFound(options.CategoriesSheetName, category.Id);
             }
 
             var rowValues = mapper.MapToRow(category);
@@ -151,7 +134,10 @@ internal sealed partial class GoogleSheetsCategoryRepository(
         var failures = results.OfType<CategoryRowMappingResult.Failure>().ToList();
         ThrowIfFailures(failures);
 
-        return [.. results.OfType<CategoryRowMappingResult.Success>()];
+        var validRows = results.OfType<CategoryRowMappingResult.Success>().ToList();
+        ThrowIfDuplicateIds(validRows);
+
+        return validRows;
     }
 
     private static IEnumerable<GoogleSheetRow> SkipHeader(IEnumerable<GoogleSheetRow> rows)
@@ -162,6 +148,20 @@ internal sealed partial class GoogleSheetsCategoryRepository(
         if (failures.Count > 0)
         {
             throw new GoogleSheetsPersistenceException(options.CategoriesSheetName, failures);
+        }
+    }
+
+    private void ThrowIfDuplicateIds(List<CategoryRowMappingResult.Success> validRows)
+    {
+        var duplicateIds = validRows
+            .GroupBy(s => s.Category.Id, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (duplicateIds.Count > 0)
+        {
+            throw GoogleSheetsPersistenceException.DuplicateCategories(options.CategoriesSheetName, duplicateIds);
         }
     }
 }

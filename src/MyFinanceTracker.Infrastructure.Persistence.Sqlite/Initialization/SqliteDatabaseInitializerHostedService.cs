@@ -67,7 +67,6 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         if (remoteCategories.Count > 0)
         {
             var entities = remoteCategories
-                .DistinctBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(c => new CategoryEntity
                 {
                     Id = c.Id,
@@ -92,7 +91,6 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         if (remoteTransactions.Count > 0)
         {
             var entities = remoteTransactions
-                .DistinctBy(t => t.Id)
                 .Select(t => new TransactionEntity
                 {
                     Id = t.Id,

@@ -1,8 +1,9 @@
+using MyFinanceTracker.Domain.Exceptions;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 
 namespace MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Exceptions;
 
-internal sealed class GoogleSheetsPersistenceException : Exception
+internal sealed class GoogleSheetsPersistenceException : DataIntegrityException
 {
     public IReadOnlyList<RowMappingResult.Failure> Failures { get; }
 
@@ -23,11 +24,11 @@ internal sealed class GoogleSheetsPersistenceException : Exception
         Failures = [];
     }
 
-    public static GoogleSheetsPersistenceException TransactionNotFound(string sheetName, Guid transactionId) =>
-        new($"Transaction '{transactionId}' was not found in Google Sheet '{sheetName}'.");
+    public static GoogleSheetsPersistenceException DuplicateCategories(string sheetName, IEnumerable<string> duplicateIds) =>
+        new($"Duplicate category IDs found in Google Sheet '{sheetName}': {string.Join(", ", duplicateIds)}.");
 
-    public static GoogleSheetsPersistenceException CategoryNotFound(string sheetName, string categoryId) =>
-        new($"Category '{categoryId}' was not found in Google Sheet '{sheetName}'.");
+    public static GoogleSheetsPersistenceException DuplicateTransactions(string sheetName, IEnumerable<Guid> duplicateIds) =>
+        new($"Duplicate transaction IDs found in Google Sheet '{sheetName}': {string.Join(", ", duplicateIds)}.");
 
     private static string FormatMessage(string sheetName, IEnumerable<(int RowNumber, string Reason)> failures)
     {

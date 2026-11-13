@@ -55,14 +55,13 @@ public class GoogleSheetsCategoryRepositoryTests
     }
 
     [Fact]
-    public async Task GetAll_DuplicateCategoriesInSheet_ReturnsDistinctCategoriesAndLogsWarning()
+    public async Task GetAll_DuplicateCategoriesInSheet_ThrowsGoogleSheetsPersistenceException()
     {
         // arrange
         var options = Options.Create(defaultOptions);
         var mapper = new GoogleSheetCategoryMapper();
         var clientMock = Substitute.For<IGoogleSheetsClient>();
         var loggerMock = Substitute.For<ILogger<GoogleSheetsCategoryRepository>>();
-        loggerMock.IsEnabled(LogLevel.Warning).Returns(true);
 
         var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Name", "IsArchived"]));
         var row1 = new GoogleSheetRow(1, new GoogleSheetRowValues(["food_id", "Food", "FALSE"]));
@@ -75,19 +74,11 @@ public class GoogleSheetsCategoryRepositoryTests
         using var sut = new GoogleSheetsCategoryRepository(options, mapper, clientMock, loggerMock);
 
         // act
-        var results = await sut.GetAll(CancellationToken.None);
+        var act = () => sut.GetAll(CancellationToken.None);
 
         // assert
-        results.Should().HaveCount(2);
-        results[0].Id.Should().Be("food_id");
-        results[1].Id.Should().Be("rent_id");
-
-        loggerMock.Received(1).Log(
-            LogLevel.Warning,
-            Arg.Is<EventId>(e => e.Id == LogEvents.CategoryRepository.DuplicateCategoriesDetected),
-            Arg.Any<Arg.AnyType>(),
-            null,
-            Arg.Any<Func<Arg.AnyType, Exception?, string>>());
+        var ex = await act.Should().ThrowAsync<GoogleSheetsPersistenceException>();
+        ex.Which.Message.Should().Contain("food_id");
     }
 
     [Fact]
@@ -413,7 +404,7 @@ public class GoogleSheetsCategoryRepositoryTests
     }
 
     [Fact]
-    public async Task Update_NonExistingCategory_ThrowsGoogleSheetsPersistenceException()
+    public async Task Update_NonExistingCategory_ThrowsGoogleSheetsEntityNotFoundException()
     {
         // arrange
         var options = Options.Create(defaultOptions);
@@ -434,8 +425,33 @@ public class GoogleSheetsCategoryRepositoryTests
         var act = () => sut.Update(unknownCategory, CancellationToken.None);
 
         // assert
-        var ex = await act.Should().ThrowAsync<GoogleSheetsPersistenceException>();
+        var ex = await act.Should().ThrowAsync<GoogleSheetsEntityNotFoundException>();
         ex.WithMessage("Category 'unknown_id' was not found in Google Sheet 'Categories'.");
+    }
+
+    [Fact]
+    public async Task GetById_DuplicateCategoriesInSheet_ThrowsGoogleSheetsPersistenceException()
+    {
+        // arrange
+        var options = Options.Create(defaultOptions);
+        var mapper = new GoogleSheetCategoryMapper();
+        var clientMock = Substitute.For<IGoogleSheetsClient>();
+        var loggerMock = Substitute.For<ILogger<GoogleSheetsCategoryRepository>>();
+
+        var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Name", "IsArchived"]));
+        var row1 = new GoogleSheetRow(1, new GoogleSheetRowValues(["food_id", "Food", "FALSE"]));
+        var row2 = new GoogleSheetRow(2, new GoogleSheetRowValues(["FOOD_ID", "Duplicate Food", "TRUE"]));
+
+        clientMock.GetRows("Categories", Arg.Any<CancellationToken>())
+            .Returns([headerRow, row1, row2]);
+
+        using var sut = new GoogleSheetsCategoryRepository(options, mapper, clientMock, loggerMock);
+
+        // act
+        var act = () => sut.GetById("food_id", CancellationToken.None);
+
+        // assert
+        await act.Should().ThrowAsync<GoogleSheetsPersistenceException>();
     }
 
     [Fact]

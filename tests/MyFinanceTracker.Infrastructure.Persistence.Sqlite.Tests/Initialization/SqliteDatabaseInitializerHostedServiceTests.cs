@@ -176,16 +176,29 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task StartAsync_RemoteRepositoriesReturnDuplicates_DeduplicatesAndDoesNotThrow()
+    public async Task StartAsync_RemoteRepositoriesReturnDuplicates_ThrowsDbUpdateException()
+    {
+        // arrange
+        var duplicateFoodCategory = new Category("FOOD", "Food Duplicate");
+        remoteCategoryRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([foodCategory, duplicateFoodCategory, salaryCategory]);
+
+        var initializer = CreateInitializer();
+
+        // act
+        var act = () => initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task StartAsync_RemoteTransactionRepositoryReturnsDuplicates_ThrowsInvalidOperationException()
     {
         // arrange
         var txId = Guid.NewGuid();
         var remoteTx1 = new Transaction(txId, TransactionType.Expense, foodCategory, 10m, DateTime.UtcNow, "note");
-        var remoteTx2 = new Transaction(txId, TransactionType.Expense, foodCategory, 10m, DateTime.UtcNow, "note");
-
-        var duplicateFoodCategory = new Category("FOOD", "Food Duplicate");
-        remoteCategoryRepository.GetAll(Arg.Any<CancellationToken>())
-            .Returns([foodCategory, duplicateFoodCategory, salaryCategory]);
+        var remoteTx2 = new Transaction(txId, TransactionType.Expense, foodCategory, 20m, DateTime.UtcNow, "duplicate");
 
         transactionRepository.GetAll(Arg.Any<CancellationToken>())
             .Returns([remoteTx1, remoteTx2]);
@@ -196,14 +209,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         var act = () => initializer.StartAsync(CancellationToken.None);
 
         // assert
-        await act.Should().NotThrowAsync();
-
-        await using var assertContext = new SqliteDbContext(options);
-        var categories = await assertContext.Categories.ToListAsync();
-        categories.Should().HaveCount(2);
-
-        var transactions = await assertContext.Transactions.ToListAsync();
-        transactions.Should().HaveCount(1);
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Fact]
