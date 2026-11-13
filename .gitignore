@@ -55,3 +55,6 @@ out/
 
 # 7 Coverage reports
 coveragereport/
+
+# 8. Private Keys
+*.pem
