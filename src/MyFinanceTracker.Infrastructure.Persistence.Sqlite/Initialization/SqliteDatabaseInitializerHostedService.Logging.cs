@@ -16,8 +16,14 @@ internal partial class SqliteDatabaseInitializerHostedService
     [LoggerMessage(
         EventId = FlushingOutbox,
         Level = LogLevel.Debug,
-        Message = "Flushing pending outbox messages before transactions synchronization")]
+        Message = "Flushing pending outbox messages on startup")]
     partial void LogFlushingOutbox();
+
+    [LoggerMessage(
+        EventId = SkippingRemoteSync,
+        Level = LogLevel.Information,
+        Message = "Local SQLite database is not empty; skipping initial remote synchronization")]
+    partial void LogSkippingRemoteSync();
 
     [LoggerMessage(
         EventId = FetchingCategories,
@@ -28,7 +34,7 @@ internal partial class SqliteDatabaseInitializerHostedService
     [LoggerMessage(
         EventId = SyncingCategories,
         Level = LogLevel.Debug,
-        Message = "Replacing local categories cache with {Count} categories")]
+        Message = "Populating local categories cache with {Count} categories")]
     partial void LogSyncingCategories(int count);
 
     [LoggerMessage(
@@ -40,7 +46,7 @@ internal partial class SqliteDatabaseInitializerHostedService
     [LoggerMessage(
         EventId = SyncingTransactions,
         Level = LogLevel.Debug,
-        Message = "Replacing local transactions cache with {Count} transactions")]
+        Message = "Populating local transactions cache with {Count} transactions")]
     partial void LogSyncingTransactions(int count);
 
     [LoggerMessage(

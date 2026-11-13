@@ -3,14 +3,13 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MyFinanceTracker.Domain.Common;
 using MyFinanceTracker.Domain.Entities;
 using MyFinanceTracker.Domain.Repositories;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Data;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Entities;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Initialization;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Models;
+using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Options;
 using MyFinanceTracker.Infrastructure.Persistence.Sqlite.Sync;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -40,13 +39,8 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             .UseSqlite(connection)
             .Options;
 
-        // Create tables and seed initial categories
         using var context = new SqliteDbContext(options);
         context.Database.EnsureCreated();
-        context.Categories.AddRange(
-            new CategoryEntity { Id = foodCategory.Id, Name = foodCategory.Name, IsArchived = foodCategory.IsArchived },
-            new CategoryEntity { Id = salaryCategory.Id, Name = salaryCategory.Name, IsArchived = salaryCategory.IsArchived });
-        context.SaveChanges();
 
         contextFactory = new TestDbContextFactory(options);
         transactionRepository = Substitute.For<ITransactionRepository>();
@@ -75,6 +69,9 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
 
         remoteCategoryRepository.GetAll(Arg.Any<CancellationToken>())
             .Returns([foodCategory, salaryCategory]);
+
+        transactionRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([]);
     }
 
     public void Dispose()
@@ -82,60 +79,11 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         connection.Dispose();
     }
 
-    private OutboxProcessor CreateOutboxProcessor() =>
-        new(contextFactory,
-            transactionRepository,
-            remoteCategoryRepository,
-            localCategoryRepository,
-            TimeProvider.System,
-            Microsoft.Extensions.Options.Options.Create(new SqlitePersistenceOptions()),
-            Substitute.For<IOutboxNotificationPublisher>(),
-            outboxLogger);
-
-    private SqliteDatabaseInitializerHostedService CreateInitializer(OutboxProcessor? processor = null) =>
-        new(contextFactory, transactionRepository, remoteCategoryRepository, processor ?? CreateOutboxProcessor(), initializerLogger);
-
     [Fact]
-    public async Task StartAsync_ShouldFlushOutboxFirst_ThenOverwriteTransactionsFromRemote()
+    public async Task StartAsync_EmptyDatabase_SyncsCategoriesAndTransactionsFromRemote()
     {
         // arrange
-        var oldLocalTxId = Guid.NewGuid();
-        var pendingOutboxTxId = Guid.NewGuid();
         var remoteTxId = Guid.NewGuid();
-
-        // 1. Seed existing local transaction that should be wiped
-        // 2. Seed pending outbox message that should be flushed first
-        await using (var seedContext = new SqliteDbContext(options))
-        {
-            seedContext.Transactions.Add(new TransactionEntity
-            {
-                Id = oldLocalTxId,
-                Type = TransactionType.Expense,
-                CategoryId = "food",
-                Amount = 99m,
-                Date = new DateTime(2026, 10, 1, 10, 0, 0),
-                Note = "Stale local transaction"
-            });
-
-            var pendingOutboxDto = new TransactionOutboxDto(
-                pendingOutboxTxId,
-                TransactionType.Expense,
-                "food",
-                45m,
-                new DateTime(2026, 11, 1, 10, 0, 0),
-                "Pending outbox item");
-
-            seedContext.OutboxMessages.Add(new OutboxMessageEntity
-            {
-                OperationType = OutboxOperationType.AddTransaction,
-                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([pendingOutboxDto])),
-                CreatedAtUtc = DateTimeOffset.UtcNow
-            });
-
-            await seedContext.SaveChangesAsync();
-        }
-
-        // Remote repository returns a fresh list of transactions
         var remoteTransaction = new Transaction(
             remoteTxId,
             TransactionType.Income,
@@ -147,36 +95,208 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         transactionRepository.GetAll(Arg.Any<CancellationToken>())
             .Returns([remoteTransaction]);
 
-        var processor = CreateOutboxProcessor();
-        var initializer = CreateInitializer(processor);
+        var initializer = CreateInitializer();
 
         // act
         await initializer.StartAsync(CancellationToken.None);
 
-        // assert - Outbox message was processed and sent to remote
+        // assert
+        await using var assertContext = new SqliteDbContext(options);
+
+        var categories = await assertContext.Categories.OrderBy(c => c.Id).ToListAsync();
+        categories.Should().HaveCount(2);
+        categories.Select(c => c.Id).Should().BeEquivalentTo(["food", "salary"]);
+
+        var transactions = await assertContext.Transactions.ToListAsync();
+        transactions.Should().HaveCount(1);
+        transactions[0].Id.Should().Be(remoteTxId);
+        transactions[0].Amount.Should().Be(5000m);
+        transactions[0].CategoryId.Should().Be("salary");
+        transactions[0].Type.Should().Be(TransactionType.Income);
+        transactions[0].Note.Should().Be("Monthly salary");
+    }
+
+    [Fact]
+    public async Task StartAsync_EmptyDatabaseWithPendingOutbox_FlushesOutboxFirstThenSyncsFromRemote()
+    {
+        // arrange
+        var pendingOutboxTxId = Guid.NewGuid();
+        var remoteTxId = Guid.NewGuid();
+
+        await SeedOutboxAddTransaction(pendingOutboxTxId, "food", 45m, "Pending outbox item");
+
+        var remoteTransaction = new Transaction(
+            remoteTxId,
+            TransactionType.Income,
+            salaryCategory,
+            5000m,
+            new DateTime(2026, 11, 5, 10, 0, 0),
+            "Monthly salary");
+
+        transactionRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([remoteTransaction]);
+
+        var initializer = CreateInitializer();
+
+        // act
+        await initializer.StartAsync(CancellationToken.None);
+
+        // assert
         await transactionRepository.Received(1).AddRange(
             Arg.Is<IReadOnlyCollection<Transaction>>(txs => txs.Any(t => t.Id == pendingOutboxTxId)),
             Arg.Any<CancellationToken>());
 
-        // assert - Database state:
         await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.OutboxMessages.ToListAsync()).Should().BeEmpty();
 
-        // Outbox is now empty
-        var remainingOutbox = await assertContext.OutboxMessages.ToListAsync();
-        remainingOutbox.Should().BeEmpty();
-
-        // Local transactions table contains ONLY remote transactions
         var currentTransactions = await assertContext.Transactions.ToListAsync();
         currentTransactions.Should().HaveCount(1);
         currentTransactions[0].Id.Should().Be(remoteTxId);
-        currentTransactions[0].Amount.Should().Be(5000m);
-        currentTransactions[0].CategoryId.Should().Be("salary");
-        currentTransactions[0].Type.Should().Be(TransactionType.Income);
-        currentTransactions[0].Note.Should().Be("Monthly salary");
     }
 
     [Fact]
-    public async Task StartAsync_RemoteRepositoriesReturnDuplicates_ThrowsDbUpdateException()
+    public async Task StartAsync_LocalDatabaseHasCategories_SkipsRemoteSync()
+    {
+        // arrange
+        await SeedLocalCategory(foodCategory);
+        var initializer = CreateInitializer();
+
+        // act
+        await initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await remoteCategoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+        await transactionRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        var categories = await assertContext.Categories.ToListAsync();
+        categories.Should().HaveCount(1);
+        categories[0].Id.Should().Be(foodCategory.Id);
+    }
+
+    [Fact]
+    public async Task StartAsync_LocalDatabaseHasTransactions_FlushesOutboxAndSkipsRemoteSync()
+    {
+        // arrange
+        var existingLocalTxId = Guid.NewGuid();
+        var pendingOutboxTxId = Guid.NewGuid();
+
+        await SeedLocalCategory(foodCategory);
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.Transactions.Add(new TransactionEntity
+            {
+                Id = existingLocalTxId,
+                Type = TransactionType.Expense,
+                CategoryId = foodCategory.Id,
+                Amount = 99m,
+                Date = new DateTime(2026, 10, 1, 10, 0, 0),
+                Note = "Existing local transaction"
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        await SeedOutboxAddTransaction(pendingOutboxTxId, "food", 45m, "Pending outbox item");
+
+        var initializer = CreateInitializer();
+
+        // act
+        await initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await transactionRepository.Received(1).AddRange(
+            Arg.Is<IReadOnlyCollection<Transaction>>(txs => txs.Any(t => t.Id == pendingOutboxTxId)),
+            Arg.Any<CancellationToken>());
+        await remoteCategoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+        await transactionRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.OutboxMessages.ToListAsync()).Should().BeEmpty();
+
+        var transactions = await assertContext.Transactions.ToListAsync();
+        transactions.Should().HaveCount(1);
+        transactions[0].Id.Should().Be(existingLocalTxId);
+    }
+
+    [Fact]
+    public async Task StartAsync_PendingOutboxRemainsAfterFlushFailure_SkipsRemoteSync()
+    {
+        // arrange
+        var pendingOutboxTxId = Guid.NewGuid();
+        await SeedOutboxAddTransaction(pendingOutboxTxId);
+
+        transactionRepository.AddRange(Arg.Any<IReadOnlyCollection<Transaction>>(), Arg.Any<CancellationToken>())
+            .Throws(new HttpRequestException("Temporary Google Sheets outage"));
+
+        var initializer = CreateInitializer();
+
+        // act
+        await initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await remoteCategoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+        await transactionRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.OutboxMessages.CountAsync()).Should().Be(1);
+        (await assertContext.Categories.AnyAsync()).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartAsync_DeadLetterMessagesExist_SkipsRemoteSync()
+    {
+        // arrange
+        await using (var seedContext = new SqliteDbContext(options))
+        {
+            seedContext.DeadLetterMessages.Add(new DeadLetterMessageEntity
+            {
+                OriginalOutboxMessageId = 1,
+                OperationType = OutboxOperationType.AddCategory,
+                PayloadJson = "{}",
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                FailedAtUtc = DateTimeOffset.UtcNow,
+                RetryCount = 5,
+                ErrorMessage = "Permanent error"
+            });
+            await seedContext.SaveChangesAsync();
+        }
+
+        var initializer = CreateInitializer();
+
+        // act
+        await initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await remoteCategoryRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+        await transactionRepository.DidNotReceive().GetAll(Arg.Any<CancellationToken>());
+
+        await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.Categories.AnyAsync()).Should().BeFalse();
+        (await assertContext.Transactions.AnyAsync()).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartAsync_RemoteTransactionsFetchFails_DoesNotPersistCategories()
+    {
+        // arrange
+        transactionRepository.GetAll(Arg.Any<CancellationToken>())
+            .Throws(new HttpRequestException("Failed to fetch transactions"));
+
+        var initializer = CreateInitializer();
+
+        // act
+        var act = () => initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await act.Should().ThrowAsync<HttpRequestException>();
+
+        await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.Categories.AnyAsync()).Should().BeFalse();
+        (await assertContext.Transactions.AnyAsync()).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartAsync_RemoteCategoryRepositoryReturnsCaseInsensitiveDuplicates_ThrowsDbUpdateExceptionAndRollsBack()
     {
         // arrange
         var duplicateFoodCategory = new Category("FOOD", "Food Duplicate");
@@ -190,10 +310,14 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
 
         // assert
         await act.Should().ThrowAsync<DbUpdateException>();
+
+        await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.Categories.AnyAsync()).Should().BeFalse();
+        (await assertContext.Transactions.AnyAsync()).Should().BeFalse();
     }
 
     [Fact]
-    public async Task StartAsync_RemoteTransactionRepositoryReturnsDuplicates_ThrowsInvalidOperationException()
+    public async Task StartAsync_RemoteTransactionRepositoryReturnsDuplicates_ThrowsInvalidOperationExceptionAndRollsBack()
     {
         // arrange
         var txId = Guid.NewGuid();
@@ -210,40 +334,27 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
 
         // assert
         await act.Should().ThrowAsync<InvalidOperationException>();
+
+        await using var assertContext = new SqliteDbContext(options);
+        (await assertContext.Categories.AnyAsync()).Should().BeFalse();
+        (await assertContext.Transactions.AnyAsync()).Should().BeFalse();
     }
 
     [Fact]
     public async Task StopAsync_ShouldFlushOutbox()
     {
         // arrange
-        var txDto = new TransactionOutboxDto(
-            Guid.NewGuid(),
-            TransactionType.Expense,
-            "food",
-            20m,
-            new DateTime(2026, 11, 3, 10, 0, 0),
-            "Coffee");
+        var txId = Guid.NewGuid();
+        await SeedOutboxAddTransaction(txId);
 
-        await using (var seedContext = new SqliteDbContext(options))
-        {
-            seedContext.OutboxMessages.Add(new OutboxMessageEntity
-            {
-                OperationType = OutboxOperationType.AddTransaction,
-                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
-                CreatedAtUtc = DateTimeOffset.UtcNow
-            });
-            await seedContext.SaveChangesAsync();
-        }
-
-        var processor = CreateOutboxProcessor();
-        var initializer = CreateInitializer(processor);
+        var initializer = CreateInitializer();
 
         // act
         await initializer.StopAsync(CancellationToken.None);
 
         // assert
         await transactionRepository.Received(1).AddRange(
-            Arg.Is<IReadOnlyCollection<Transaction>>(txs => txs.Any(t => t.Id == txDto.Id)),
+            Arg.Is<IReadOnlyCollection<Transaction>>(txs => txs.Any(t => t.Id == txId)),
             Arg.Any<CancellationToken>());
 
         await using var assertContext = new SqliteDbContext(options);
@@ -255,30 +366,12 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
     public async Task StopAsync_ShouldNotThrow_WhenExceptionOccurs()
     {
         // arrange
-        var txDto = new TransactionOutboxDto(
-            Guid.NewGuid(),
-            TransactionType.Expense,
-            "food",
-            20m,
-            new DateTime(2026, 11, 3, 10, 0, 0),
-            "Coffee");
-
-        await using (var seedContext = new SqliteDbContext(options))
-        {
-            seedContext.OutboxMessages.Add(new OutboxMessageEntity
-            {
-                OperationType = OutboxOperationType.AddTransaction,
-                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
-                CreatedAtUtc = DateTimeOffset.UtcNow
-            });
-            await seedContext.SaveChangesAsync();
-        }
+        await SeedOutboxAddTransaction(Guid.NewGuid());
 
         transactionRepository.AddRange(Arg.Any<IReadOnlyCollection<Transaction>>(), Arg.Any<CancellationToken>())
             .Throws(new HttpRequestException("Network failure during shutdown"));
 
-        var processor = CreateOutboxProcessor();
-        var initializer = CreateInitializer(processor);
+        var initializer = CreateInitializer();
 
         // act
         var act = () => initializer.StopAsync(CancellationToken.None);
@@ -293,5 +386,50 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
 
         public Task<SqliteDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new SqliteDbContext(options));
+    }
+
+    private OutboxProcessor CreateOutboxProcessor() =>
+        new(contextFactory,
+            transactionRepository,
+            remoteCategoryRepository,
+            localCategoryRepository,
+            TimeProvider.System,
+            Microsoft.Extensions.Options.Options.Create(new SqlitePersistenceOptions()),
+            Substitute.For<IOutboxNotificationPublisher>(),
+            outboxLogger);
+
+    private SqliteDatabaseInitializerHostedService CreateInitializer(OutboxProcessor? processor = null) =>
+        new(contextFactory, transactionRepository, remoteCategoryRepository, processor ?? CreateOutboxProcessor(), initializerLogger);
+
+    private async Task SeedOutboxAddTransaction(Guid txId, string categoryId = "food", decimal amount = 20m, string? note = "Coffee")
+    {
+        var txDto = new TransactionOutboxDto(
+            txId,
+            TransactionType.Expense,
+            categoryId,
+            amount,
+            new DateTime(2026, 11, 3, 10, 0, 0),
+            note);
+
+        await using var context = new SqliteDbContext(options);
+        context.OutboxMessages.Add(new OutboxMessageEntity
+        {
+            OperationType = OutboxOperationType.AddTransaction,
+            PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await context.SaveChangesAsync();
+    }
+
+    private async Task SeedLocalCategory(Category category)
+    {
+        await using var context = new SqliteDbContext(options);
+        context.Categories.Add(new CategoryEntity
+        {
+            Id = category.Id,
+            Name = category.Name,
+            IsArchived = category.IsArchived
+        });
+        await context.SaveChangesAsync();
     }
 }

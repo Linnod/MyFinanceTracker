@@ -25,8 +25,12 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         LogFlushingOutbox();
         await outboxProcessor.ProcessPendingMessages(ct);
 
-        await SyncCategories(ct);
-        await SyncTransactions(ct);
+        if (await ShouldSkipInitialSync(ct))
+        {
+            return;
+        }
+
+        await SyncFromRemote(ct);
     }
 
     public async Task StopAsync(CancellationToken ct)
@@ -50,23 +54,44 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         await dbContext.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", ct);
     }
 
-    private async Task SyncCategories(CancellationToken ct)
+    private async Task<bool> ShouldSkipInitialSync(CancellationToken ct)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
+
+        var hasData = await dbContext.Categories.AnyAsync(ct)
+            || await dbContext.Transactions.AnyAsync(ct)
+            || await dbContext.OutboxMessages.AnyAsync(ct)
+            || await dbContext.DeadLetterMessages.AnyAsync(ct);
+
+        if (!hasData)
+        {
+            return false;
+        }
+
+        LogSkippingRemoteSync();
+        return true;
+    }
+
+    private async Task SyncFromRemote(CancellationToken ct)
     {
         LogFetchingCategories();
         var remoteCategories = await remoteCategoryRepository.GetAll(ct);
 
-        LogSyncingCategories(remoteCategories.Count);
+        LogFetchingTransactions();
+        var remoteTransactions = await transactionRepository.GetAll(ct);
+
+        if (remoteCategories.Count == 0 && remoteTransactions.Count == 0)
+        {
+            LogDatabaseInitialized(0);
+            return;
+        }
+
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
-
-        var existingTransactions = await dbContext.Transactions.ToListAsync(ct);
-        dbContext.Transactions.RemoveRange(existingTransactions);
-
-        var existingCategories = await dbContext.Categories.ToListAsync(ct);
-        dbContext.Categories.RemoveRange(existingCategories);
 
         if (remoteCategories.Count > 0)
         {
-            var entities = remoteCategories
+            LogSyncingCategories(remoteCategories.Count);
+            var categoryEntities = remoteCategories
                 .Select(c => new CategoryEntity
                 {
                     Id = c.Id,
@@ -74,23 +99,13 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
                     IsArchived = c.IsArchived
                 });
 
-            await dbContext.Categories.AddRangeAsync(entities, ct);
+            await dbContext.Categories.AddRangeAsync(categoryEntities, ct);
         }
-
-        await dbContext.SaveChangesAsync(ct);
-    }
-
-    private async Task SyncTransactions(CancellationToken ct)
-    {
-        LogFetchingTransactions();
-        var remoteTransactions = await transactionRepository.GetAll(ct);
-
-        LogSyncingTransactions(remoteTransactions.Count);
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
 
         if (remoteTransactions.Count > 0)
         {
-            var entities = remoteTransactions
+            LogSyncingTransactions(remoteTransactions.Count);
+            var transactionEntities = remoteTransactions
                 .Select(t => new TransactionEntity
                 {
                     Id = t.Id,
@@ -101,7 +116,7 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
                     Note = t.Note
                 });
 
-            await dbContext.Transactions.AddRangeAsync(entities, ct);
+            await dbContext.Transactions.AddRangeAsync(transactionEntities, ct);
         }
 
         await dbContext.SaveChangesAsync(ct);

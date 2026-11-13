@@ -58,5 +58,6 @@ internal static class LogEvents
         public const int StopCompleted = SubBase + 8;
         public const int FetchingCategories = SubBase + 9;
         public const int SyncingCategories = SubBase + 10;
+        public const int SkippingRemoteSync = SubBase + 11;
     }
 }

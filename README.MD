@@ -105,7 +105,7 @@ Share your copied spreadsheet with the Service Account email address and grant i
 
 ### 5. Configure categories
 
-Categories are stored on the `Categories` sheet in your Google Spreadsheet (with columns: `Id`, `Name`, `IsArchived`). They are synchronized with the local SQLite database at startup.
+Categories are stored on the `Categories` sheet in your Google Spreadsheet (with columns: `Id`, `Name`, `IsArchived`). On first startup with an empty local SQLite database, existing categories and transactions are imported from Google Sheets; once the local database is populated, subsequent startups skip remote import and sync local changes to Google Sheets via the outbox.
 
 ### 6. Configure the application
 
