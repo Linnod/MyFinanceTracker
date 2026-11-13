@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Google.Apis.Sheets.v4;
 using MyFinanceTracker.Domain.Repositories;
@@ -20,8 +21,15 @@ public static class DependencyInjection
     {
         services.ConfigureGoogleSheetsOptions(configuration)
             .AddSheetsService()
-            .AddKeyedSingleton<ITransactionRepository, GoogleSheetsTransactionRepository>(PersistenceServiceKeys.RemoteTransactionRepository)
             .AddKeyedSingleton<ICategoryRepository, GoogleSheetsCategoryRepository>(PersistenceServiceKeys.RemoteCategoryRepository)
+            .AddKeyedSingleton<ITransactionRepository>(
+                PersistenceServiceKeys.RemoteTransactionRepository,
+                (sp, _) => new GoogleSheetsTransactionRepository(
+                    sp.GetRequiredService<IOptions<GoogleSheetsOptions>>(),
+                    sp.GetRequiredService<GoogleSheetMapper>(),
+                    sp.GetRequiredService<IGoogleSheetsClient>(),
+                    sp.GetRequiredKeyedService<ICategoryRepository>(PersistenceServiceKeys.RemoteCategoryRepository),
+                    sp.GetRequiredService<ILogger<GoogleSheetsTransactionRepository>>()))
             .AddSingleton<GoogleSheetMapper>()
             .AddSingleton<GoogleSheetCategoryMapper>()
             .AddSingleton<IGoogleSheetsClient, GoogleSheetsClient>();
