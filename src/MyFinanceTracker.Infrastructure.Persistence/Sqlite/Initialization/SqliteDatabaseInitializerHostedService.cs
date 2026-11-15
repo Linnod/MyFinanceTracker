@@ -19,7 +19,7 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
     public async Task StartAsync(CancellationToken ct)
     {
         LogInitializingDatabase();
-        await EnsureDatabaseCreated(ct);
+        await MigrateDatabase(ct);
 
         LogFlushingOutbox();
         await outboxProcessor.ProcessPendingMessages(ct);
@@ -46,10 +46,10 @@ internal sealed partial class SqliteDatabaseInitializerHostedService(
         }
     }
 
-    private async Task EnsureDatabaseCreated(CancellationToken ct)
+    private async Task MigrateDatabase(CancellationToken ct)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ct);
-        await dbContext.Database.EnsureCreatedAsync(ct);
+        await dbContext.Database.MigrateAsync(ct);
         await dbContext.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;", ct);
     }
 

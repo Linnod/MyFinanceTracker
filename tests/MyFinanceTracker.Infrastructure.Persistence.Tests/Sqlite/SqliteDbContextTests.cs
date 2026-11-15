@@ -161,6 +161,19 @@ public class SqliteDbContextTests : IDisposable
         retrieved.ErrorMessage.Should().Be("Network connection failed");
     }
 
+    [Fact]
+    public void HasPendingModelChanges_CurrentModel_ReturnsFalse()
+    {
+        // arrange
+        using var context = new SqliteDbContext(options);
+
+        // act
+        var hasPendingChanges = context.Database.HasPendingModelChanges();
+
+        // assert
+        hasPendingChanges.Should().BeFalse();
+    }
+
     public void Dispose()
     {
         connection.Dispose();

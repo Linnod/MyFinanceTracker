@@ -41,7 +41,7 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             .Options;
 
         using var context = new SqliteDbContext(options);
-        context.Database.EnsureCreated();
+        context.Database.Migrate();
 
         contextFactory = new TestDbContextFactory(options);
         transactionRepository = Substitute.For<IRemoteTransactionRepository>();
@@ -96,6 +96,45 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
         transactions[0].CategoryId.Should().Be("salary");
         transactions[0].Type.Should().Be(TransactionType.Income);
         transactions[0].Note.Should().Be("Monthly salary");
+    }
+
+    [Fact]
+    public async Task StartAsync_UnmigratedEmptyDatabase_AppliesMigrationsAndSyncsFromRemote()
+    {
+        // arrange
+        await using var freshConnection = new SqliteConnection("DataSource=:memory:");
+        await freshConnection.OpenAsync();
+
+        var freshOptions = new DbContextOptionsBuilder<SqliteDbContext>()
+            .UseSqlite(freshConnection)
+            .Options;
+
+        var freshFactory = new TestDbContextFactory(freshOptions);
+        var initializer = CreateInitializer(factory: freshFactory);
+
+        var remoteTxId = Guid.NewGuid();
+        var remoteTransaction = new TransactionSyncRecord(
+            remoteTxId,
+            TransactionType.Expense,
+            foodCategory.Id,
+            15m,
+            new DateTime(2026, 11, 10, 9, 0, 0),
+            "Breakfast");
+
+        transactionRepository.GetAll(Arg.Any<CancellationToken>())
+            .Returns([remoteTransaction]);
+
+        // act
+        await initializer.StartAsync(CancellationToken.None);
+
+        // assert
+        await using var assertContext = new SqliteDbContext(freshOptions);
+        (await assertContext.Database.GetAppliedMigrationsAsync()).Should().NotBeEmpty();
+        (await assertContext.Categories.ToListAsync()).Should().HaveCount(2);
+
+        var transactions = await assertContext.Transactions.ToListAsync();
+        transactions.Should().HaveCount(1);
+        transactions[0].Id.Should().Be(remoteTxId);
     }
 
     [Fact]
@@ -399,8 +438,8 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             Task.FromResult(new SqliteDbContext(options));
     }
 
-    private OutboxProcessor CreateOutboxProcessor() =>
-        new(contextFactory,
+    private OutboxProcessor CreateOutboxProcessor(IDbContextFactory<SqliteDbContext>? factory = null) =>
+        new(factory ?? contextFactory,
             transactionRepository,
             remoteCategoryRepository,
             TimeProvider.System,
@@ -408,8 +447,14 @@ public sealed class SqliteDatabaseInitializerHostedServiceTests : IDisposable
             Substitute.For<IOutboxNotificationPublisher>(),
             outboxLogger);
 
-    private SqliteDatabaseInitializerHostedService CreateInitializer(OutboxProcessor? processor = null) =>
-        new(contextFactory, transactionRepository, remoteCategoryRepository, processor ?? CreateOutboxProcessor(), initializerLogger);
+    private SqliteDatabaseInitializerHostedService CreateInitializer(
+        OutboxProcessor? processor = null,
+        IDbContextFactory<SqliteDbContext>? factory = null) =>
+        new(factory ?? contextFactory,
+            transactionRepository,
+            remoteCategoryRepository,
+            processor ?? CreateOutboxProcessor(factory),
+            initializerLogger);
 
     private async Task SeedOutboxAddTransaction(Guid txId, string categoryId = "food", decimal amount = 20m, string? note = "Coffee")
     {
