@@ -69,8 +69,7 @@ public static class DependencyInjection
         return services.AddSingleton(sp =>
         {
             var opt = sp.GetRequiredService<IOptions<GoogleSheetsOptions>>().Value;
-            var credential = GoogleCredential.FromFile(opt.CredentialsFilePath)
-                .CreateScoped(SheetsService.Scope.Spreadsheets);
+            var credential = CreateCredential(opt);
 
             return new SheetsService(new BaseClientService.Initializer
             {
@@ -80,12 +79,23 @@ public static class DependencyInjection
         });
     }
 
+    private static GoogleCredential CreateCredential(GoogleSheetsOptions opt)
+    {
+        var credential = !string.IsNullOrWhiteSpace(opt.CredentialsJson)
+            ? GoogleCredential.FromJson(opt.CredentialsJson)
+            : GoogleCredential.FromFile(opt.CredentialsFilePath);
+
+        return credential.CreateScoped(SheetsService.Scope.Spreadsheets);
+    }
+
     private static IServiceCollection ConfigureGoogleSheetsOptions(this IServiceCollection services, IConfiguration configuration)
     {
         return services.AddOptions<GoogleSheetsOptions>()
             .Bind(configuration.GetSection(GoogleSheetsOptions.SectionName))
             .ValidateDataAnnotations()
-            .Validate(opt => File.Exists(opt.CredentialsFilePath), "Google Service Account key file is missing at the specified path.")
+            .Validate(
+                opt => !string.IsNullOrWhiteSpace(opt.CredentialsJson) || File.Exists(opt.CredentialsFilePath),
+                "Google Service Account credentials are missing: provide GoogleSheets:CredentialsJson or an existing GoogleSheets:CredentialsFilePath.")
             .ValidateOnStart()
             .Services;
     }
