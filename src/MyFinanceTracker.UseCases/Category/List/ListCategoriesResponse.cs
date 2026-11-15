@@ -1,9 +1,7 @@
 namespace MyFinanceTracker.UseCases.Category.List;
 
-public abstract record ListCategoriesResponse : UseCaseResponse
+public closed record ListCategoriesResponse : UseCaseResponse
 {
-    private ListCategoriesResponse() { }
-
     public sealed record Success(IReadOnlyList<Domain.Entities.Category> Categories)
      : ListCategoriesResponse
     {

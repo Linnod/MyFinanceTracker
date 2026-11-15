@@ -1,9 +1,7 @@
 namespace MyFinanceTracker.UseCases.Category.Update;
 
-public abstract record UpdateCategoryResponse : UseCaseResponse
+public closed record UpdateCategoryResponse : UseCaseResponse
 {
-    private UpdateCategoryResponse() { }
-
     public sealed record Success(Domain.Entities.Category Category) : UpdateCategoryResponse
     {
         public override string ToString() => $"Updated category {Category.Id}";

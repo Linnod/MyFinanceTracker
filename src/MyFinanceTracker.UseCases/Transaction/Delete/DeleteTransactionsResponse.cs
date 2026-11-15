@@ -1,9 +1,7 @@
 namespace MyFinanceTracker.UseCases.Transaction.Delete;
 
-public abstract record DeleteTransactionsResponse : UseCaseResponse
+public closed record DeleteTransactionsResponse : UseCaseResponse
 {
-    private DeleteTransactionsResponse() { }
-
     public sealed record Success(
         int DeletedCount
     ) : DeleteTransactionsResponse

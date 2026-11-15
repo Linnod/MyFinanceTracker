@@ -2,10 +2,8 @@ using MediatR;
 
 namespace MyFinanceTracker.Common.Notifications;
 
-public abstract record OutboxSyncNotification : INotification
+public closed record OutboxSyncNotification : INotification
 {
-    private OutboxSyncNotification() { }
-
     public sealed record MessageMovedToDeadLetter(
         long OriginalOutboxMessageId,
         string OperationType,

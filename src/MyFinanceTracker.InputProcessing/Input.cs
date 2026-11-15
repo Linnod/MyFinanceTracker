@@ -2,10 +2,8 @@ using MediatR;
 
 namespace MyFinanceTracker.InputProcessing;
 
-public abstract record Input : IRequest<ProcessingResult>
+public closed record Input : IRequest<ProcessingResult>
 {
-    private Input() { }
-
     public sealed record Text(string Content) : Input
     {
         public override string ToString() => Content;

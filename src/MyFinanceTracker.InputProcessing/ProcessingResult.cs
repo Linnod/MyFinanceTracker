@@ -2,10 +2,8 @@ using MyFinanceTracker.UseCases;
 
 namespace MyFinanceTracker.InputProcessing;
 
-public abstract record ProcessingResult
+public closed record ProcessingResult
 {
-    private ProcessingResult() { }
-
     public sealed record Completed(
         IReadOnlyList<UseCaseResponse> Actions
     ) : ProcessingResult
@@ -22,6 +20,4 @@ public abstract record ProcessingResult
     {
         public override string ToString() => $"SystemError: {Message}";
     }
-
-    public override string ToString() => GetType().Name;
 }

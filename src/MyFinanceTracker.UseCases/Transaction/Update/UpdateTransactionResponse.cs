@@ -1,9 +1,7 @@
 namespace MyFinanceTracker.UseCases.Transaction.Update;
 
-public abstract record UpdateTransactionResponse : UseCaseResponse
+public closed record UpdateTransactionResponse : UseCaseResponse
 {
-    private UpdateTransactionResponse() { }
-
     public sealed record Success(Domain.Entities.Transaction Transaction) : UpdateTransactionResponse
     {
         public override string ToString() => $"Updated transaction {Transaction.Id}";

@@ -2,10 +2,8 @@ using MyFinanceTracker.Domain.Common;
 
 namespace MyFinanceTracker.UseCases.Transaction.Get;
 
-public abstract record GetTransactionsResponse : UseCaseResponse
+public closed record GetTransactionsResponse : UseCaseResponse
 {
-    private GetTransactionsResponse() { }
-
     public sealed record Success(
         DateTime FromDate,
         DateTime ToDate,

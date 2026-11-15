@@ -1,9 +1,7 @@
 namespace MyFinanceTracker.UseCases.Category.Create;
 
-public abstract record CreateCategoryResponse : UseCaseResponse
+public closed record CreateCategoryResponse : UseCaseResponse
 {
-    private CreateCategoryResponse() { }
-
     public sealed record Success(Domain.Entities.Category Category) : CreateCategoryResponse
     {
         public override string ToString() => $"Created category {Category.Id}";

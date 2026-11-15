@@ -32,9 +32,7 @@ internal static class TelegramResponseFormatter
         OutboxSyncNotification.SyncFailed syncFailed => $"""
             <b>Outbox Sync Failed</b>
             {WebUtility.HtmlEncode(syncFailed.ErrorMessage)}
-            """,
-
-        _ => throw new UnreachableException($"Unknown notification type: {notification.GetType()}")
+            """
     };
 
     public static string FormatResponse(ProcessingResult response) => response switch
@@ -50,9 +48,7 @@ internal static class TelegramResponseFormatter
             <b>System Hiccup</b>
             Something went wrong. We're looking into it.
             <i>{WebUtility.HtmlEncode(systemError.Message)}</i>
-            """,
-
-        _ => throw new UnreachableException($"Unknown response type: {response.GetType()}")
+            """
     };
 
     private static string FormatCompleted(ProcessingResult.Completed completed)

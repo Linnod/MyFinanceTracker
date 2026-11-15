@@ -1,9 +1,7 @@
 namespace MyFinanceTracker.UseCases.Transaction.Create;
 
-public abstract record CreateTransactionsResponse : UseCaseResponse
+public closed record CreateTransactionsResponse : UseCaseResponse
 {
-    private CreateTransactionsResponse() { }
-
     public sealed record Success(
         IReadOnlyList<Domain.Entities.Transaction> Transactions
     ) : CreateTransactionsResponse
