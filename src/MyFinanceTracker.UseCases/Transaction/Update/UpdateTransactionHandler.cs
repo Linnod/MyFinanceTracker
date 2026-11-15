@@ -55,7 +55,7 @@ internal sealed class UpdateTransactionHandler(
         if (resolved is null)
         {
             return (null, new UpdateTransactionResponse.ValidationError([
-                new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, categoryId)
+                new ValidationErrorItem(ValidationErrorCode.Category.CategoryNotFound, categoryId)
             ]));
         }
 

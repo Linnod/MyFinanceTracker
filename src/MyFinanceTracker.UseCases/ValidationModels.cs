@@ -14,7 +14,6 @@ public static class ValidationErrorCode
     public static class Transaction
     {
         public const string CategoryRequired = nameof(CategoryRequired);
-        public const string CategoryNotFound = nameof(CategoryNotFound);
         public const string CategoryArchived = nameof(CategoryArchived);
         public const string IdRequired = nameof(IdRequired);
         public const string InvalidId = nameof(InvalidId);

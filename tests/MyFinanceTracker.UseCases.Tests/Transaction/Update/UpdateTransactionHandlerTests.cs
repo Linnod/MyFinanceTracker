@@ -110,7 +110,7 @@ public class UpdateTransactionHandlerTests
         // assert
         var error = result.Should().BeOfType<UpdateTransactionResponse.ValidationError>().Subject;
         error.Errors.Should().ContainSingle(e =>
-            e.ErrorCode == ValidationErrorCode.Transaction.CategoryNotFound &&
+            e.ErrorCode == ValidationErrorCode.Category.CategoryNotFound &&
             e.AttemptedValue == "unknown");
 
         await transactionRepository.DidNotReceiveWithAnyArgs().Update(default!, default);

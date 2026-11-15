@@ -178,7 +178,7 @@ public class CreateTransactionsHandlerTests
         error.Errors.Should().ContainSingle();
 
         error.Errors.Single().ErrorCode
-            .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
+            .Should().Be(ValidationErrorCode.Category.CategoryNotFound);
 
         await categoryRepository.Received(1)
             .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
@@ -267,7 +267,7 @@ public class CreateTransactionsHandlerTests
         error.Errors.Should().ContainSingle();
 
         error.Errors.Single().ErrorCode
-            .Should().Be(ValidationErrorCode.Transaction.CategoryNotFound);
+            .Should().Be(ValidationErrorCode.Category.CategoryNotFound);
 
         await categoryRepository.Received(1)
             .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());

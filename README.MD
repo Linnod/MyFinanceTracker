@@ -1,6 +1,6 @@
 # MyFinanceTracker
 
-[![Build](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci-cd.yml)
+[![Build](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blue)]()
 
 Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, and banking screenshots) through Telegram bot interface.

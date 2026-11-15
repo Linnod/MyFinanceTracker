@@ -31,7 +31,7 @@ internal sealed class CreateTransactionsHandler(
             if (!categoriesById.TryGetValue(item.CategoryId.Trim(), out var category))
             {
                 return new CreateTransactionsResponse.ValidationError([
-                    new ValidationErrorItem(ValidationErrorCode.Transaction.CategoryNotFound, item.CategoryId)
+                    new ValidationErrorItem(ValidationErrorCode.Category.CategoryNotFound, item.CategoryId)
                 ]);
             }
 

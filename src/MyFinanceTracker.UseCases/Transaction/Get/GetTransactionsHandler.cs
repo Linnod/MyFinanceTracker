@@ -60,7 +60,7 @@ internal sealed class GetTransactionsHandler(
                 !categoriesById.TryGetValue(categoryId.Trim(), out var category))
             {
                 errors.Add(new ValidationErrorItem(
-                    ValidationErrorCode.Transaction.CategoryNotFound,
+                    ValidationErrorCode.Category.CategoryNotFound,
                     categoryId));
             }
             else

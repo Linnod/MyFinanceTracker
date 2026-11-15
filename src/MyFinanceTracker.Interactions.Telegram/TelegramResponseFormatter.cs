@@ -239,9 +239,6 @@ internal static class TelegramResponseFormatter
     private static string FormatValidationError(ValidationErrorItem err) => err.ErrorCode switch
     {
         ValidationErrorCode.Transaction.CategoryRequired => "Category is required.",
-        ValidationErrorCode.Transaction.CategoryNotFound => err.AttemptedValue is not null
-            ? $"Category '{err.AttemptedValue}' was not found."
-            : "Category was not found.",
         ValidationErrorCode.Transaction.CategoryArchived => err.AttemptedValue is not null
             ? $"Category '{err.AttemptedValue}' is archived and cannot be used for new transactions."
             : "Category is archived and cannot be used for new transactions.",
@@ -270,6 +267,9 @@ internal static class TelegramResponseFormatter
         ValidationErrorCode.Category.CategoryAlreadyExists => err.AttemptedValue is not null
             ? $"Category '{err.AttemptedValue}' already exists."
             : "Category already exists.",
+        ValidationErrorCode.Category.CategoryNotFound => err.AttemptedValue is not null
+            ? $"Category '{err.AttemptedValue}' was not found."
+            : "Category was not found.",
         ValidationErrorCode.Category.NoChangesSpecified => "At least one field (name or archive status) must be provided to update the category.",
         _ => err.ErrorCode
     };
