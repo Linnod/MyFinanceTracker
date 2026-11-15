@@ -67,6 +67,30 @@
 
 ---
 
+## Known Architectural Trade-offs (By Design — Do NOT "Fix")
+
+Do **NOT** flag the following behaviors as bugs or propose refactoring them unless explicitly asked by the user:
+
+1. **Google Sheets Purpose & Usage Model:**
+   - Google Sheets is strictly an external flat-data mirror/backup consumed directly by AI agents (e.g., via direct spreadsheet integrations) and used for emergency manual inspection.
+   - No Excel-like formulas, pivot tables, charts, or cell formatting are used for reporting (`ValueInputOption.RAW` is intentional).
+   - Humans do **not** edit the spreadsheet during normal operation; manual edits in the Google Sheets UI happen only during emergency recovery (e.g., manually fixing/deleting a corrupted row after a Dead Letter Queue alert).
+2. **Google Sheets Write Symmetry (`AppendRows`) vs. Read Fail-Fast (`LoadValidRows`):**
+   - Both `GoogleSheetsTransactionRepository.AddRange` and `GoogleSheetsCategoryRepository.Add` intentionally append rows directly via `AppendRows` in a single round-trip **without** pre-fetching the sheet to check for duplicate IDs or sheet consistency. Primary key uniqueness and domain invariants are enforced by SQLite before Outbox messages are created.
+   - Full-sheet reads (`LoadValidRows`) are performed **only** when technically required by Google Sheets API (`GetAll`, and resolving row indices for `Update` and `DeleteRange`).
+   - When `LoadValidRows` runs, it strictly **fails fast** (`GoogleSheetsPersistenceException`) on duplicate IDs or malformed rows instead of silently deduplicating (`DistinctBy`) or skipping invalid rows, surfacing data corruption via Dead Letter Queue notifications.
+3. **One-Way Sync & Cold-Start Bootstrap Only:**
+   - `SqliteDatabaseInitializerHostedService` pulls data from Google Sheets **only** when the local SQLite database is completely empty (`ShouldSkipInitialSync`). Once initialized, SQLite is the single source of truth, and runtime synchronization is strictly one-way (`SQLite -> Outbox -> Google Sheets`).
+4. **Strict FIFO Outbox Ordering (Head-of-Line Blocking):**
+   - `OutboxProcessor` processes messages sequentially by `Id` and stops the batch (`break`) on the first transient failure (until `MaxRetryAttempts` moves the message to `DeadLetterMessages`). This preserves causal ordering (e.g., `AddCategory` before `AddTransaction`, `Add` before `Update`/`Delete`).
+5. **Single-User & Stateless Single-Turn AI Processing:**
+   - The application is a single-user bot (`AllowedUserId`); multi-tenancy (`UserId` columns) is intentionally omitted.
+   - `GeminiInputProcessor` is stateless (no conversation history) and executes tool calls in a single turn without sending tool outputs back to Gemini (responses are formatted deterministically by `TelegramResponseFormatter`). Multiple tool calls in a single turn execute sequentially without a cross-request database transaction.
+6. **Wall-Clock Local `DateTime` for Transactions:**
+   - `Transaction.Date` intentionally uses `DateTime` representing user local time (`timeProvider.GetLocalNow().DateTime`, serialized as `yyyy-MM-dd HH:mm:ss` in Sheets), while system audit timestamps (`CreatedAtUtc`, `FailedAtUtc`) use UTC `DateTimeOffset`. Do not convert `Transaction.Date` to UTC or `DateTimeOffset`.
+
+---
+
 ## Workflow & Agent Rules
 
 ### 1. Critical Thinking & Architectural Review
