@@ -15,7 +15,6 @@ services:
       - GoogleSheets__CredentialsFilePath=/app/secrets/google-api-credentials.json
       - GoogleSheets__TransactionsSheetName=Transactions
       - GoogleSheets__CategoriesSheetName=Categories
-      - GoogleSheets__DecimalSeparator=,
       - SqlitePersistence__ConnectionString=Data Source=/app/data/finance.db
       - SqlitePersistence__SyncIntervalSeconds=${SYNC_INTERVAL_SECONDS:-20}
       - Gemini__ApiKey=${GEMINI_API_KEY}

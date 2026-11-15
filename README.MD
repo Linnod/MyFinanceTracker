@@ -59,8 +59,7 @@ src/
 ├── MyFinanceTracker.Domain/
 ├── MyFinanceTracker.Common/
 ├── MyFinanceTracker.UseCases/
-├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets/
-├── MyFinanceTracker.Infrastructure.Persistence.Sqlite/
+├── MyFinanceTracker.Infrastructure.Persistence/
 ├── MyFinanceTracker.InputProcessing/
 ├── MyFinanceTracker.InputProcessing.Gemini/
 ├── MyFinanceTracker.Interactions.Telegram/
@@ -69,8 +68,7 @@ src/
 tests/
 ├── MyFinanceTracker.Domain.Tests/
 ├── MyFinanceTracker.UseCases.Tests/
-├── MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Tests/
-├── MyFinanceTracker.Infrastructure.Persistence.Sqlite.Tests/
+├── MyFinanceTracker.Infrastructure.Persistence.Tests/
 ├── MyFinanceTracker.InputProcessing.Gemini.Tests/
 └── MyFinanceTracker.Interactions.Telegram.Tests/
 ```
@@ -109,12 +107,16 @@ Categories are stored on the `Categories` sheet in your Google Spreadsheet (with
 
 ### 6. Configure the application
 
-Create `appsettings.Development.json` in the repository root:
+Create `src/MyFinanceTracker.Host/appsettings.Development.json`:
 
 ```json
 {
   "GoogleSheets": {
     "SpreadsheetId": "YOUR_SPREADSHEET_ID"
+  },
+  "Telegram": {
+    "Token": "YOUR_TELEGRAM_BOT_TOKEN",
+    "AllowedUserId": 123456789
   },
   "Gemini": {
     "ApiKey": "YOUR_GEMINI_API_KEY",
@@ -122,6 +124,9 @@ Create `appsettings.Development.json` in the repository root:
   }
 }
 ```
+
+> [!NOTE]
+> `GoogleSheets:CredentialsFilePath` defaults to `google-api-credentials.json` in `src/MyFinanceTracker.Host/appsettings.json` and resolves relative to the current working directory (the repository root when running the command below). If you launch from an IDE whose working directory is `src/MyFinanceTracker.Host/`, set `GoogleSheets:CredentialsFilePath` to `../../google-api-credentials.json` or an absolute path.
 
 ### 7. Run the application
 
@@ -141,8 +146,7 @@ dotnet run --project src/MyFinanceTracker.Host
     "CredentialsFilePath": "google-api-credentials.json",
     "TransactionsSheetName": "Transactions",
     "CategoriesSheetName": "Categories",
-    "ApplicationName": "MyFinanceTracker",
-    "DecimalSeparator": ","
+    "ApplicationName": "MyFinanceTracker"
   },
   "SqlitePersistence": {
     "ConnectionString": "Data Source=finance.db",
@@ -197,7 +201,7 @@ You can also run the application as a background service via Docker Compose:
 
 ### Text Commands
 
-Natural language input in any language for adding, viewing, updating, and deleting transactions:
+Natural language input in any language for managing transactions and categories:
 
 ```text
 # Add transactions
@@ -217,6 +221,13 @@ Change transaction 7d9a8c12-34ef-5678-90ab-cdef12345678: remove note
 # Delete transactions (by ID)
 Delete transaction 7d9a8c12-34ef-5678-90ab-cdef12345678
 Delete transactions 7d9a8c12-34ef-5678-90ab-cdef12345678 and 1a2b3c4d-5678-90ab-cdef-1234567890ab
+
+# Manage categories
+Show my categories
+Create category Subscriptions
+Rename category Subscriptions to Streaming
+Archive category Streaming
+Unarchive category Streaming
 ```
 
 ### Voice Messages (Telegram)

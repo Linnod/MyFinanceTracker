@@ -25,6 +25,7 @@ internal sealed partial class GeminiInputProcessor(
 {
     private const string ProcessingFailureMessage = "Failed to process your request. Please try again later.";
     private const string ExtractionInstruction = "Extract financial transaction details and execute the corresponding function call.";
+    private const string AudioInstruction = "Process the user's voice message and execute the corresponding function call.";
 
     public Task<ProcessingResult> Handle(Input.Text request, CancellationToken ct)
     {
@@ -118,7 +119,7 @@ internal sealed partial class GeminiInputProcessor(
             Parts =
             [
                 Part.FromBytes(input.Data, input.ContentType),
-                new Part { Text = ExtractionInstruction }
+                new Part { Text = AudioInstruction }
             ]
         };
     }

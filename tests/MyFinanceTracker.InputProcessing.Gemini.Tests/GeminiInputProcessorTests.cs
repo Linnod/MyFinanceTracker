@@ -55,7 +55,7 @@ public class GeminiInputProcessorTests
         parts[0].GetProperty("inlineData").GetProperty("data").GetString()
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
-            "Extract financial transaction details and execute the corresponding function call.");
+            "Process the user's voice message and execute the corresponding function call.");
     }
 
     [Theory]

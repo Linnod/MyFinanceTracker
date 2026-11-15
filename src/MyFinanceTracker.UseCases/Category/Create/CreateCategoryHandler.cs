@@ -19,7 +19,7 @@ internal sealed class CreateCategoryHandler(ICategoryRepository categoryReposito
         }
 
         var category = new Domain.Entities.Category(
-            request.Id.Trim().ToLowerInvariant(),
+            request.Id,
             request.Name.Trim(),
             isArchived: false);
 

@@ -2,21 +2,23 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyFinanceTracker.Host.Configuration;
 using MyFinanceTracker.Interactions.Telegram;
-using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets;
-using MyFinanceTracker.Infrastructure.Persistence.Sqlite;
+using MyFinanceTracker.Infrastructure.Persistence;
 using MyFinanceTracker.UseCases;
 using MyFinanceTracker.InputProcessing.Gemini;
 using Microsoft.Extensions.DependencyInjection;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
 
 builder.Services
     .AddSingleton(TimeProvider.System)
     .AddOptionalApplicationInsights(builder.Configuration)
     .AddGeminiInputProcessor(builder.Configuration)
     .AddUseCases()
-    .AddGoogleSheetsPersistence(builder.Configuration)
-    .AddSqlitePersistence(builder.Configuration)
+    .AddPersistence(builder.Configuration)
     .AddTelegramInteractions(builder.Configuration);
 
 builder.Logging

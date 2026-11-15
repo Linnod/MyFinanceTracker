@@ -39,13 +39,13 @@ public class CreateCategoryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CategoryDoesNotExist_TrimsAndNormalizes_CallsAddAndReturnsSuccess()
+    public async Task Handle_CategoryDoesNotExist_TrimsName_CallsAddAndReturnsSuccess()
     {
         // arrange
-        categoryRepository.GetById(" Food_1 ", Arg.Any<CancellationToken>())
+        categoryRepository.GetById("food_1", Arg.Any<CancellationToken>())
             .Returns((Domain.Entities.Category?)null);
 
-        var request = new CreateCategoryRequest(" Food_1 ", "  Groceries  ");
+        var request = new CreateCategoryRequest("food_1", "  Groceries  ");
 
         // act
         var result = await sut.Handle(request, CancellationToken.None);

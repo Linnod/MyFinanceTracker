@@ -153,6 +153,12 @@ internal static class TelegramResponseFormatter
 
     private static void AppendCategories(StringBuilder sb, ListCategoriesResponse.Success categories)
     {
+        if (categories.Categories.Count == 0)
+        {
+            sb.AppendLine("No categories found.");
+            return;
+        }
+
         foreach (var c in categories.Categories)
         {
             sb.AppendLine($"• <code>{WebUtility.HtmlEncode(c.Name)}</code>");
@@ -255,6 +261,7 @@ internal static class TelegramResponseFormatter
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
         ValidationErrorCode.Transaction.NothingToUpdate => "At least one field must be provided to update the transaction.",
+        ValidationErrorCode.Transaction.InvalidPagination => "Pagination parameters must be non-negative.",
         ValidationErrorCode.Category.CategoryIdRequired => "Category ID is required.",
         ValidationErrorCode.Category.InvalidIdFormat => err.AttemptedValue is not null
             ? $"Category ID '{err.AttemptedValue}' has an invalid format. It must contain only lowercase English letters, digits, and underscores."
