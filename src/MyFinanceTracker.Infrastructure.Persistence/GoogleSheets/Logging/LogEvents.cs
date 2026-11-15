@@ -23,7 +23,6 @@ internal static class LogEvents
         public const int AddingCategory = SubBase + 1;
         public const int UpdatingCategory = SubBase + 2;
         public const int GettingAllCategories = SubBase + 3;
-        public const int CategoryAlreadyExists = SubBase + 4;
     }
 
     public static class Client

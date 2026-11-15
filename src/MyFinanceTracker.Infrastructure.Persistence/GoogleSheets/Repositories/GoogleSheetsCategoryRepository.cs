@@ -34,20 +34,10 @@ internal sealed partial class GoogleSheetsCategoryRepository(
 
     public async Task Add(CategorySyncRecord category, CancellationToken ct)
     {
-        LogAddingCategory(category.Id);
-
         await semaphore.WaitAsync(ct);
         try
         {
-            var validRows = await LoadValidRows(ct);
-            var exists = validRows.Any(s =>
-                s.Category.Id.Equals(category.Id, StringComparison.OrdinalIgnoreCase));
-
-            if (exists)
-            {
-                LogCategoryAlreadyExists(category.Id);
-                return;
-            }
+            LogAddingCategory(category.Id);
 
             var row = mapper.MapToRow(category);
             await client.AppendRows(options.CategoriesSheetName, [row], ct);

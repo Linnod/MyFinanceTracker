@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Clients;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Configuration;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Exceptions;
-using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Logging;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Mapping;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Models;
 using MyFinanceTracker.Infrastructure.Persistence.GoogleSheets.Repositories;
@@ -170,68 +169,6 @@ public class GoogleSheetsCategoryRepositoryTests
             "Categories",
             Arg.Is<IEnumerable<GoogleSheetRowValues>>(rows =>
                 rows.Single().Values.SequenceEqual(new[] { "food_id", "Food", "FALSE" })),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Add_CategoryAlreadyExists_DoesNotAppendRowAndLogsInformation()
-    {
-        // arrange
-        var options = Options.Create(defaultOptions);
-        var mapper = new GoogleSheetCategoryMapper();
-        var clientMock = Substitute.For<IGoogleSheetsClient>();
-        var loggerMock = Substitute.For<ILogger<GoogleSheetsCategoryRepository>>();
-        loggerMock.IsEnabled(LogLevel.Information).Returns(true);
-
-        var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Name", "IsArchived"]));
-        var existingRow = new GoogleSheetRow(1, new GoogleSheetRowValues(["food_id", "Food", "FALSE"]));
-
-        clientMock.GetRows("Categories", Arg.Any<CancellationToken>())
-            .Returns([headerRow, existingRow]);
-
-        using var sut = new GoogleSheetsCategoryRepository(options, mapper, clientMock, loggerMock);
-
-        // act
-        await sut.Add(foodCategory, CancellationToken.None);
-
-        // assert
-        await clientMock.DidNotReceive().AppendRows(
-            Arg.Any<string>(),
-            Arg.Any<IEnumerable<GoogleSheetRowValues>>(),
-            Arg.Any<CancellationToken>());
-
-        loggerMock.Received(1).Log(
-            LogLevel.Information,
-            Arg.Is<EventId>(e => e.Id == LogEvents.CategoryRepository.CategoryAlreadyExists),
-            Arg.Any<Arg.AnyType>(),
-            null,
-            Arg.Any<Func<Arg.AnyType, Exception?, string>>());
-    }
-
-    [Fact]
-    public async Task Add_CategoryAlreadyExistsWithDifferentCase_DoesNotAppendRow()
-    {
-        // arrange
-        var options = Options.Create(defaultOptions);
-        var mapper = new GoogleSheetCategoryMapper();
-        var clientMock = Substitute.For<IGoogleSheetsClient>();
-        var loggerMock = Substitute.For<ILogger<GoogleSheetsCategoryRepository>>();
-
-        var headerRow = new GoogleSheetRow(0, new GoogleSheetRowValues(["Id", "Name", "IsArchived"]));
-        var existingRow = new GoogleSheetRow(1, new GoogleSheetRowValues(["FOOD_ID", "Food", "FALSE"]));
-
-        clientMock.GetRows("Categories", Arg.Any<CancellationToken>())
-            .Returns([headerRow, existingRow]);
-
-        using var sut = new GoogleSheetsCategoryRepository(options, mapper, clientMock, loggerMock);
-
-        // act
-        await sut.Add(foodCategory, CancellationToken.None);
-
-        // assert
-        await clientMock.DidNotReceive().AppendRows(
-            Arg.Any<string>(),
-            Arg.Any<IEnumerable<GoogleSheetRowValues>>(),
             Arg.Any<CancellationToken>());
     }
 
