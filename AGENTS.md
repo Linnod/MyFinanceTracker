@@ -1,7 +1,7 @@
 # Guidelines for AI Agents (MyFinanceTracker)
 
 ## Project Overview
-- **Stack:** .NET 10, C# 13, Clean Architecture + CQRS (MediatR), Entity Framework Core 10 (SQLite), Google Sheets API, Telegram.Bot, Gemini API.
+- **Stack:** .NET 11, C# 15, Clean Architecture + CQRS (MediatR), Entity Framework Core 11 (SQLite), Google Sheets API, Telegram.Bot, Gemini API.
 - **Architecture Pattern:** Dual persistence with Transactional Outbox pattern:
   - Local database (SQLite via EF Core) acts as the primary transactional store.
   - Background synchronization (`OutboxProcessor`, `OutboxSyncBackgroundService`) pushes transactions to Google Sheets.
