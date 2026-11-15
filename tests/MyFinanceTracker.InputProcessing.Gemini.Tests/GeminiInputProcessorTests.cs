@@ -80,7 +80,7 @@ public class GeminiInputProcessorTests
     }
 
     [Fact]
-    public async Task Handle_AudioWithCaption_IncludesCaptionInTextPart()
+    public async Task Handle_AudioWithCaption_IncludesCaptionAsSeparatePart()
     {
         // arrange
         using var fixture = new Fixture();
@@ -92,12 +92,13 @@ public class GeminiInputProcessorTests
         // assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
-        parts.GetArrayLength().Should().Be(2);
+        parts.GetArrayLength().Should().Be(3);
         parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("audio/ogg");
         parts[0].GetProperty("inlineData").GetProperty("data").GetString()
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
-            "Process the user's voice message and execute the corresponding function call. User caption: User note");
+            "Process the user's voice message and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be("User caption: User note");
     }
 
     [Fact]
@@ -136,11 +137,12 @@ public class GeminiInputProcessorTests
         // assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
-        parts.GetArrayLength().Should().Be(3);
+        parts.GetArrayLength().Should().Be(4);
         parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("audio/ogg");
         parts[1].GetProperty("text").GetString().Should().Be(
-            "Process the user's voice message and execute the corresponding function call. User caption: Voice note");
-        parts[2].GetProperty("text").GetString().Should().Be(
+            "Process the user's voice message and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be("User caption: Voice note");
+        parts[3].GetProperty("text").GetString().Should().Be(
             "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
     }
 
@@ -256,7 +258,7 @@ public class GeminiInputProcessorTests
     }
 
     [Fact]
-    public async Task Handle_ImageWithCaption_IncludesCaptionInTextPart()
+    public async Task Handle_ImageWithCaption_IncludesCaptionAsSeparatePart()
     {
         // Arrange
         using var fixture = new Fixture();
@@ -268,12 +270,13 @@ public class GeminiInputProcessorTests
         // Assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
-        parts.GetArrayLength().Should().Be(2);
+        parts.GetArrayLength().Should().Be(3);
         parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("image/jpeg");
         parts[0].GetProperty("inlineData").GetProperty("data").GetString()
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
-            "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
+            "Extract financial transaction details and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be("User caption: Groceries yesterday");
     }
 
     [Fact]
@@ -312,11 +315,12 @@ public class GeminiInputProcessorTests
         // assert
         using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
         var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
-        parts.GetArrayLength().Should().Be(3);
+        parts.GetArrayLength().Should().Be(4);
         parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("image/jpeg");
         parts[1].GetProperty("text").GetString().Should().Be(
-            "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
-        parts[2].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be("User caption: Groceries yesterday");
+        parts[3].GetProperty("text").GetString().Should().Be(
             "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
     }
 

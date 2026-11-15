@@ -40,14 +40,20 @@ internal sealed partial class GeminiInputProcessor(
     {
         LogExecuteEntry(request);
 
-        return ProcessCore(CreateAudioContent(request), ct);
+        var content = CreateMediaContent(
+            request.Data, request.ContentType, AudioInstruction, request.Caption, request.Context);
+
+        return ProcessCore(content, ct);
     }
 
     public Task<ProcessingResult> Handle(Input.Image request, CancellationToken ct)
     {
         LogExecuteEntry(request);
 
-        return ProcessCore(CreateImageContent(request), ct);
+        var content = CreateMediaContent(
+            request.Data, request.ContentType, ExtractionInstruction, request.Caption, request.Context);
+
+        return ProcessCore(content, ct);
     }
 
     private async Task<ProcessingResult> ProcessCore(Content content, CancellationToken ct)
@@ -92,12 +98,6 @@ internal sealed partial class GeminiInputProcessor(
         }
     }
 
-    private static Content CreateImageContent(Input.Image input) =>
-        CreateMediaContent(input.Data, input.ContentType, ExtractionInstruction, input.Caption, input.Context);
-
-    private static Content CreateAudioContent(Input.Audio input) =>
-        CreateMediaContent(input.Data, input.ContentType, AudioInstruction, input.Caption, input.Context);
-
     private static Content CreateMediaContent(
         byte[] data,
         string contentType,
@@ -105,14 +105,18 @@ internal sealed partial class GeminiInputProcessor(
         string? caption,
         string? context)
     {
-        var promptText = string.IsNullOrWhiteSpace(caption)
-            ? instruction
-            : $"{instruction} User caption: {caption}";
-
-        return CreateContent(
-            context,
+        List<Part> primaryParts =
+        [
             Part.FromBytes(data, contentType),
-            new Part { Text = promptText });
+            new Part { Text = instruction }
+        ];
+
+        if (!string.IsNullOrWhiteSpace(caption))
+        {
+            primaryParts.Add(new Part { Text = $"User caption: {caption}" });
+        }
+
+        return CreateContent(context, [.. primaryParts]);
     }
 
     private static Content CreateContent(string? context, params Part[] primaryParts)
@@ -129,7 +133,11 @@ internal sealed partial class GeminiInputProcessor(
     }
 
     private static string FormatContext(string context) =>
-        $"[Context - reference only, do not re-execute]\n{context}\n[End of context]";
+        $"""
+        [Context - reference only, do not re-execute]
+        {context}
+        [End of context]
+        """;
 
     private async Task<GenerateContentConfig> BuildConfig(CancellationToken ct)
         => new()
