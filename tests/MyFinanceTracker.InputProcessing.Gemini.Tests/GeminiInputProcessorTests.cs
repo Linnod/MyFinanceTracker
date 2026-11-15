@@ -37,7 +37,28 @@ public class GeminiInputProcessorTests
             .GetString().Should().Be("System instruction");
         root.GetProperty("tools")[0].GetProperty("functionDeclarations")[0].GetProperty("name")
             .GetString().Should().Be("record_transaction");
+        root.GetProperty("generationConfig").GetProperty("temperature").GetSingle().Should().Be(0f);
         fixture.Handler.RequestUri!.AbsolutePath.Should().EndWith("/models/test-model:generateContent");
+    }
+
+    [Fact]
+    public async Task Handle_TextWithContext_IncludesContextAsSeparatePartAfterText()
+    {
+        // arrange
+        using var fixture = new Fixture();
+
+        // act
+        await fixture.Processor.Handle(
+            new Input.Text("change amount to 10", "Created transaction 123"),
+            CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(2);
+        parts[0].GetProperty("text").GetString().Should().Be("change amount to 10");
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated transaction 123\n[End of context]");
     }
 
     [Fact]
@@ -56,6 +77,71 @@ public class GeminiInputProcessorTests
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
             "Process the user's voice message and execute the corresponding function call.");
+    }
+
+    [Fact]
+    public async Task Handle_AudioWithCaption_IncludesCaptionInTextPart()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(new Input.Audio(bytes, "audio/ogg", "User note"), CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(2);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("audio/ogg");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Process the user's voice message and execute the corresponding function call. User caption: User note");
+    }
+
+    [Fact]
+    public async Task Handle_AudioWithContext_IncludesContextAsSeparatePartWithoutCaptionPrefix()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(new Input.Audio(bytes, "audio/ogg", Context: "Created tx 123"), CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(3);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("audio/ogg");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Process the user's voice message and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
+    }
+
+    [Fact]
+    public async Task Handle_AudioWithCaptionAndContext_IncludesBothAsExpectedParts()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(new Input.Audio(bytes, "audio/ogg", "Voice note", "Created tx 123"), CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(3);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("audio/ogg");
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Process the user's voice message and execute the corresponding function call. User caption: Voice note");
+        parts[2].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
     }
 
     [Theory]
@@ -188,6 +274,50 @@ public class GeminiInputProcessorTests
             .Should().Be(Convert.ToBase64String(bytes));
         parts[1].GetProperty("text").GetString().Should().Be(
             "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
+    }
+
+    [Fact]
+    public async Task Handle_ImageWithContext_IncludesContextAsSeparatePartWithoutCaptionPrefix()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(new Input.Image(bytes, "image/jpeg", Context: "Created tx 123"), CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(3);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("image/jpeg");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
+    }
+
+    [Fact]
+    public async Task Handle_ImageWithCaptionAndContext_IncludesBothAsExpectedParts()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(new Input.Image(bytes, "image/jpeg", "Groceries yesterday", "Created tx 123"), CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(3);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("image/jpeg");
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details and execute the corresponding function call. User caption: Groceries yesterday");
+        parts[2].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
     }
 
     [Fact]

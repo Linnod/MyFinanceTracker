@@ -31,11 +31,7 @@ internal sealed partial class GeminiInputProcessor(
     {
         LogExecuteEntry(request);
 
-        var content = new Content
-        {
-            Role = "user",
-            Parts = [new Part { Text = request.Content }]
-        };
+        var content = CreateContent(request.Context, new Part { Text = request.Content });
 
         return ProcessCore(content, ct);
     }
@@ -96,37 +92,49 @@ internal sealed partial class GeminiInputProcessor(
         }
     }
 
-    private static Content CreateImageContent(Input.Image input)
+    private static Content CreateImageContent(Input.Image input) =>
+        CreateMediaContent(input.Data, input.ContentType, ExtractionInstruction, input.Caption, input.Context);
+
+    private static Content CreateAudioContent(Input.Audio input) =>
+        CreateMediaContent(input.Data, input.ContentType, AudioInstruction, input.Caption, input.Context);
+
+    private static Content CreateMediaContent(
+        byte[] data,
+        string contentType,
+        string instruction,
+        string? caption,
+        string? context)
     {
-        var promptText = string.IsNullOrWhiteSpace(input.Caption)
-            ? ExtractionInstruction
-            : $"{ExtractionInstruction} User caption: {input.Caption}";
+        var promptText = string.IsNullOrWhiteSpace(caption)
+            ? instruction
+            : $"{instruction} User caption: {caption}";
+
+        return CreateContent(
+            context,
+            Part.FromBytes(data, contentType),
+            new Part { Text = promptText });
+    }
+
+    private static Content CreateContent(string? context, params Part[] primaryParts)
+    {
+        List<Part> parts = string.IsNullOrWhiteSpace(context)
+            ? [.. primaryParts]
+            : [.. primaryParts, new Part { Text = FormatContext(context) }];
 
         return new Content
         {
-            Parts =
-            [
-                Part.FromBytes(input.Data, input.ContentType),
-                new Part { Text = promptText }
-            ]
+            Role = "user",
+            Parts = parts
         };
     }
 
-    private static Content CreateAudioContent(Input.Audio input)
-    {
-        return new Content
-        {
-            Parts =
-            [
-                Part.FromBytes(input.Data, input.ContentType),
-                new Part { Text = AudioInstruction }
-            ]
-        };
-    }
+    private static string FormatContext(string context) =>
+        $"[Context - reference only, do not re-execute]\n{context}\n[End of context]";
 
     private async Task<GenerateContentConfig> BuildConfig(CancellationToken ct)
         => new()
         {
+            Temperature = 0f,
             SystemInstruction = new Content
             {
                 Parts = [new Part { Text = await promptBuilder.BuildSystemInstruction(ct) }]
