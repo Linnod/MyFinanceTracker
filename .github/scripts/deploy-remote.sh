@@ -28,8 +28,14 @@ docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy
 docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml up -d --force-recreate
 sleep 5
 
-if [ -z "$(docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml ps -q --filter status=running fintracker-bot)" ]; then
-  echo "::error::Container failed to start. Logs:"
+CONTAINER_ID=$(docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml ps -q --filter status=running fintracker-bot)
+RESTART_COUNT=""
+if [ -n "$CONTAINER_ID" ]; then
+  RESTART_COUNT=$(docker inspect -f '{{.State.RestartCount}}' "$CONTAINER_ID")
+fi
+
+if [ -z "$CONTAINER_ID" ] || [ "${RESTART_COUNT:-0}" -gt 0 ]; then
+  echo "::error::Container failed to start cleanly (running=${CONTAINER_ID:+yes}${CONTAINER_ID:-no}, RestartCount=${RESTART_COUNT:-unknown}). Logs:"
   docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml logs --tail 50
   exit 1
 fi

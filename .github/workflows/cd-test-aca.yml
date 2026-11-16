@@ -45,7 +45,7 @@ jobs:
             --resource-group rg-fintracker \
             --name ca-fintracker-test \
             --min-replicas 0 \
-            --max-replicas 0
+            --max-replicas 1
 
   deploy:
     name: Deploy to Azure Container Apps
@@ -60,9 +60,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set Image Name to Lowercase
         run: echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Resolve image tag
+        run: bash .github/scripts/resolve-image-tag.sh
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -74,7 +79,7 @@ jobs:
       - name: Verify image exists in GHCR
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: bash .github/scripts/verify-image-exists.sh
 
       - name: Azure Login (OIDC)
@@ -87,12 +92,13 @@ jobs:
       - name: Deploy new revision to Azure Container Apps
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           az containerapp update \
             --resource-group rg-fintracker \
             --name ca-fintracker-test \
             --image "ghcr.io/${IMAGE_NAME}:${IMAGE_TAG}" \
+            --revision-suffix "run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --min-replicas 1 \
             --max-replicas 1 \
-            --set-env-vars "DOTNET_ENVIRONMENT=Test"
+            --set-env-vars "DOTNET_ENVIRONMENT=Test" "TZ=Europe/Madrid"

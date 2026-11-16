@@ -24,7 +24,7 @@
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
     <ContainerBaseImage>mcr.microsoft.com/dotnet/runtime:11.0</ContainerBaseImage>
     <ContainerRepository>myfinancetracker</ContainerRepository>
-    <ContainerImageTags Condition="'$(CONTAINER_TAG)' != ''">latest;$(CONTAINER_TAG)</ContainerImageTags>
+    <ContainerImageTags Condition="'$(ContainerImageTags)' == '' and '$(CONTAINER_TAG)' != ''">$(CONTAINER_TAG)</ContainerImageTags>
     <ContainerImageTags Condition="'$(ContainerImageTags)' == ''">latest</ContainerImageTags>
   </PropertyGroup>
 

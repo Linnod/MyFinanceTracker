@@ -64,6 +64,7 @@ jobs:
 
   publish-container:
     name: Build & Publish Container
+    if: github.event_name != 'pull_request'
     needs: [build-and-test]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -95,7 +96,7 @@ jobs:
       - name: Publish Container to GHCR
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          CONTAINER_TAG: ${{ github.sha }}
+          CONTAINER_TAG: ${{ github.ref == 'refs/heads/main' && format('latest;{0}', github.sha) || github.sha }}
         run: >
           dotnet publish src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj 
           -c Release 
@@ -103,11 +104,11 @@ jobs:
           /p:ContainerRegistry=ghcr.io
           /p:ContainerRepository=$IMAGE_NAME
 
-      - name: Cleanup old container versions (keep last 5)
+      - name: Cleanup old container versions (keep last 15)
         uses: actions/delete-package-versions@v5
         continue-on-error: true
         with:
           package-name: 'myfinancetracker'
           package-type: 'container'
-          min-versions-to-keep: 5
+          min-versions-to-keep: 15
           delete-only-untagged-versions: 'false'

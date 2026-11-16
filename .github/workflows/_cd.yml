@@ -59,9 +59,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set Image Name to Lowercase
         run: echo "IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Resolve image tag
+        run: bash .github/scripts/resolve-image-tag.sh
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -73,7 +78,7 @@ jobs:
       - name: Verify image exists in GHCR
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: bash .github/scripts/verify-image-exists.sh
 
       - name: Prepare configuration files
@@ -87,7 +92,7 @@ jobs:
           SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
           CONTAINER_NAME: ${{ inputs.container_name }}
           DOTNET_ENVIRONMENT: ${{ inputs.dotnet_environment }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: bash .github/scripts/prepare-deploy-config.sh
 
       - name: Copy deployment files to server via SCP
@@ -104,7 +109,7 @@ jobs:
         env:
           TARGET_DIR: ${{ inputs.target_dir }}
           PROJECT_NAME: ${{ inputs.project_name }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
           GH_ACTOR: ${{ github.actor }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLEAN_DATA: ${{ inputs.clean_data }}
