@@ -64,6 +64,7 @@
   ...
   ```
 - **Mocking:** Use NSubstitute (`Substitute.For<T>()`, `Arg.Any<CancellationToken>()`).
+- **Test Exclusions:** Do **NOT** write new tests for `GeminiToolDeclarationProvider`, `TelegramResponseFormatter`, or `GeminiSystemPromptBuilder` unless explicitly requested by the user.
 
 ---
 

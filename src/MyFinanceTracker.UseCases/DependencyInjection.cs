@@ -20,6 +20,9 @@ using MyFinanceTracker.UseCases.Transaction.Delete.Validation;
 using MyFinanceTracker.UseCases.Transaction.Get;
 using MyFinanceTracker.UseCases.Transaction.Get.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Get.Validation;
+using MyFinanceTracker.UseCases.Transaction.GetById;
+using MyFinanceTracker.UseCases.Transaction.GetById.Behaviors;
+using MyFinanceTracker.UseCases.Transaction.GetById.Validation;
 using MyFinanceTracker.UseCases.Transaction.Update;
 using MyFinanceTracker.UseCases.Transaction.Update.Behaviors;
 using MyFinanceTracker.UseCases.Transaction.Update.Validation;
@@ -45,6 +48,7 @@ public static class DependencyInjection
             .AddTransactionCreate()
             .AddTransactionDelete()
             .AddTransactionGet()
+            .AddTransactionGetById()
             .AddTransactionUpdate();
     }
 
@@ -79,6 +83,17 @@ public static class DependencyInjection
             .AddScoped<IValidator<GetTransactionsRequest>, GetTransactionsRequestValidator>()
             .AddValidationBehavior<GetTransactionsRequest, GetTransactionsResponse>(
                 errors => new GetTransactionsResponse.ValidationError(errors));
+    }
+
+    private static IServiceCollection AddTransactionGetById(this IServiceCollection services)
+    {
+        return services
+            .AddTransient<
+                IPipelineBehavior<GetTransactionByIdRequest, GetTransactionByIdResponse>,
+                GetTransactionByIdLoggingBehavior>()
+            .AddScoped<IValidator<GetTransactionByIdRequest>, GetTransactionByIdRequestValidator>()
+            .AddValidationBehavior<GetTransactionByIdRequest, GetTransactionByIdResponse>(
+                errors => new GetTransactionByIdResponse.ValidationError(errors));
     }
 
     private static IServiceCollection AddTransactionUpdate(this IServiceCollection services)

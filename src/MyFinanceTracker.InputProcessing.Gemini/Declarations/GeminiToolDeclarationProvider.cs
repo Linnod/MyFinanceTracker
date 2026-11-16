@@ -165,6 +165,24 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
                 },
                 new FunctionDeclaration
                 {
+                    Name = ToolNames.GetTransactionById,
+                    Description = "Get a single financial transaction by its unique ID (UUID/GUID).",
+                    Parameters = new Schema
+                    {
+                        Type = Type.Object,
+                        Properties = new Dictionary<string, Schema>
+                        {
+                            ["id"] = new Schema
+                            {
+                                Type = Type.String,
+                                Description = "Unique transaction ID (UUID/GUID) to retrieve."
+                            }
+                        },
+                        Required = ["id"]
+                    }
+                },
+                new FunctionDeclaration
+                {
                     Name = ToolNames.ListCategories,
                     Description = "List all available categories."
                 },
@@ -231,6 +249,7 @@ internal sealed class GeminiToolDeclarationProvider : IGeminiToolDeclarationProv
         public const string DeleteTransactions = "delete_transactions";
         public const string UpdateTransaction = "update_transaction";
         public const string GetTransactions = "get_transactions";
+        public const string GetTransactionById = "get_transaction_by_id";
         public const string ListCategories = "list_categories";
         public const string CreateCategory = "create_category";
         public const string UpdateCategory = "update_category";

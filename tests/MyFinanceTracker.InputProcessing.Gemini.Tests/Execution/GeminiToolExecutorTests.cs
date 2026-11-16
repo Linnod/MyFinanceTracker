@@ -12,6 +12,7 @@ using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.GetById;
 using MyFinanceTracker.UseCases.Transaction.Update;
 using NSubstitute;
 using Xunit;
@@ -684,6 +685,86 @@ public class GeminiToolExecutorTests
         // assert
         response.Should().BeOfType<UpdateCategoryResponse.Failure>();
         await sender.DidNotReceive().Send(Arg.Any<UpdateCategoryRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionByIdCall_ShouldSendGetTransactionByIdRequest()
+    {
+        // arrange
+        var txId = Guid.NewGuid();
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactionById,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = txId.ToString()
+            }
+        };
+
+        var transaction = new Transaction(
+            txId,
+            TransactionType.Expense,
+            new Category("food", "Food"),
+            14.11m,
+            new DateTime(2026, 11, 16, 21, 24, 47),
+            "Burger King");
+
+        sender.Send(Arg.Any<GetTransactionByIdRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new GetTransactionByIdResponse.Success(transaction));
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        var success = response.Should().BeOfType<GetTransactionByIdResponse.Success>().Subject;
+        success.Transaction.Should().Be(transaction);
+
+        await sender.Received(1).Send(
+            Arg.Is<GetTransactionByIdRequest>(r => r.Id == txId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionByIdCallWithInvalidId_ShouldReturnValidationErrorWithoutSendingRequest()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactionById,
+            Args = new Dictionary<string, object>
+            {
+                ["id"] = "not-a-guid"
+            }
+        };
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        var validation = response.Should().BeOfType<GetTransactionByIdResponse.ValidationError>().Subject;
+        validation.Errors.Should().ContainSingle(e =>
+            e.ErrorCode == ValidationErrorCode.Transaction.InvalidId &&
+            e.AttemptedValue == "not-a-guid");
+
+        await sender.DidNotReceive().Send(Arg.Any<GetTransactionByIdRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    async Task ExecuteToolCall_WhenGetTransactionByIdCallWithNullArgs_ShouldReturnFailure()
+    {
+        // arrange
+        var functionCall = new FunctionCall
+        {
+            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactionById,
+            Args = null
+        };
+
+        // act
+        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
+
+        // assert
+        response.Should().BeOfType<GetTransactionByIdResponse.Failure>();
+        await sender.DidNotReceive().Send(Arg.Any<GetTransactionByIdRequest>(), Arg.Any<CancellationToken>());
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

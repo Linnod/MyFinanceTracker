@@ -11,6 +11,7 @@ using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.GetById;
 using MyFinanceTracker.UseCases.Transaction.Update;
 
 namespace MyFinanceTracker.InputProcessing.Gemini.Execution;
@@ -32,6 +33,7 @@ internal sealed partial class GeminiToolExecutor(
             GeminiToolDeclarationProvider.ToolNames.UpdateTransaction => await HandleUpdateTransaction(args, ct),
             GeminiToolDeclarationProvider.ToolNames.ListCategories => await HandleListCategories(ct),
             GeminiToolDeclarationProvider.ToolNames.GetTransactions => await HandleGetTransactions(args, ct),
+            GeminiToolDeclarationProvider.ToolNames.GetTransactionById => await HandleGetTransactionById(args, ct),
             GeminiToolDeclarationProvider.ToolNames.CreateCategory => await HandleCreateCategory(args, ct),
             GeminiToolDeclarationProvider.ToolNames.UpdateCategory => await HandleUpdateCategory(args, ct),
             _ => throw new UnreachableException($"Unsupported function call: '{functionCall.Name}'")
@@ -103,15 +105,9 @@ internal sealed partial class GeminiToolExecutor(
             return new UpdateTransactionResponse.Failure();
         }
 
-        Guid parsedId = Guid.Empty;
-        if (!string.IsNullOrWhiteSpace(typedArgs.Id))
+        if (!TryParseOptionalGuid(typedArgs.Id, out var parsedId, out var error))
         {
-            if (!Guid.TryParse(typedArgs.Id, out parsedId))
-            {
-                return new UpdateTransactionResponse.ValidationError([
-                    new ValidationErrorItem(ValidationErrorCode.Transaction.InvalidId, typedArgs.Id)
-                ]);
-            }
+            return new UpdateTransactionResponse.ValidationError([error!]);
         }
 
         var request = new UpdateTransactionRequest(
@@ -160,6 +156,41 @@ internal sealed partial class GeminiToolExecutor(
             Take: typedArgs.Limit);
 
         return await sender.Send(request, ct);
+    }
+
+    private async Task<UseCaseResponse> HandleGetTransactionById(
+        ToolCallArgs args,
+        CancellationToken ct)
+    {
+        var typedArgs = args.To<GetTransactionByIdArgs>();
+        if (typedArgs is null)
+        {
+            return new GetTransactionByIdResponse.Failure();
+        }
+
+        if (!TryParseOptionalGuid(typedArgs.Id, out var parsedId, out var error))
+        {
+            return new GetTransactionByIdResponse.ValidationError([error!]);
+        }
+
+        return await sender.Send(new GetTransactionByIdRequest(parsedId), ct);
+    }
+
+    private static bool TryParseOptionalGuid(
+        string? rawId,
+        out Guid parsedId,
+        out ValidationErrorItem? error)
+    {
+        parsedId = Guid.Empty;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(rawId) || Guid.TryParse(rawId, out parsedId))
+        {
+            return true;
+        }
+
+        error = new ValidationErrorItem(ValidationErrorCode.Transaction.InvalidId, rawId);
+        return false;
     }
 
     private async Task<UseCaseResponse> HandleListCategories(CancellationToken ct)

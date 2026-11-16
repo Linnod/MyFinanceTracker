@@ -11,6 +11,7 @@ using MyFinanceTracker.UseCases.Category.Update;
 using MyFinanceTracker.UseCases.Transaction.Create;
 using MyFinanceTracker.UseCases.Transaction.Delete;
 using MyFinanceTracker.UseCases.Transaction.Get;
+using MyFinanceTracker.UseCases.Transaction.GetById;
 using MyFinanceTracker.UseCases.Transaction.Update;
 
 namespace MyFinanceTracker.Interactions.Telegram;
@@ -86,6 +87,10 @@ internal static class TelegramResponseFormatter
                 AppendListed(sb, listed);
                 break;
 
+            case GetTransactionByIdResponse.Success found:
+                AppendFoundById(sb, found);
+                break;
+
             case ListCategoriesResponse.Success categories:
                 AppendCategories(sb, categories);
                 break;
@@ -145,6 +150,13 @@ internal static class TelegramResponseFormatter
         }
 
         AppendTransactions(sb, listed.Transactions.Items);
+    }
+
+    private static void AppendFoundById(StringBuilder sb, GetTransactionByIdResponse.Success found)
+    {
+        sb.AppendLine("<b>Transaction</b>");
+        sb.AppendLine();
+        AppendTransaction(sb, found.Transaction);
     }
 
     private static void AppendCategories(StringBuilder sb, ListCategoriesResponse.Success categories)

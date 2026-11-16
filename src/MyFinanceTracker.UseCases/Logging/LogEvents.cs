@@ -47,6 +47,16 @@ public static class LogEvents
             public const int ValidationFailed = SubBase + 3;
             public const int CriticalError = SubBase + 4;
         }
+
+        public static class GetById
+        {
+            private const int SubBase = Base + 4_000;
+
+            public const int Starting = SubBase + 1;
+            public const int Completed = SubBase + 2;
+            public const int ValidationFailed = SubBase + 3;
+            public const int CriticalError = SubBase + 4;
+        }
     }
 
     public static class Categories
