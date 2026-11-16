@@ -12,7 +12,7 @@ if [ "${CLEAN_DATA:-false}" = "true" ]; then
   fi
 
   echo "Cleaning deploy/data directory for fresh test deployment..."
-  docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.prod.yml down || true
+  docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml down || true
   rm -rf deploy/data/* || true
 fi
 
@@ -24,13 +24,13 @@ fi
 
 export IMAGE_TAG="$IMAGE_TAG"
 
-docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.prod.yml pull
-docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate
+docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml pull
+docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml up -d --force-recreate
 sleep 5
 
-if [ -z "$(docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.prod.yml ps -q --filter status=running fintracker-bot)" ]; then
+if [ -z "$(docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml ps -q --filter status=running fintracker-bot)" ]; then
   echo "::error::Container failed to start. Logs:"
-  docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.prod.yml logs --tail 50
+  docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml logs --tail 50
   exit 1
 fi
 

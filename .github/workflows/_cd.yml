@@ -20,10 +20,10 @@ on:
         required: false
         default: false
         type: boolean
-      log_level:
-        description: 'Logging level for MyFinanceTracker (e.g. Information or Debug)'
+      dotnet_environment:
+        description: 'DOTNET_ENVIRONMENT for the container (e.g. Production or Test)'
         required: false
-        default: 'Information'
+        default: 'Production'
         type: string
     secrets:
       SERVER_HOST:
@@ -86,7 +86,7 @@ jobs:
           SECRET_GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
           SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
           CONTAINER_NAME: ${{ inputs.container_name }}
-          LOG_LEVEL: ${{ inputs.log_level }}
+          DOTNET_ENVIRONMENT: ${{ inputs.dotnet_environment }}
           IMAGE_TAG: ${{ github.sha }}
         run: bash .github/scripts/prepare-deploy-config.sh
 
@@ -96,7 +96,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.yml,docker-compose.prod.yml,.env,deploy/google-api-credentials.json"
+          source: "docker-compose.yml,docker-compose.deploy.yml,.env,deploy/google-api-credentials.json"
           target: "${{ inputs.target_dir }}"
 
       - name: Deploy container via SSH

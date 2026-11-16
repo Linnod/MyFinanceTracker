@@ -5,18 +5,13 @@ services:
     restart: always
     environment:
       - TZ=Europe/Madrid
-      - DOTNET_ENVIRONMENT=Production
+      - DOTNET_ENVIRONMENT=${DOTNET_ENVIRONMENT:-Production}
       - APPLICATIONINSIGHTS_CONNECTION_STRING=${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
-      - Logging__LogLevel__MyFinanceTracker=${LOG_LEVEL:-Information}
-      - Logging__ApplicationInsights__LogLevel__MyFinanceTracker=${LOG_LEVEL:-Information}
       - Telegram__Token=${TG_TOKEN}
       - Telegram__AllowedUserId=${TG_USER_ID}
       - GoogleSheets__SpreadsheetId=${GOOGLE_SHEET_ID}
       - GoogleSheets__CredentialsFilePath=/app/secrets/google-api-credentials.json
-      - GoogleSheets__TransactionsSheetName=Transactions
-      - GoogleSheets__CategoriesSheetName=Categories
       - SqlitePersistence__ConnectionString=Data Source=/app/data/finance.db
-      - SqlitePersistence__SyncIntervalSeconds=${SYNC_INTERVAL_SECONDS:-20}
       - Gemini__ApiKey=${GEMINI_API_KEY}
       - Gemini__Model=${GEMINI_MODEL}
     volumes:

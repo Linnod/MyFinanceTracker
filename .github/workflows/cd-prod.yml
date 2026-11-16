@@ -19,6 +19,7 @@ jobs:
       target_dir: "~/production"
       project_name: "fintracker-prod"
       container_name: "fintracker_app"
+      dotnet_environment: 'Production'
     secrets:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -29,3 +30,4 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.PROD_GEMINI_API_KEY }}
       GEMINI_MODEL: ${{ secrets.PROD_GEMINI_MODEL }}
       GOOGLE_CREDENTIALS_JSON: ${{ secrets.PROD_GOOGLE_CREDENTIALS_JSON }}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.PROD_APPINSIGHTS_CONNECTION_STRING }}

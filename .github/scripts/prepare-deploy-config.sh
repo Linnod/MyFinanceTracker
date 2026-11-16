@@ -34,8 +34,8 @@ if [ -n "${SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING:-}" ]; then
   printf "APPLICATIONINSIGHTS_CONNECTION_STRING=%s\n" "$SECRET_APPLICATIONINSIGHTS_CONNECTION_STRING" >> .env
 fi
 
-if [ -n "${LOG_LEVEL:-}" ]; then
-  printf "LOG_LEVEL=%s\n" "$LOG_LEVEL" >> .env
+if [ -n "${DOTNET_ENVIRONMENT:-}" ]; then
+  printf "DOTNET_ENVIRONMENT=%s\n" "$DOTNET_ENVIRONMENT" >> .env
 fi
 
 # Prepare deploy directory and configuration files
