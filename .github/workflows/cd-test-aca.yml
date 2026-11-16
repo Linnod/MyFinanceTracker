@@ -11,14 +11,6 @@ on:
         options:
           - deploy
           - destroy
-      log_level:
-        description: 'Logging level for MyFinanceTracker'
-        required: false
-        default: 'Debug'
-        type: choice
-        options:
-          - Debug
-          - Information
   pull_request:
     branches:
       - main
@@ -96,7 +88,6 @@ jobs:
         env:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           IMAGE_TAG: ${{ github.sha }}
-          LOG_LEVEL: ${{ github.event.inputs.log_level || 'Debug' }}
         run: |
           az containerapp update \
             --resource-group rg-fintracker \
@@ -104,6 +95,4 @@ jobs:
             --image "ghcr.io/${IMAGE_NAME}:${IMAGE_TAG}" \
             --min-replicas 1 \
             --max-replicas 1 \
-            --set-env-vars \
-              "Logging__LogLevel__MyFinanceTracker=${LOG_LEVEL}" \
-              "Logging__ApplicationInsights__LogLevel__MyFinanceTracker=${LOG_LEVEL}"
+            --set-env-vars "DOTNET_ENVIRONMENT=Test"
