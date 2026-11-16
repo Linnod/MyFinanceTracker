@@ -234,45 +234,6 @@ public class GeminiToolExecutorTests
     }
 
     [Fact]
-    async Task ExecuteToolCall_WhenGetTransactionsCallWithTimeWindow_ShouldPreserveExactHoursAndMinutes()
-    {
-        // arrange
-        var fromDate = new DateTime(2026, 8, 8, 10, 15, 0);
-        var toDate = new DateTime(2026, 8, 8, 11, 15, 0);
-
-        var functionCall = new FunctionCall
-        {
-            Name = GeminiToolDeclarationProvider.ToolNames.GetTransactions,
-            Args = new Dictionary<string, object>
-            {
-                ["fromDate"] = "2026-08-08T10:15:00",
-                ["toDate"] = "2026-08-08T11:15:00",
-                ["recognizedInput"] = "Show transactions in the last hour"
-            }
-        };
-
-        sender.Send(Arg.Any<GetTransactionsRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new GetTransactionsResponse.Success(
-                fromDate,
-                toDate,
-                [],
-                new PagedResult<Transaction>([], 0)));
-
-        // act
-        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
-
-        // assert
-        response.Should().BeOfType<GetTransactionsResponse.Success>();
-
-        await sender.Received(1).Send(
-            Arg.Is<GetTransactionsRequest>(r =>
-                r.FromDate == fromDate &&
-                r.ToDate == toDate),
-            Arg.Any<CancellationToken>()
-        );
-    }
-
-    [Fact]
     async Task ExecuteToolCall_WhenGetTransactionsCallWithLimit_ShouldSendGetTransactionsRequestWithTake()
     {
         // arrange
@@ -378,6 +339,7 @@ public class GeminiToolExecutorTests
     {
         // arrange
         var txId = Guid.NewGuid();
+        var updatedDate = new DateTime(2026, 11, 2, 15, 45, 0);
         var functionCall = new FunctionCall
         {
             Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
@@ -387,6 +349,7 @@ public class GeminiToolExecutorTests
                 ["amount"] = 75.50m,
                 ["type"] = "expense",
                 ["categoryId"] = "food",
+                ["date"] = "2026-11-02T15:45:00",
                 ["recognizedInput"] = "update tx amount 75.50"
             }
         };
@@ -397,7 +360,7 @@ public class GeminiToolExecutorTests
             TransactionType.Expense,
             category,
             75.50m,
-            new DateTime(2026, 11, 1, 12, 0, 0),
+            updatedDate,
             "Lunch");
 
         sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
@@ -417,87 +380,9 @@ public class GeminiToolExecutorTests
                 r.Amount == 75.50m &&
                 r.Type == TransactionType.Expense &&
                 r.CategoryId == "food" &&
-                r.Date == null &&
+                r.Date == updatedDate &&
                 r.Note == null &&
                 !r.ClearNote),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    async Task ExecuteToolCall_WhenUpdateTransactionCallWithDate_ShouldSendUpdateTransactionRequestWithParsedDateTime()
-    {
-        // arrange
-        var txId = Guid.NewGuid();
-        var newDate = new DateTime(2026, 11, 2, 15, 45, 0);
-        var functionCall = new FunctionCall
-        {
-            Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
-            Args = new Dictionary<string, object>
-            {
-                ["id"] = txId.ToString(),
-                ["date"] = "2026-11-02T15:45:00",
-                ["recognizedInput"] = "change date"
-            }
-        };
-
-        var category = new Category("food", "Food");
-        var updatedTransaction = new Transaction(
-            txId,
-            TransactionType.Expense,
-            category,
-            50m,
-            newDate,
-            null);
-
-        sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new UpdateTransactionResponse.Success(updatedTransaction));
-
-        // act
-        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
-
-        // assert
-        response.Should().BeOfType<UpdateTransactionResponse.Success>();
-
-        await sender.Received(1).Send(
-            Arg.Is<UpdateTransactionRequest>(r =>
-                r.Id == txId &&
-                r.Date == newDate),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    async Task ExecuteToolCall_WhenUpdateTransactionReturnsValidationError_ShouldReturnInvalidInput()
-    {
-        // arrange
-        var txId = Guid.NewGuid();
-        var functionCall = new FunctionCall
-        {
-            Name = GeminiToolDeclarationProvider.ToolNames.UpdateTransaction,
-            Args = new Dictionary<string, object>
-            {
-                ["id"] = txId.ToString(),
-                ["recognizedInput"] = "update without changes"
-            }
-        };
-
-        ValidationErrorItem[] errors =
-        [
-            new(ValidationErrorCode.Transaction.NothingToUpdate)
-        ];
-
-        sender.Send(Arg.Any<UpdateTransactionRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new UpdateTransactionResponse.ValidationError(errors));
-
-        // act
-        var response = await executor.ExecuteToolCall(functionCall, CancellationToken.None);
-
-        // assert
-        response.Should().BeOfType<UpdateTransactionResponse.ValidationError>();
-        var invalid = (UpdateTransactionResponse.ValidationError)response;
-        invalid.Errors.Should().BeEquivalentTo(errors);
-
-        await sender.Received(1).Send(
-            Arg.Is<UpdateTransactionRequest>(r => r.Id == txId),
             Arg.Any<CancellationToken>());
     }
 

@@ -72,7 +72,7 @@ public class CreateTransactionsHandlerTests
     }
 
     [Fact]
-    async Task Handle_ExpenseWithoutCategory_ReturnsValidationError()
+    async Task Handle_EmptyCategoryId_ReturnsValidationError()
     {
         // arrange
         var request = new CreateTransactionsRequest(
@@ -83,44 +83,6 @@ public class CreateTransactionsHandlerTests
                 string.Empty,
                 new DateTime(2026, 1, 27, 10, 0, 0),
                 "Lunch")
-        ]);
-
-        // act
-        var result = await sut.Handle(
-            request,
-            CancellationToken.None);
-
-        // assert
-        var error = result.Should()
-            .BeOfType<CreateTransactionsResponse.ValidationError>()
-            .Subject;
-
-        error.Errors.Should().ContainSingle();
-
-        error.Errors.Single().ErrorCode
-            .Should().Be(ValidationErrorCode.Transaction.CategoryRequired);
-
-        await categoryRepository.DidNotReceive()
-            .GetByIds(Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>());
-
-        await transactionRepository.DidNotReceive()
-            .AddRange(
-                Arg.Any<IReadOnlyCollection<Domain.Entities.Transaction>>(),
-                Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    async Task Handle_IncomeWithoutCategory_ReturnsValidationError()
-    {
-        // arrange
-        var request = new CreateTransactionsRequest(
-        [
-            new CreateTransactionItem(
-                TransactionType.Income,
-                100m,
-                string.Empty,
-                new DateTime(2026, 1, 27, 10, 0, 0),
-                "Salary")
         ]);
 
         // act

@@ -200,9 +200,10 @@ public sealed class OutboxProcessorTests : IDisposable
         remainingMessages[1].Id.Should().Be(2);
         remainingMessages[1].RetryCount.Should().Be(0);
 
-        // No dead letter messages
+        // No dead letter messages or notifications
         var deadLetter = await assertContext.DeadLetterMessages.ToListAsync();
         deadLetter.Should().BeEmpty();
+        await notificationPublisher.DidNotReceiveWithAnyArgs().Publish(default!, default);
     }
 
     [Fact]
@@ -254,6 +255,14 @@ public sealed class OutboxProcessorTests : IDisposable
         // Message 2 was sent to remote
         await remoteRepository.Received(1).AddRange(
             Arg.Is<IReadOnlyCollection<TransactionSyncRecord>>(txs => txs.Any(t => t.Id == txDto2.Id)),
+            Arg.Any<CancellationToken>());
+
+        // Dead letter notification was published for Message 1
+        await notificationPublisher.Received(1).Publish(
+            Arg.Is<OutboxSyncNotification.MessageMovedToDeadLetter>(n =>
+                n.OriginalOutboxMessageId == 1 &&
+                n.OperationType == "AddTransaction" &&
+                n.ErrorMessage == "Fatal API format error"),
             Arg.Any<CancellationToken>());
     }
 
@@ -322,73 +331,6 @@ public sealed class OutboxProcessorTests : IDisposable
         deadLetters[0].OriginalOutboxMessageId.Should().Be(30);
         deadLetters[0].ErrorMessage.Should().Contain("Failed to deserialize message payload");
         deadLetters[0].ErrorMessage.Should().Contain("JsonException");
-    }
-
-    [Fact]
-    public async Task ProcessPendingMessages_MessageMovedToDeadLetter_PublishesMessageMovedToDeadLetterNotification()
-    {
-        // arrange
-        var txDto = new TransactionSyncRecord(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateTime(2026, 11, 1), "Fail");
-
-        await using (var seedContext = new SqliteDbContext(options))
-        {
-            seedContext.OutboxMessages.Add(new OutboxMessageEntity
-            {
-                Id = 42,
-                OperationType = OutboxOperationType.AddTransaction,
-                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
-                CreatedAtUtc = DateTimeOffset.UtcNow,
-                RetryCount = 2
-            });
-            await seedContext.SaveChangesAsync();
-        }
-
-        remoteRepository.AddRange(Arg.Any<IReadOnlyCollection<TransactionSyncRecord>>(), Arg.Any<CancellationToken>())
-            .Throws(new InvalidOperationException("Permanent remote error"));
-
-        using var processor = CreateProcessor(maxRetries: 3);
-
-        // act
-        await processor.ProcessPendingMessages(CancellationToken.None);
-
-        // assert
-        await notificationPublisher.Received(1).Publish(
-            Arg.Is<OutboxSyncNotification.MessageMovedToDeadLetter>(n =>
-                n.OriginalOutboxMessageId == 42 &&
-                n.OperationType == "AddTransaction" &&
-                n.ErrorMessage == "Permanent remote error"),
-            Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task ProcessPendingMessages_RetryAttemptBelowMax_DoesNotPublishNotification()
-    {
-        // arrange
-        var txDto = new TransactionSyncRecord(Guid.NewGuid(), TransactionType.Expense, "food", 100m, new DateTime(2026, 11, 1), "Test");
-
-        await using (var seedContext = new SqliteDbContext(options))
-        {
-            seedContext.OutboxMessages.Add(new OutboxMessageEntity
-            {
-                Id = 1,
-                OperationType = OutboxOperationType.AddTransaction,
-                PayloadJson = JsonSerializer.Serialize(new AddTransactionsOutboxPayload([txDto])),
-                CreatedAtUtc = DateTimeOffset.UtcNow,
-                RetryCount = 0
-            });
-            await seedContext.SaveChangesAsync();
-        }
-
-        remoteRepository.AddRange(Arg.Any<IReadOnlyCollection<TransactionSyncRecord>>(), Arg.Any<CancellationToken>())
-            .Throws(new HttpRequestException("Temporary network error"));
-
-        using var processor = CreateProcessor(maxRetries: 3);
-
-        // act
-        await processor.ProcessPendingMessages(CancellationToken.None);
-
-        // assert
-        await notificationPublisher.DidNotReceiveWithAnyArgs().Publish(default!, default);
     }
 
     [Fact]

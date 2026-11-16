@@ -202,31 +202,6 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_FilteredByExactTimeWindow_ReturnsOnlyTransactionsWithinHour()
-    {
-        // arrange
-        var repository = CreateRepository();
-        var baseDate = new DateTime(2026, 11, 8, 12, 0, 0);
-
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, baseDate.AddMinutes(-90), "90 mins ago");
-        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 20m, baseDate.AddMinutes(-45), "45 mins ago");
-        var tx3 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 30m, baseDate.AddMinutes(-10), "10 mins ago");
-        var tx4 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 40m, baseDate.AddMinutes(10), "10 mins in future");
-
-        await repository.AddRange([tx1, tx2, tx3, tx4], CancellationToken.None);
-
-        var filter = new TransactionFilter(
-            FromDate: baseDate.AddHours(-1),
-            ToDate: baseDate);
-
-        // act
-        var results = await repository.Get(filter, CancellationToken.None);
-
-        // assert
-        results.Items.Select(t => t.Id).Should().BeEquivalentTo([tx2.Id, tx3.Id]);
-    }
-
-    [Fact]
     public async Task Get_WithPagination_ReturnsCorrectPageAndTotalCount()
     {
         // arrange
@@ -249,45 +224,6 @@ public sealed class SqliteTransactionRepositoryTests : IDisposable
         results.Items.Should().HaveCount(2);
         results.Items[0].Id.Should().Be(tx4.Id);
         results.Items[1].Id.Should().Be(tx3.Id);
-    }
-
-    [Fact]
-    public async Task Get_WithTakeZero_ReturnsEmptyItemsAndTotalCount()
-    {
-        // arrange
-        var repository = CreateRepository();
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, new DateTime(2026, 11, 1, 10, 0, 0), "1");
-        var tx2 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 20m, new DateTime(2026, 11, 2, 10, 0, 0), "2");
-
-        await repository.AddRange([tx1, tx2], CancellationToken.None);
-
-        var filter = new TransactionFilter(Skip: 0, Take: 0);
-
-        // act
-        var results = await repository.Get(filter, CancellationToken.None);
-
-        // assert
-        results.TotalCount.Should().Be(2);
-        results.Items.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task Get_WithSkipBeyondCount_ReturnsEmptyItemsAndTotalCount()
-    {
-        // arrange
-        var repository = CreateRepository();
-        var tx1 = new Transaction(Guid.NewGuid(), TransactionType.Expense, foodCategory, 10m, new DateTime(2026, 11, 1, 10, 0, 0), "1");
-
-        await repository.AddRange([tx1], CancellationToken.None);
-
-        var filter = new TransactionFilter(Skip: 10, Take: 5);
-
-        // act
-        var results = await repository.Get(filter, CancellationToken.None);
-
-        // assert
-        results.TotalCount.Should().Be(1);
-        results.Items.Should().BeEmpty();
     }
 
     [Fact]

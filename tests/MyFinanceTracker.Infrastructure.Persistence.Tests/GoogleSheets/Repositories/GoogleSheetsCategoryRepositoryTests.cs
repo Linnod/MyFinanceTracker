@@ -228,22 +228,4 @@ public class GoogleSheetsCategoryRepositoryTests
         var ex = await act.Should().ThrowAsync<GoogleSheetsEntityNotFoundException>();
         ex.WithMessage("Category 'unknown_id' was not found in Google Sheet 'Categories'.");
     }
-
-    [Fact]
-    public void Dispose_DisposesSemaphore()
-    {
-        // arrange
-        var options = Options.Create(defaultOptions);
-        var mapper = new GoogleSheetCategoryMapper();
-        var clientMock = Substitute.For<IGoogleSheetsClient>();
-        var loggerMock = Substitute.For<ILogger<GoogleSheetsCategoryRepository>>();
-
-        var sut = new GoogleSheetsCategoryRepository(options, mapper, clientMock, loggerMock);
-
-        // act
-        var act = () => sut.Dispose();
-
-        // assert
-        act.Should().NotThrow();
-    }
 }

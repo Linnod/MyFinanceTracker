@@ -30,17 +30,19 @@ public class ValidationBehaviorTests
         // arrange
         var request = new TestRequest("valid");
         var expectedResponse = new TestResponse.Success("OK");
+        using var cts = new CancellationTokenSource();
         RequestHandlerDelegate<TestResponse> next = () => Task.FromResult<TestResponse>(expectedResponse);
 
-        validator.ValidateAsync(request, Arg.Any<CancellationToken>())
+        validator.ValidateAsync(request, cts.Token)
             .Returns(new ValidationResult());
 
         // act
-        var result = await sut.Handle(request, next, CancellationToken.None);
+        var result = await sut.Handle(request, next, cts.Token);
 
         // assert
         result.Should().Be(expectedResponse);
         createdErrorBatches.Should().BeEmpty();
+        await validator.Received(1).ValidateAsync(request, cts.Token);
     }
 
     [Fact]
@@ -73,24 +75,6 @@ public class ValidationBehaviorTests
         validationError.Errors.First().ErrorCode.Should().Be("NAME_REQUIRED");
         validationError.Errors.First().AttemptedValue.Should().Be("invalid");
         createdErrorBatches.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task Handle_CancellationRequested_PassesCancellationTokenToValidator()
-    {
-        // arrange
-        var request = new TestRequest("valid");
-        using var cts = new CancellationTokenSource();
-        RequestHandlerDelegate<TestResponse> next = () => Task.FromResult<TestResponse>(new TestResponse.Success("OK"));
-
-        validator.ValidateAsync(request, cts.Token)
-            .Returns(new ValidationResult());
-
-        // act
-        await sut.Handle(request, next, cts.Token);
-
-        // assert
-        await validator.Received(1).ValidateAsync(request, cts.Token);
     }
 
     public sealed record TestRequest(string Name) : IRequest<TestResponse>;

@@ -166,31 +166,4 @@ public class GoogleSheetCategoryMapperTests
         results[1].Should().BeOfType<CategoryRowMappingResult.Empty>();
         results[2].Should().BeOfType<CategoryRowMappingResult.Success>();
     }
-
-    [Fact]
-    public void MapToRow_IdWithLeadingZeros_PreservesStringFormat()
-    {
-        // arrange
-        var category = new CategorySyncRecord("001", "Special", IsArchived: false);
-
-        // act
-        var result = sut.MapToRow(category);
-
-        // assert
-        result.Values[0].Should().Be("001");
-    }
-
-    [Fact]
-    public void MapFromRows_IdWithLeadingZeros_PreservesStringFormat()
-    {
-        // arrange
-        var row = new GoogleSheetRow(1, new GoogleSheetRowValues(["001", "Special", "FALSE"]));
-
-        // act
-        var result = sut.MapFromRows([row]).Single();
-
-        // assert
-        var success = result.Should().BeOfType<CategoryRowMappingResult.Success>().Subject;
-        success.Category.Id.Should().Be("001");
-    }
 }

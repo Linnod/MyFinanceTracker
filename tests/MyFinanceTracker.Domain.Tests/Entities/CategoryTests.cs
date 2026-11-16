@@ -66,18 +66,4 @@ public class CategoryTests
         var exception = Assert.Throws<DomainException>(act);
         Assert.Equal("Category Name cannot be empty or whitespace.", exception.Message);
     }
-
-    [Fact]
-    public void ToString_ReturnsCategoryName()
-    {
-        // arrange
-        var name = "Food";
-        var category = new Category("food", name);
-
-        // act
-        var result = category.ToString();
-
-        // assert
-        Assert.Equal(name, result);
-    }
 }

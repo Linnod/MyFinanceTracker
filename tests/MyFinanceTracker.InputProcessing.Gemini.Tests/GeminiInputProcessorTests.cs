@@ -4,7 +4,6 @@ using System.Text.Json;
 using FluentAssertions;
 using Google.GenAI;
 using Google.GenAI.Types;
-using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MyFinanceTracker.InputProcessing.Gemini.Configuration;
@@ -322,23 +321,6 @@ public class GeminiInputProcessorTests
         parts[2].GetProperty("text").GetString().Should().Be("User caption: Groceries yesterday");
         parts[3].GetProperty("text").GetString().Should().Be(
             "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
-    }
-
-    [Fact]
-    public async Task Handle_PolymorphicInputDispatchedViaSender_CallsExpectedHandler()
-    {
-        // Arrange
-        var sender = Substitute.For<ISender>();
-        Input input = new Input.Text("coffee 5");
-        var expected = new ProcessingResult.InvalidInput("Please specify a category.");
-        sender.Send(input, Arg.Any<CancellationToken>()).Returns(expected);
-
-        // Act
-        var result = await sender.Send(input, CancellationToken.None);
-
-        // Assert
-        result.Should().Be(expected);
-        await sender.Received(1).Send(input, Arg.Any<CancellationToken>());
     }
 
     private sealed class Fixture : IDisposable
