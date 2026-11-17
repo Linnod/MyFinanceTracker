@@ -14,6 +14,7 @@
     <Project Path="tests/MyFinanceTracker.Domain.Tests/MyFinanceTracker.Domain.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Infrastructure.Persistence.Tests/MyFinanceTracker.Infrastructure.Persistence.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.InputProcessing.Gemini.Tests/MyFinanceTracker.InputProcessing.Gemini.Tests.csproj" />
+    <Project Path="tests/MyFinanceTracker.Integration.Tests/MyFinanceTracker.Integration.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.UseCases.Tests/MyFinanceTracker.UseCases.Tests.csproj" />
     <Project Path="tests/MyFinanceTracker.Interactions.Telegram.Tests/MyFinanceTracker.Interactions.Telegram.Tests.csproj" />
   </Folder>

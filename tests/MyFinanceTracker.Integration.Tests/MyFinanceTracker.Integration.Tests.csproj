@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MyFinanceTracker.Common\MyFinanceTracker.Common.csproj" />
+    <ProjectReference Include="..\..\src\MyFinanceTracker.Domain\MyFinanceTracker.Domain.csproj" />
+    <ProjectReference Include="..\..\src\MyFinanceTracker.Infrastructure.Persistence\MyFinanceTracker.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\MyFinanceTracker.InputProcessing\MyFinanceTracker.InputProcessing.csproj" />
+    <ProjectReference Include="..\..\src\MyFinanceTracker.InputProcessing.Gemini\MyFinanceTracker.InputProcessing.Gemini.csproj" />
+    <ProjectReference Include="..\..\src\MyFinanceTracker.UseCases\MyFinanceTracker.UseCases.csproj" />
+  </ItemGroup>
+
+</Project>
