@@ -25,7 +25,7 @@ internal sealed partial class TelegramInteractionWorker(
         var receiverOptions = new ReceiverOptions
         {
             AllowedUpdates = [UpdateType.Message],
-            DropPendingUpdates = true
+            DropPendingUpdates = false
         };
 
         botClient.StartReceiving(

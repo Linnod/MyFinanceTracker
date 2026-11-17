@@ -31,7 +31,7 @@ sleep 5
 CONTAINER_ID=$(docker compose -p "$PROJECT_NAME" -f docker-compose.yml -f docker-compose.deploy.yml ps -q --filter status=running fintracker-bot)
 RESTART_COUNT=""
 if [ -n "$CONTAINER_ID" ]; then
-  RESTART_COUNT=$(docker inspect -f '{{.State.RestartCount}}' "$CONTAINER_ID")
+  RESTART_COUNT=$(docker inspect -f '{{.RestartCount}}' "$CONTAINER_ID")
 fi
 
 if [ -z "$CONTAINER_ID" ] || [ "${RESTART_COUNT:-0}" -gt 0 ]; then

@@ -14,8 +14,11 @@ internal sealed class CreateTransactionsRequestValidator : AbstractValidator<Cre
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.Amount)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(0)
-                .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive);
+                .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive)
+                .Must(FinancialRules.HasValidAmountPrecision)
+                .WithErrorCode(ValidationErrorCode.Transaction.AmountTooManyDecimalPlaces);
 
             item.RuleFor(i => i.CategoryId)
                 .NotEmpty()

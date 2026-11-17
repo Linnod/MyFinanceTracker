@@ -100,7 +100,9 @@ internal sealed class GoogleSheetTransactionMapper
             return new TransactionRowMappingResult.Failure(rowNumber, "Missing required 'Amount' value.");
         }
 
-        if (!TryParseAmount(amountString, out var rawAmount) || rawAmount == 0)
+        if (!TryParseAmount(amountString, out var rawAmount)
+            || rawAmount == 0
+            || !FinancialRules.HasValidAmountPrecision(rawAmount))
         {
             return new TransactionRowMappingResult.Failure(rowNumber, $"Invalid Amount: '{amountString}'.");
         }

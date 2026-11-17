@@ -183,13 +183,18 @@ You can also run the application as a background service via Docker Compose:
 1. Prepare configuration files, persistent data directory, and secrets:
    ```bash
    cp .env.example .env
-   cp google-api-credentials.json deploy/google-api-credentials.json
    mkdir -p deploy/data
+   cp google-api-credentials.json deploy/google-api-credentials.json
    ```
 
 2. Fill in `.env` with your Telegram, Google Sheets, and Gemini credentials.
 
-3. Start the container:
+3. Build the local container image (or use `-f docker-compose.yml -f docker-compose.deploy.yml` in the next step to pull the pre-built image from GHCR):
+   ```bash
+   dotnet publish src/MyFinanceTracker.Host/MyFinanceTracker.Host.csproj -c Release /t:PublishContainer
+   ```
+
+4. Start the container:
    ```bash
    docker compose up -d
    ```

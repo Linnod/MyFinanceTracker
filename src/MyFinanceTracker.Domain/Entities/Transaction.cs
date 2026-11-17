@@ -34,6 +34,11 @@ public record Transaction
             throw new DomainException("Transaction amount must be greater than zero.");
         }
 
+        if (!FinancialRules.HasValidAmountPrecision(amount))
+        {
+            throw new DomainException($"Transaction amount cannot have more than {FinancialRules.MaxAmountDecimalPlaces} decimal places.");
+        }
+
         if (date.Year < FinancialRules.MinAllowedYear || date.Year > FinancialRules.MaxAllowedYear)
         {
             throw new DomainException($"Transaction date year must be between {FinancialRules.MinAllowedYear} and {FinancialRules.MaxAllowedYear}.");

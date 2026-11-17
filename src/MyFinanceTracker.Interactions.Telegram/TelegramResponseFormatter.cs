@@ -265,6 +265,7 @@ internal static class TelegramResponseFormatter
         ValidationErrorCode.Transaction.InvalidDateRange => "Start date must be on or before end date.",
         ValidationErrorCode.Transaction.AmountRequired => "At least one amount is required.",
         ValidationErrorCode.Transaction.AmountMustBePositive => "Amount must be greater than zero.",
+        ValidationErrorCode.Transaction.AmountTooManyDecimalPlaces => $"Amount cannot have more than {FinancialRules.MaxAmountDecimalPlaces} decimal places.",
         ValidationErrorCode.Transaction.NothingToUpdate => "At least one field must be provided to update the transaction.",
         ValidationErrorCode.Transaction.InvalidPagination => "Pagination parameters must be non-negative.",
         ValidationErrorCode.Category.CategoryIdRequired => "Category ID is required.",

@@ -29,8 +29,11 @@ internal sealed class UpdateTransactionRequestValidator : AbstractValidator<Upda
         When(x => x.Amount.HasValue, () =>
         {
             RuleFor(x => x.Amount!.Value)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(0)
-                .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive);
+                .WithErrorCode(ValidationErrorCode.Transaction.AmountMustBePositive)
+                .Must(FinancialRules.HasValidAmountPrecision)
+                .WithErrorCode(ValidationErrorCode.Transaction.AmountTooManyDecimalPlaces);
         });
 
         When(x => x.Date.HasValue, () =>
