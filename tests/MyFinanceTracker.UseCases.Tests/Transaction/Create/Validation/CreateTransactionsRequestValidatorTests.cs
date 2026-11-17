@@ -75,6 +75,31 @@ public class CreateTransactionsRequestValidatorTests
     }
 
     [Theory]
+    [InlineData(10.123)]
+    [InlineData(0.001)]
+    void Validate_AmountHasTooManyDecimalPlaces_ReturnsTooManyDecimalPlacesError(decimal amount)
+    {
+        // arrange
+        var request = new CreateTransactionsRequest(
+        [
+            new CreateTransactionItem(
+                TransactionType.Expense,
+                amount,
+                "food",
+                new DateTime(2026, 1, 27),
+                "Lunch")
+        ]);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == "Items[0].Amount" &&
+            e.ErrorCode == ValidationErrorCode.Transaction.AmountTooManyDecimalPlaces);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData(" ")]
     [InlineData(null)]

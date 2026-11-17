@@ -203,7 +203,9 @@ public class GoogleSheetTransactionMapperTests
     [InlineData("0")]
     [InlineData("0.00")]
     [InlineData("-1100,25")]
-    public void MapFromRows_ShouldReturnFailure_WhenAmountIsInvalidOrZero(string amountStr)
+    [InlineData("-10.123")]
+    [InlineData("10.125")]
+    public void MapFromRows_ShouldReturnFailure_WhenAmountIsInvalid(string amountStr)
     {
         // arrange
         var sut = new GoogleSheetTransactionMapper();

@@ -85,6 +85,30 @@ public class TransactionTests
     }
 
     [Theory]
+    [InlineData(10.123)]
+    [InlineData(0.001)]
+    void Constructor_WithTooManyDecimalPlaces_ThrowsDomainException(decimal invalidAmount)
+    {
+        // arrange
+        var id = Guid.NewGuid();
+        var category = CreateTestCategory();
+        var expectedMessage = $"Transaction amount cannot have more than {FinancialRules.MaxAmountDecimalPlaces} decimal places.";
+
+        // act
+        Transaction act() => new(
+            id,
+            TransactionType.Expense,
+            category,
+            invalidAmount,
+            new DateTime(2026, 5, 10, 10, 0, 0),
+            null);
+
+        // assert
+        var exception = Assert.Throws<DomainException>(act);
+        Assert.Equal(expectedMessage, exception.Message);
+    }
+
+    [Theory]
     [InlineData(1899)]
     [InlineData(2101)]
     void Constructor_WithInvalidDateYear_ThrowsDomainException(int invalidYear)

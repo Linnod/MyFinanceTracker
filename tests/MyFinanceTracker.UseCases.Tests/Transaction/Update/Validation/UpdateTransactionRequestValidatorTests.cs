@@ -59,6 +59,23 @@ public class UpdateTransactionRequestValidatorTests
     }
 
     [Theory]
+    [InlineData(10.123)]
+    [InlineData(0.001)]
+    public void Validate_AmountHasTooManyDecimalPlaces_ReturnsTooManyDecimalPlacesError(decimal amount)
+    {
+        // arrange
+        var request = new UpdateTransactionRequest(Guid.NewGuid(), Amount: amount);
+
+        // act
+        var result = sut.TestValidate(request);
+
+        // assert
+        result.Errors.Should().ContainSingle(e =>
+            e.PropertyName == "Amount.Value" &&
+            e.ErrorCode == ValidationErrorCode.Transaction.AmountTooManyDecimalPlaces);
+    }
+
+    [Theory]
     [InlineData(-1)]
     [InlineData(1)]
     public void Validate_DateYearOutOfRange_ReturnsDateOutOfRangeError(int offset)
