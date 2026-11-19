@@ -323,6 +323,132 @@ public class GeminiInputProcessorTests
             "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
     }
 
+    [Fact]
+    public async Task Handle_DocumentWithoutCaptionOrContext_SendsBytesAndDocumentInstruction()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(new Input.Document(bytes, "application/pdf"), CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(2);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("application/pdf");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details from the attached document and execute the corresponding function call.");
+    }
+
+    [Fact]
+    public async Task Handle_DocumentWithCaption_IncludesCaptionAsSeparatePart()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(
+            new Input.Document(bytes, "application/pdf", "Monthly statement"),
+            CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(3);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("application/pdf");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details from the attached document and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be("User caption: Monthly statement");
+    }
+
+    [Fact]
+    public async Task Handle_DocumentWithContext_IncludesContextAsSeparatePartWithoutCaptionPrefix()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(
+            new Input.Document(bytes, "application/pdf", Context: "Created tx 123"),
+            CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(3);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("application/pdf");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details from the attached document and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
+    }
+
+    [Fact]
+    public async Task Handle_DocumentWithCaptionAndContext_IncludesAllPartsInExpectedOrder()
+    {
+        // arrange
+        using var fixture = new Fixture();
+        byte[] bytes = [1, 2, 3, 4];
+
+        // act
+        await fixture.Processor.Handle(
+            new Input.Document(bytes, "application/pdf", "Monthly statement", "Created tx 123"),
+            CancellationToken.None);
+
+        // assert
+        using var request = JsonDocument.Parse(fixture.Handler.RequestBody!);
+        var parts = request.RootElement.GetProperty("contents")[0].GetProperty("parts");
+        parts.GetArrayLength().Should().Be(4);
+        parts[0].GetProperty("inlineData").GetProperty("mimeType").GetString().Should().Be("application/pdf");
+        parts[0].GetProperty("inlineData").GetProperty("data").GetString()
+            .Should().Be(Convert.ToBase64String(bytes));
+        parts[1].GetProperty("text").GetString().Should().Be(
+            "Extract financial transaction details from the attached document and execute the corresponding function call.");
+        parts[2].GetProperty("text").GetString().Should().Be("User caption: Monthly statement");
+        parts[3].GetProperty("text").GetString().Should().Be(
+            "[Context - reference only, do not re-execute]\nCreated tx 123\n[End of context]");
+    }
+
+    [Fact]
+    public async Task Handle_DocumentWithFunctionCall_ExecutesToolAndReturnsCompleted()
+    {
+        // arrange
+        using var fixture = new Fixture("""
+            {"candidates":[{"content":{"parts":[
+              {"functionCall":{"name":"add_transaction","args":{"amount":42}}}
+            ]}}]}
+            """);
+        byte[] bytes = [1, 2, 3, 4];
+        UseCaseResponse expectedAction = new ListCategoriesResponse.Success([]);
+        FunctionCall? capturedCall = null;
+        fixture.Executor.ExecuteToolCall(Arg.Any<FunctionCall>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                capturedCall = call.Arg<FunctionCall>();
+                return Task.FromResult(expectedAction);
+            });
+
+        // act
+        var result = await fixture.Processor.Handle(new Input.Document(bytes, "application/pdf"), CancellationToken.None);
+
+        // assert
+        var completed = result.Should().BeOfType<ProcessingResult.Completed>().Which;
+        completed.Actions.Should().Equal(expectedAction);
+        capturedCall.Should().NotBeNull();
+        capturedCall!.Name.Should().Be("add_transaction");
+        await fixture.Executor.Received(1).ExecuteToolCall(Arg.Any<FunctionCall>(), Arg.Any<CancellationToken>());
+    }
+
     private sealed class Fixture : IDisposable
     {
         public IGeminiSystemPromptBuilder PromptBuilder { get; } = Substitute.For<IGeminiSystemPromptBuilder>();

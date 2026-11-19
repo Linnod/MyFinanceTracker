@@ -47,15 +47,18 @@ internal sealed class GeminiSystemPromptBuilder(
                 - "groceries 10.15" -> one expense, amounts: [10.15]
                 - "groceries 10 15" -> two expense amounts, amounts: [10, 15]
                 - "groceries 10 and 15" -> two expense amounts, amounts: [10, 15]
-            11. When the input is an image of a receipt, extract ONLY the final total amount (TOTAL) as a single transaction and infer the category from the merchant/items or user caption (unless the user caption explicitly asks to split specific items). If the image is a banking app screenshot showing multiple distinct transactions, call `add_transaction` for each transaction.
-            12. When the input is an image (receipt or screenshot), use the transaction date and time visible on the image (if only the date is visible without time, set the time to 00:00:00). If the date on the image is missing, unreadable, or not present, use current date and time ({now:yyyy-MM-ddTHH:mm:ss}), unless overridden by the user caption.
+            11. When the input is an image or document/PDF:
+                - For a receipt or invoice, extract ONLY the final total amount (TOTAL) as a single transaction and infer the category from the merchant/items or user caption (unless the user caption explicitly asks to split specific items).
+                - For a banking app screenshot, bank receipt, or bank statement (e.g., Revolut EUR Statement) showing one or more transactions, call `add_transaction` for each distinct transaction: determine `type` from payment direction (`Money out` / debit / outgoing payment -> `expense`; `Money in` / credit / incoming transfer -> `income`), and ignore non-transactional rows (headers, page footers, legal disclaimers, opening/closing/running balances, account summaries).
+                - If an image or document is unreadable, corrupted, password-protected, or contains no financial transactions, respond concisely in text explaining the issue (rule 7) — NEVER invent or guess transactions.
+            12. When the input is an image or document/PDF (receipt, invoice, banking screenshot, or bank statement), ALWAYS use the actual transaction date and time (`Transaction date` / payment date) visible in the image or document — NEVER use document generation, export, or print dates (such as `Generated on`, `Exported on`, or `Statement date`). If only the date is visible without time, set the time to 00:00:00. If the transaction date is missing, unreadable, or not present, use current date and time ({now:yyyy-MM-ddTHH:mm:ss}), unless overridden by the user caption.
             13. Populate the optional `note` field in `add_transaction` as follows:
                 - If the message contains a primary category (e.g. venue, service, or expense type like "cafe", "restaurant", "taxi", "groceries") along with an activity, occasion, store name, brand, or detail (e.g. "board games", "business lunch", "birthday", "Mercadona", "Starbucks"):
                   * ALWAYS use the matching category ID from the available categories list above for `categoryId`.
                   * ALWAYS place the activity, occasion, store name, or clarification into `note` (e.g. "board games").
                   * NEVER create a second transaction for the activity or occasion.
                 - If the text or voice message contains a clarification, description, store name, service name, or occasion in addition to the category and amount (e.g. "300 kids Alice's bday", "22 subscriptions Netflix", "15 cafe burgers"), pass this clarification into `note` (e.g. "Alice's bday", "Netflix", "burgers").
-                - When the input is a receipt image or banking app screenshot, record the store or merchant name in `note` (plus user caption clarification if present).
+                - When the input is an image or document/PDF (receipt, invoice, banking screenshot, or bank statement), record ONLY the store, merchant, or counterparty name in `note` (plus user caption clarification if present). Do NOT include banking or technical details such as masked card numbers, authorization codes, IBAN, BIC, reference IDs, or addresses.
                 - If the user provides only the amount and category without additional details (e.g. "50 groceries"), leave `note` empty (`null`). NEVER duplicate the category name into `note`.
             """;
     }

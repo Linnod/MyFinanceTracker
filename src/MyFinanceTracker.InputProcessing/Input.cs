@@ -19,6 +19,11 @@ public closed record Input(string? Context = null) : IRequest<ProcessingResult>
         public override string ToString() => $"Image ({ContentType}, {Data.Length} bytes{FormatCaption(Caption)}{FormatContext(Context)})";
     }
 
+    public sealed record Document(byte[] Data, string ContentType, string? Caption = null, string? Context = null) : Input(Context)
+    {
+        public override string ToString() => $"Document ({ContentType}, {Data.Length} bytes{FormatCaption(Caption)}{FormatContext(Context)})";
+    }
+
     private static string FormatCaption(string? caption) => FormatOptional("caption", caption);
 
     private static string FormatContext(string? context) => FormatOptional("context", context);

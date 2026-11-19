@@ -52,6 +52,23 @@ internal static class TelegramResponseFormatter
             """
     };
 
+    public static string FormatUnsupportedInput()
+    {
+        var formats = WebUtility.HtmlEncode(
+            string.Join(", ", TelegramInputBuilder.SupportedDocumentFormats.Select(f => f.DisplayName)));
+        var maxSizeMb = TelegramInputBuilder.MaxFileSizeBytes / (1024 * 1024);
+
+        return $"""
+            <b>Unsupported Input</b>
+            Please send a text, voice, photo, or a supported document ({formats}, max {maxSizeMb} MB).
+            """;
+    }
+
+    public static string FormatUnexpectedError() => """
+        <b>System Hiccup</b>
+        Something went wrong. Please try again.
+        """;
+
     private static string FormatCompleted(ProcessingResult.Completed completed)
     {
         var sb = new StringBuilder();

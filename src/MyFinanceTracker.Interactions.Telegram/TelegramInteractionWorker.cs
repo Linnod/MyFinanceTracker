@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MyFinanceTracker.InputProcessing;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -61,19 +62,11 @@ internal sealed partial class TelegramInteractionWorker(
                 var input = await message.BuildInput(bot, ct);
                 if (input is null)
                 {
-                    await messageSender.Send("Unsupported input. Please send a text, voice, or photo message.", ct);
+                    await messageSender.Send(TelegramResponseFormatter.FormatUnsupportedInput(), ct);
                     return;
                 }
 
-                LogUpdateReceived(input);
-
-                await using var scope = scopeFactory.CreateAsyncScope();
-                var sender = scope.ServiceProvider.GetRequiredService<ISender>();
-
-                var result = await sender.Send(input, ct);
-                var responseText = TelegramResponseFormatter.FormatResponse(result);
-
-                await messageSender.Send(responseText, ct);
+                await ProcessInput(input, ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -82,9 +75,22 @@ internal sealed partial class TelegramInteractionWorker(
             catch (Exception ex)
             {
                 LogUpdateProcessingFailed(ex, message.Id);
-                await messageSender.Send("Something went wrong. Please try again.", ct);
+                await messageSender.Send(TelegramResponseFormatter.FormatUnexpectedError(), ct);
             }
         }
+    }
+
+    private async Task ProcessInput(Input input, CancellationToken ct)
+    {
+        LogUpdateReceived(input);
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
+        var result = await sender.Send(input, ct);
+        var responseText = TelegramResponseFormatter.FormatResponse(result);
+
+        await messageSender.Send(responseText, ct);
     }
 
     private Task HandlePollingError(ITelegramBotClient bot, Exception ex, CancellationToken ct)

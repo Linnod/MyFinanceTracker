@@ -288,4 +288,75 @@ public sealed class PipelineIntegrationTests
         listResponse.Categories.Should().ContainSingle(c => c.Id == "food" && !c.IsArchived);
         listResponse.Categories.Should().NotContain(c => c.Id == "subscriptions");
     }
+
+    [Fact]
+    public async Task ProcessInput_PdfDocumentWithAddTransaction_SavesTransactionCreatesOutboxAndSyncsToSheets()
+    {
+        // arrange
+        await using var fixture = new IntegrationTestFixture();
+        fixture.SheetsClient.SeedCategory("food", "Food", isArchived: false);
+        await fixture.InitializeDatabase();
+
+        fixture.GeminiHandler.EnqueueFunctionCall("add_transaction", new
+        {
+            type = "expense",
+            amounts = new[] { 32.45m },
+            categoryId = "food",
+            date = "2026-11-12T18:15:00",
+            note = "Supermarket receipt"
+        });
+
+        byte[] pdfBytes = [0x25, 0x50, 0x44, 0x46];
+        var documentInput = new Input.Document(pdfBytes, "application/pdf", "November receipt");
+
+        // act - process document input
+        var result = await fixture.SendInput(documentInput);
+
+        // assert - saved to SQLite & Outbox
+        var completed = result.Should().BeOfType<ProcessingResult.Completed>().Subject;
+        var createdResponse = completed.Actions.Should().ContainSingle()
+            .Which.Should().BeOfType<CreateTransactionsResponse.Success>().Subject;
+        var createdTransaction = createdResponse.Transactions.Should().ContainSingle().Subject;
+
+        createdTransaction.Type.Should().Be(TransactionType.Expense);
+        createdTransaction.Amount.Should().Be(32.45m);
+        createdTransaction.Category.Id.Should().Be("food");
+        createdTransaction.Category.Name.Should().Be("Food");
+        createdTransaction.Date.Should().Be(new DateTime(2026, 11, 12, 18, 15, 0));
+        createdTransaction.Note.Should().Be("Supermarket receipt");
+
+        await using (var dbContext = await fixture.CreateDbContext())
+        {
+            var storedTransaction = await dbContext.Transactions.SingleAsync();
+            storedTransaction.Id.Should().Be(createdTransaction.Id);
+            storedTransaction.Amount.Should().Be(32.45m);
+            storedTransaction.CategoryId.Should().Be("food");
+
+            var outboxMessages = await dbContext.OutboxMessages.ToListAsync();
+            outboxMessages.Should().ContainSingle(m => m.OperationType == OutboxOperationType.AddTransaction);
+        }
+
+        fixture.SheetsClient.GetDataRows(InMemoryGoogleSheetsClient.TransactionsSheetName).Should().BeEmpty();
+
+        // act - flush outbox
+        await fixture.OutboxProcessor.ProcessPendingMessages(CancellationToken.None);
+
+        // assert - synced to Google Sheets
+        await using (var dbContext = await fixture.CreateDbContext())
+        {
+            (await dbContext.OutboxMessages.ToListAsync()).Should().BeEmpty();
+            (await dbContext.DeadLetterMessages.ToListAsync()).Should().BeEmpty();
+        }
+
+        var sheetRows = fixture.SheetsClient.GetDataRows(InMemoryGoogleSheetsClient.TransactionsSheetName);
+        var syncedRow = sheetRows.Should().ContainSingle().Subject;
+        syncedRow.Index.Should().Be(1);
+        syncedRow.Values.Values.Should().Equal(
+            createdTransaction.Id.ToString(),
+            "2026-11-12 18:15:00",
+            "Expense",
+            "food",
+            "-32.45",
+            "Supermarket receipt");
+    }
 }

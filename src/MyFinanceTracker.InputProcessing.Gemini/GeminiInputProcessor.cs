@@ -21,11 +21,13 @@ internal sealed partial class GeminiInputProcessor(
     ILogger<GeminiInputProcessor> logger)
     : IRequestHandler<Input.Text, ProcessingResult>,
       IRequestHandler<Input.Audio, ProcessingResult>,
-      IRequestHandler<Input.Image, ProcessingResult>
+      IRequestHandler<Input.Image, ProcessingResult>,
+      IRequestHandler<Input.Document, ProcessingResult>
 {
     private const string ProcessingFailureMessage = "Failed to process your request. Please try again later.";
     private const string ExtractionInstruction = "Extract financial transaction details and execute the corresponding function call.";
     private const string AudioInstruction = "Process the user's voice message and execute the corresponding function call.";
+    private const string DocumentInstruction = "Extract financial transaction details from the attached document and execute the corresponding function call.";
 
     public Task<ProcessingResult> Handle(Input.Text request, CancellationToken ct)
     {
@@ -52,6 +54,16 @@ internal sealed partial class GeminiInputProcessor(
 
         var content = CreateMediaContent(
             request.Data, request.ContentType, ExtractionInstruction, request.Caption, request.Context);
+
+        return ProcessCore(content, ct);
+    }
+
+    public Task<ProcessingResult> Handle(Input.Document request, CancellationToken ct)
+    {
+        LogExecuteEntry(request);
+
+        var content = CreateMediaContent(
+            request.Data, request.ContentType, DocumentInstruction, request.Caption, request.Context);
 
         return ProcessCore(content, ct);
     }

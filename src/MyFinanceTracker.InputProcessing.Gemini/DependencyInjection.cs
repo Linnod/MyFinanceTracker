@@ -26,6 +26,7 @@ public static class DependencyInjection
             .AddScoped<IRequestHandler<Input.Text, ProcessingResult>, GeminiInputProcessor>()
             .AddScoped<IRequestHandler<Input.Audio, ProcessingResult>, GeminiInputProcessor>()
             .AddScoped<IRequestHandler<Input.Image, ProcessingResult>, GeminiInputProcessor>()
+            .AddScoped<IRequestHandler<Input.Document, ProcessingResult>, GeminiInputProcessor>()
             .AddScoped<IGeminiSystemPromptBuilder, GeminiSystemPromptBuilder>()
             .AddSingleton<IGeminiToolDeclarationProvider, GeminiToolDeclarationProvider>()
             .AddScoped<IGeminiToolExecutor, GeminiToolExecutor>();

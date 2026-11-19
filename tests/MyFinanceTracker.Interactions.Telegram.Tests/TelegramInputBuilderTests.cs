@@ -221,4 +221,195 @@ public sealed class TelegramInputBuilderTests
         // assert
         result.Should().BeNull();
     }
+
+    [Fact]
+    public async Task BuildInput_PdfDocumentWithoutCaptionOrContext_ReturnsDocumentInput()
+    {
+        // arrange
+        var message = new Message
+        {
+            Document = new Document { FileId = "doc-id", MimeType = "application/pdf", FileName = "statement.pdf" }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        var documentInput = result.Should().BeOfType<Input.Document>().Which;
+        documentInput.Data.Should().Equal(downloadedBytes);
+        documentInput.ContentType.Should().Be("application/pdf");
+        documentInput.Caption.Should().BeNull();
+        documentInput.Context.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("Quoted line", "Reply text", "Quoted line")]
+    [InlineData(null, "Reply text", "Reply text")]
+    public async Task BuildInput_PdfDocumentWithCaptionAndContext_SetsCaptionAndContext(
+        string? quoteText,
+        string replyText,
+        string expectedContext)
+    {
+        // arrange
+        var message = new Message
+        {
+            Document = new Document { FileId = "doc-id", MimeType = "application/pdf" },
+            Caption = "Monthly statement",
+            Quote = quoteText is null ? null : new TextQuote { Text = quoteText },
+            ReplyToMessage = new Message { Text = replyText }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        var documentInput = result.Should().BeOfType<Input.Document>().Which;
+        documentInput.Data.Should().Equal(downloadedBytes);
+        documentInput.ContentType.Should().Be("application/pdf");
+        documentInput.Caption.Should().Be("Monthly statement");
+        documentInput.Context.Should().Be(expectedContext);
+    }
+
+    [Fact]
+    public async Task BuildInput_PdfDocumentWithNonCanonicalMimeType_ReturnsCanonicalApplicationPdf()
+    {
+        // arrange
+        var message = new Message
+        {
+            Document = new Document { FileId = "doc-id", MimeType = "APPLICATION/PDF; charset=binary" }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        var documentInput = result.Should().BeOfType<Input.Document>().Which;
+        documentInput.Data.Should().Equal(downloadedBytes);
+        documentInput.ContentType.Should().Be("application/pdf");
+    }
+
+    [Theory]
+    [InlineData(null, "statement.pdf")]
+    [InlineData("application/octet-stream", "statement.pdf")]
+    [InlineData(null, " statement.PDF ")]
+    [InlineData("application/octet-stream", " statement.PDF ")]
+    public async Task BuildInput_PdfDocumentWithFallbackExtension_ReturnsApplicationPdf(
+        string? mimeType,
+        string fileName)
+    {
+        // arrange
+        var message = new Message
+        {
+            Document = new Document { FileId = "doc-id", MimeType = mimeType, FileName = fileName }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        var documentInput = result.Should().BeOfType<Input.Document>().Which;
+        documentInput.Data.Should().Equal(downloadedBytes);
+        documentInput.ContentType.Should().Be("application/pdf");
+    }
+
+    [Theory]
+    [InlineData("application/zip", "archive.zip")]
+    [InlineData("image/png", "receipt.png")]
+    [InlineData(null, "notes.txt")]
+    [InlineData("application/octet-stream", null)]
+    public async Task BuildInput_UnsupportedDocumentFormat_ReturnsNullWithoutDownloading(
+        string? mimeType,
+        string? fileName)
+    {
+        // arrange
+        var message = new Message
+        {
+            Document = new Document { FileId = "doc-id", MimeType = mimeType, FileName = fileName }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        result.Should().BeNull();
+        botClient.ReceivedCalls().Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("video/mp4", "animation.mp4")]
+    [InlineData("application/pdf", "animation.pdf")]
+    public async Task BuildInput_AnimationWithDocument_ReturnsNullWithoutDownloading(
+        string mimeType,
+        string fileName)
+    {
+        // arrange
+        var message = new Message
+        {
+            Animation = new Animation { FileId = "anim-id" },
+            Document = new Document { FileId = "doc-id", MimeType = mimeType, FileName = fileName }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        result.Should().BeNull();
+        botClient.ReceivedCalls().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task BuildInput_DocumentAtMaxFileSize_DownloadsAndReturnsDocumentInput()
+    {
+        // arrange
+        var message = new Message
+        {
+            Document = new Document
+            {
+                FileId = "doc-id",
+                MimeType = "application/pdf",
+                FileSize = TelegramInputBuilder.MaxFileSizeBytes
+            }
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        var documentInput = result.Should().BeOfType<Input.Document>().Which;
+        documentInput.Data.Should().Equal(downloadedBytes);
+        documentInput.ContentType.Should().Be("application/pdf");
+    }
+
+    [Theory]
+    [InlineData("document")]
+    [InlineData("voice")]
+    [InlineData("photo")]
+    public async Task BuildInput_MediaExceedingMaxFileSize_ReturnsNullWithoutDownloading(string mediaType)
+    {
+        // arrange
+        const long oversized = TelegramInputBuilder.MaxFileSizeBytes + 1;
+        var message = mediaType switch
+        {
+            "document" => new Message
+            {
+                Document = new Document { FileId = "doc-id", MimeType = "application/pdf", FileSize = oversized }
+            },
+            "voice" => new Message
+            {
+                Voice = new Voice { FileId = "voice-id", MimeType = "audio/ogg", FileSize = oversized }
+            },
+            "photo" => new Message
+            {
+                Photo = [new PhotoSize { FileId = "thumb", FileSize = 100 }, new PhotoSize { FileId = "full", FileSize = oversized }]
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(mediaType), mediaType, null)
+        };
+
+        // act
+        var result = await message.BuildInput(botClient, CancellationToken.None);
+
+        // assert
+        result.Should().BeNull();
+        botClient.ReceivedCalls().Should().BeEmpty();
+    }
 }
