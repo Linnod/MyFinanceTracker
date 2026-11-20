@@ -3,13 +3,13 @@
 [![Build](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Linnod/MyFinanceTracker/actions/workflows/ci.yml)
 [![.NET 11](https://img.shields.io/badge/.NET-11.0-blue)]()
 
-Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, and banking screenshots) through Telegram bot interface.
+Personal finance tracker that stores transactions in Google Sheets and supports multimodal expense tracking (text, voice, receipt photos, banking screenshots, and PDF documents) through Telegram bot interface.
 
 ## Features
 
 - Complete natural language transaction lifecycle: create, list/filter, update, and delete
-- Multimodal transaction input: text commands, voice messages, receipt photos, and banking screenshots
-- Gemini-powered natural language processing, audio transcription, and image analysis
+- Multimodal transaction input: text commands, voice messages, receipt photos, banking screenshots, and PDF documents (receipts, invoices, and bank statements)
+- Gemini-powered natural language processing, audio transcription, image analysis, and PDF document extraction
 - Local SQLite persistence with Transactional Outbox pattern
 - Resilient background synchronization to Google Sheets (retry policy & dead-letter queue)
 - Category management synchronized with Google Sheets and SQLite
@@ -249,3 +249,11 @@ Send images directly to the bot:
 - **Receipts**: Automatically extracts the total amount, infers the category from the merchant/items, and extracts the transaction date.
 - **Banking App Screenshots**: Recognizes transaction details from apps such as Revolut, Monzo, etc.
 - **Optional Captions**: Attach a text caption to clarify or override details (e.g. `Pharmacy yesterday` or `Groceries split with friend`).
+
+### PDF Documents (Telegram)
+
+Send PDF files (up to 20 MB) directly to the bot:
+
+- **Receipts & Invoices**: Automatically extracts the total amount as a single transaction (unless instructed otherwise in a caption), merchant/store name, and transaction date.
+- **Bank Receipts & Statements**: Extracts one or more transactions from bank statements (e.g., Revolut statements), inferring expense vs. income direction and ignoring balances or summary rows.
+- **Optional Captions**: Attach a text caption to clarify or override details (e.g. `Split specific items` or `Business lunch`).
