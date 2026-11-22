@@ -15,7 +15,7 @@ internal sealed class GeminiSystemPromptBuilder(
 
         var categoriesInfo = categoriesResponse switch
         {
-            ListCategoriesResponse.Success success => FormatCategories(success.Categories),
+            ListCategoriesResponse.Success { Categories.Count: > 0 } success => FormatCategories(success.Categories),
             _ => "No categories available."
         };
 
