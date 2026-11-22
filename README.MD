@@ -86,9 +86,14 @@ cd MyFinanceTracker
 
 Create your own spreadsheet from the template:
 
-https://docs.google.com/spreadsheets/d/19c9D0FdtEJCOoXVpclh6MyWBv0ZN7SgH5nojOpvZq9c/copy
+https://docs.google.com/spreadsheets/d/1wt-her1rbfA4PK5t4Ilyfe0D0BNcf7TYhMIJKZrDtTc/copy
 
-The spreadsheet uses a flat `Transactions` table schema with columns: `Id`, `Date`, `Type`, `Category`, `Amount`, `Note`.
+The template contains two flat sheets:
+
+- `Transactions` with columns: `Id`, `Date`, `Type`, `Category`, `Amount`, `Note`
+- `Categories` with columns: `Id`, `Name`, `IsArchived`
+
+The header row (row 1) on both sheets is required and must not be deleted.
 
 ### 3. Create a Google Service Account
 
@@ -103,7 +108,12 @@ Share your copied spreadsheet with the Service Account email address and grant i
 
 ### 5. Configure categories
 
-Categories are stored on the `Categories` sheet in your Google Spreadsheet (with columns: `Id`, `Name`, `IsArchived`). On first startup with an empty local SQLite database, existing categories and transactions are imported from Google Sheets; once the local database is populated, subsequent startups skip remote import and sync local changes to Google Sheets via the outbox.
+Categories are stored on the `Categories` sheet in your Google Spreadsheet (with columns: `Id`, `Name`, `IsArchived`). You can start in either of two ways:
+
+- **Pre-populate `Categories` in Google Sheets:** On first startup with an empty local SQLite database, existing categories (and transactions) are imported from Google Sheets.
+- **Start with an empty `Categories` sheet:** Leave only the header row (row 1), and create categories later through the Telegram bot—they will be synchronized to Google Sheets via the outbox.
+
+Once the local SQLite database is populated, subsequent startups skip remote import and sync local changes to Google Sheets via the outbox.
 
 ### 6. Configure the application
 
